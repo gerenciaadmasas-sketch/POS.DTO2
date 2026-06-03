@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"c:\\\\Users\\\\User\\\\Desktop\\\\Point of sale\\\\POSv1\\\\POS-DL-V1\" -Recurse -Force | Select-Object -First 200 | Format-Table FullName, @{Name='Type';Expression={if\\($_.PSIsContainer\\){'DIR'}else{'FILE'}}} -AutoSize)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git branch *)",
+      "Bash(git remote *)",
+      "Bash(git config *)",
+      "Bash(git push *)"
+    ]
+  }
+}
