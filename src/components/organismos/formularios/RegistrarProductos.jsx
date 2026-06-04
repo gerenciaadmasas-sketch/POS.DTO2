@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import styled from "styled-components";
 import { v } from "../../../styles/variables";
-import { InputText, Btn1, useProductosStore, useCategoriasStore, ConvertirCapitalize } from "../../../index";
+import { InputText, Btn1, useProductosStore, useCategoriasStore, ConvertirCapitalize, Switch1, ContainerSelector } from "../../../index";
 import { useForm } from "react-hook-form";
 import { useEmpresaStore } from "../../../store/EmpresaStore";
 import { useMutation } from "@tanstack/react-query";
@@ -10,7 +10,7 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
     const { insertarProducto, editarProducto } = useProductosStore();
     const { datacategorias } = useCategoriasStore();
     const { dataempresa } = useEmpresaStore();
-    const [manejaInventario, setManejaInventario] = useState(false);
+    const [stateInventarios, setStateInventarios] = useState(false);
     const [manejaMultiprecio, setManejaMultiprecio] = useState(false);
 
     const { register, formState: { errors }, handleSubmit, reset } = useForm();
@@ -27,7 +27,7 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
 
     useEffect(() => {
         if (accion === "Editar" && dataSelect) {
-            setManejaInventario(dataSelect.maneja_inventario ?? false);
+            setStateInventarios(dataSelect.maneja_inventario ?? false);
             setManejaMultiprecio(dataSelect.maneja_multiprecio ?? false);
             reset({
                 nombre: dataSelect.nombre,
@@ -52,8 +52,8 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                 _codigo_barra: data.codigo_barra || "-",
                 _codigo_interno: data.codigo_interno || "-",
                 _sevende_por: data.sevende_por,
-                _stock_minimo: parseFloat(data.stock_minimo) || 0,
-                _maneja_inventario: manejaInventario,
+                _stock_minimo: stateInventarios ? (parseFloat(data.stock_minimo) || 0) : 0,
+                _maneja_inventario: stateInventarios,
                 _maneja_multiprecio: manejaMultiprecio,
                 _idempresa: dataempresa.id,
                 _id: dataSelect.id,
@@ -69,8 +69,8 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                 _codigo_interno: data.codigo_interno || "-",
                 _id_empresa: dataempresa.id,
                 _sevende_por: data.sevende_por,
-                _stock_minimo: parseFloat(data.stock_minimo) || 0,
-                _maneja_inventario: manejaInventario,
+                _stock_minimo: stateInventarios ? (parseFloat(data.stock_minimo) || 0) : 0,
+                _maneja_inventario: stateInventarios,
                 _maneja_multiprecio: manejaMultiprecio,
             };
             await insertarProducto(p);
@@ -85,7 +85,7 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                 <div className="sub-contenedor">
                     <div className="headers">
                         <section>
-                            <h1>{accion === "Editar" ? "Editar producto" : "Registrar nuevo producto"}</h1>
+                            <h1>{accion === "Editar" ? "Editar producto" : "Registrar nueva productos"}</h1>
                         </section>
                         <section>
                             <span onClick={onClose}>x</span>
@@ -93,80 +93,69 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                     </div>
 
                     <form className="formulario" onSubmit={handleSubmit(doGuardar)}>
-                        <div className="grid-form">
+                        <div className="seccion1">
                             <InputText icono={<v.icononombre />}>
-                                <input className="form__field" type="text" placeholder="Nombre"
+                                <input className="form__field" type="text" placeholder="nombre"
                                     {...register("nombre", { required: true })} />
-                                <label className="form__label">Nombre</label>
+                                <label className="form__label">nombre</label>
                                 {errors.nombre && <p>Campo requerido</p>}
                             </InputText>
 
                             <InputText icono={<v.iconoprecioventa />}>
-                                <input className="form__field" type="number" step="0.01" placeholder="Precio venta"
+                                <input className="form__field" type="number" step="0.01" placeholder="precio venta"
                                     {...register("precio_venta", { required: true })} />
-                                <label className="form__label">Precio venta</label>
+                                <label className="form__label">precio venta</label>
                                 {errors.precio_venta && <p>Campo requerido</p>}
                             </InputText>
 
                             <InputText icono={<v.iconopreciocompra />}>
-                                <input className="form__field" type="number" step="0.01" placeholder="Precio compra"
+                                <input className="form__field" type="number" step="0.01" placeholder="precio compra"
                                     {...register("precio_compra", { required: true })} />
-                                <label className="form__label">Precio compra</label>
+                                <label className="form__label">precio compra</label>
                                 {errors.precio_compra && <p>Campo requerido</p>}
                             </InputText>
 
-                            <InputText icono={<v.iconocategorias />}>
-                                <select className="form__field" {...register("id_categoria", { required: true })}>
-                                    <option value="">-- Categoría --</option>
-                                    {datacategorias?.map((cat) => (
-                                        <option key={cat.id} value={cat.id}>{cat.nombre}</option>
-                                    ))}
-                                </select>
-                                <label className="form__label">Categoría</label>
-                                {errors.id_categoria && <p>Campo requerido</p>}
-                            </InputText>
-
                             <InputText icono={<v.iconocodigobarras />}>
-                                <input className="form__field" type="text" placeholder="Código de barra"
+                                <input className="form__field" type="text" placeholder="codigo de barras"
                                     {...register("codigo_barra")} />
-                                <label className="form__label">Código de barra</label>
+                                <label className="form__label">codigo de barras</label>
                             </InputText>
 
                             <InputText icono={<v.iconocodigointerno />}>
-                                <input className="form__field" type="text" placeholder="Código interno"
+                                <input className="form__field" type="text" placeholder="codigo interno"
                                     {...register("codigo_interno")} />
-                                <label className="form__label">Código interno</label>
+                                <label className="form__label">codigo interno</label>
                             </InputText>
+                        </div>
 
-                            <div className="select-container">
-                                <label>Se vende por</label>
-                                <select {...register("sevende_por", { required: true })}>
-                                    <option value="Unidad">Unidad</option>
-                                    <option value="Peso">Peso</option>
-                                    <option value="Metro">Metro</option>
-                                    <option value="Litro">Litro</option>
-                                </select>
-                                {errors.sevende_por && <p>Campo requerido</p>}
-                            </div>
+                        <div className="seccion2">
+                            <ContainerSelector>
+                                <label>Controlar stock: </label>
+                                <Switch1
+                                    state={stateInventarios}
+                                    setState={() => setStateInventarios(!stateInventarios)}
+                                />
+                            </ContainerSelector>
 
-                            <InputText icono={<v.iconostockminimo />}>
-                                <input className="form__field" type="number" step="0.01" placeholder="Stock mínimo"
-                                    {...register("stock_minimo")} />
-                                <label className="form__label">Stock mínimo</label>
-                            </InputText>
+                            {stateInventarios && (
+                                <ContainerStock>
+                                    <ContainerSelector>
+                                        <label>Sucursal: </label>
+                                    </ContainerSelector>
 
-                            <div className="toggle-container">
-                                <label>
-                                    <input type="checkbox" checked={manejaInventario}
-                                        onChange={(e) => setManejaInventario(e.target.checked)} />
-                                    Maneja inventario
-                                </label>
-                                <label>
-                                    <input type="checkbox" checked={manejaMultiprecio}
-                                        onChange={(e) => setManejaMultiprecio(e.target.checked)} />
-                                    Maneja multiprecio
-                                </label>
-                            </div>
+                                    <InputText icono={<v.iconostock />}>
+                                        <input className="form__field" type="number" step="0.01" placeholder="stock"
+                                            {...register("stock")} />
+                                        <label className="form__label">stock</label>
+                                    </InputText>
+
+                                    <InputText icono={<v.iconostockminimo />}>
+                                        <input className="form__field" type="number" step="0.01" placeholder="stock minimo"
+                                            {...register("stock_minimo")} />
+                                        <label className="form__label">stock minimo</label>
+                                    </InputText>
+                                </ContainerStock>
+                            )}
                         </div>
 
                         <Btn1 icono={<v.iconoguardar />} titulo="Guardar" bgcolor="#F9D70B" />
@@ -191,8 +180,8 @@ const Container = styled.div`
 
     .sub-contenedor {
         position: relative;
-        width: 600px;
-        max-width: 90%;
+        width: 650px;
+        max-width: 92%;
         max-height: 90vh;
         overflow-y: auto;
         border-radius: 20px;
@@ -214,46 +203,32 @@ const Container = styled.div`
             flex-direction: column;
             gap: 20px;
 
-            .grid-form {
+            .seccion1 {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 16px;
-
-                @media (max-width: 500px) {
-                    grid-template-columns: 1fr;
-                }
+                @media (max-width: 500px) { grid-template-columns: 1fr; }
             }
 
-            .select-container {
+            .seccion2 {
                 display: flex;
                 flex-direction: column;
-                gap: 6px;
-                label { font-size: 13px; color: ${({ theme }) => theme.text}; }
-                select {
-                    padding: 10px;
-                    border-radius: 8px;
-                    border: 1px solid rgba(150,150,150,0.4);
-                    background: ${({ theme }) => theme.bgtotal};
-                    color: ${({ theme }) => theme.text};
-                    font-size: 14px;
-                }
-            }
-
-            .toggle-container {
-                grid-column: span 2;
-                display: flex;
-                gap: 24px;
-                align-items: center;
+                gap: 14px;
                 label {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
                     font-size: 14px;
-                    cursor: pointer;
-                    input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+                    color: ${({ theme }) => theme.text};
                 }
-                @media (max-width: 500px) { grid-column: span 1; flex-direction: column; }
             }
         }
     }
+`;
+
+const ContainerStock = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(150,150,150,0.3);
+    background: ${({ theme }) => theme.bg3 || "rgba(150,150,150,0.05)"};
 `;

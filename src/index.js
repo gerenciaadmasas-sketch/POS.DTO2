@@ -1,4 +1,5 @@
 export { default as App } from './App';
+export * from './components/atomos/ContainerSelector';
 export * from './components/atomos/Icono';
 export * from './components/atomos/Linea';
 export * from './components/atomos/Title';
@@ -6,6 +7,7 @@ export * from './components/moleculas/Btn1';
 export * from './components/moleculas/ImagenContent';
 export * from './components/moleculas/Spinner1';
 export * from './components/organismos/Buscador';
+export * from './components/organismos/Switch1';
 export * from './components/organismos/Footer';
 export * from './components/organismos/ToggleTema';
 export * from './components/organismos/formularios/InputText';
