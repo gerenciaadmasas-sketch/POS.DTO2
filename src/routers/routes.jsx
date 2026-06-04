@@ -1,26 +1,26 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import {Categorias,Configuraciones, Home, Login,ProtectedRoute, UserAuth, useEmpresaStore, useUsuariosStore} from "../index"
+import { Categorias, Configuraciones, Home, Login, Productos, ProtectedRoute, UserAuth, useEmpresaStore, useUsuariosStore } from "../index"
 import { useQuery } from "@tanstack/react-query";
 import { Spinner1 } from "../components/moleculas/Spinner1";
 
 export function Myroutes() {
   const { user } = UserAuth();
-  const {datausuarios, mostrarusuarios} = useUsuariosStore();
-  const {mostrarempresa, dataempresa} = useEmpresaStore ();
-  const {isLoading,error} = useQuery({
-    queryKey:["Mostrar Usuarios"],
-    queryFn:mostrarusuarios,refetchOnWindowFocus:false
+  const { datausuarios, mostrarusuarios } = useUsuariosStore();
+  const { mostrarempresa, dataempresa } = useEmpresaStore();
+  const { isLoading, error } = useQuery({
+    queryKey: ["Mostrar Usuarios"],
+    queryFn: mostrarusuarios, refetchOnWindowFocus: false
   });
-  const {data:dtempresa} = useQuery({
-    queryKey:["Mostrar Empresa",datausuarios?.id],
-    queryFn:()=>mostrarempresa({_id_usuario:datausuarios?.id}),
-    enabled:!!datausuarios?.id,refetchOnWindowFocus:false
+  const { data: dtempresa } = useQuery({
+    queryKey: ["Mostrar Empresa", datausuarios?.id],
+    queryFn: () => mostrarempresa({ _id_usuario: datausuarios?.id }),
+    enabled: !!datausuarios?.id, refetchOnWindowFocus: false
   });
-  
-  if (isLoading){
-    return (<Spinner1/>);
+
+  if (isLoading) {
+    return (<Spinner1 />);
   }
-  if (error){
+  if (error) {
     return <span>error...</span>;
   }
   return (
@@ -34,6 +34,7 @@ export function Myroutes() {
         <Route path="/" element={<Home />} />
         <Route path="/configuracion" element={<Configuraciones />} />
         <Route path="/configuracion/categorias" element={<Categorias />} />
+        <Route path="/configuracion/productos" element={<Productos />} />
 
         <Route path="/configurar" element={<Navigate to="/configuracion" replace />} />
         <Route
