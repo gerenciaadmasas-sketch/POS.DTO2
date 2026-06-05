@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { CategoriasTemplate, Spinner1, useCategoriasStore, useEmpresaStore } from "../index";
 
 export function Categorias() {
@@ -14,7 +14,9 @@ export function Categorias() {
     const { } = useQuery({
         queryKey: ["Buscar categorias", buscador],
         queryFn: () => buscarCategorias({ id_empresa: dataempresa?.id, descripcion: buscador }),
-        enabled: !!dataempresa?.id, refetchOnWindowFocus: false
+        enabled: !!dataempresa?.id,
+        refetchOnWindowFocus: false,
+        placeholderData: keepPreviousData,
     })
 
     if (isLoading) {

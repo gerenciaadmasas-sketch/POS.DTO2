@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { ContentAccionesTabla, Paginacion } from "../../../index";
+import { ContentAccionesTabla, Paginacion, Checkbox1 } from "../../../index";
 import Swal from "sweetalert2";
 import { v } from "../../../styles/variables";
 import { useState } from "react";
@@ -44,13 +44,18 @@ export function TablaProductos({ data, SetopenRegistro, setdataSelect, setAccion
             cell: (info) => <span>{info.getValue()}</span>,
         },
         {
-            accessorKey: "precio_venta",
+            accessorKey: "p_venta",
             header: "P. Venta",
             cell: (info) => <span>{info.getValue()}</span>,
         },
         {
-            accessorKey: "precio_compra",
+            accessorKey: "p_compra",
             header: "P. Compra",
+            cell: (info) => <span>{info.getValue()}</span>,
+        },
+        {
+            accessorKey: "categoria",
+            header: "Categoría",
             cell: (info) => <span>{info.getValue()}</span>,
         },
         {
@@ -62,6 +67,16 @@ export function TablaProductos({ data, SetopenRegistro, setdataSelect, setAccion
             accessorKey: "sevende_por",
             header: "Vende por",
             cell: (info) => <span>{info.getValue()}</span>,
+        },
+        {
+            accessorKey: "maneja_inventarios",
+            header: "Inventarios",
+            enableSorting: false,
+            cell: (info) => (
+                <td data-title="Inventarios" className="ContentCell">
+                    <Checkbox1 isChecked={info.getValue()} onChange={() => {}} />
+                </td>
+            ),
         },
         {
             accessorKey: "acciones",

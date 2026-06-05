@@ -1,14 +1,22 @@
-import { useQuery } from "@tanstack/react-query";
-import { ProductoTemplate, Spinner1, useProductosStore, useCategoriasStore, useEmpresaStore } from "../index";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { ProductoTemplate, Spinner1, useProductosStore, useCategoriasStore, useEmpresaStore, useSucursalesStore } from "../index";
 
 export function Productos() {
     const { mostrarProductos, buscarProductos, buscador } = useProductosStore();
     const { mostrarCategorias } = useCategoriasStore();
+    const { mostrarSucursales } = useSucursalesStore();
     const { dataempresa } = useEmpresaStore();
 
     useQuery({
         queryKey: ["Mostrar categorias", dataempresa?.id],
         queryFn: () => mostrarCategorias({ id_empresa: dataempresa?.id }),
+        enabled: !!dataempresa?.id,
+        refetchOnWindowFocus: false,
+    });
+
+    useQuery({
+        queryKey: ["Mostrar sucursales", dataempresa?.id],
+        queryFn: () => mostrarSucursales({ id_empresa: dataempresa?.id }),
         enabled: !!dataempresa?.id,
         refetchOnWindowFocus: false,
     });
@@ -20,11 +28,13 @@ export function Productos() {
         refetchOnWindowFocus: false,
     });
 
+    // Buscar productos — igual que categorías: siempre activo, sin condicionar a buscador
     useQuery({
         queryKey: ["Buscar productos", buscador],
         queryFn: () => buscarProductos({ id_empresa: dataempresa?.id, descripcion: buscador }),
-        enabled: !!dataempresa?.id && !!buscador,
+        enabled: !!dataempresa?.id,
         refetchOnWindowFocus: false,
+        placeholderData: keepPreviousData,
     });
 
     if (isLoading) return <Spinner1 />;
