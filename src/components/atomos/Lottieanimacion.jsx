@@ -1,12 +1,9 @@
-import Lottie from "lottie-react";
+import { useLottie } from "lottie-react";
 
 export function Lottieanimacion({ alto, ancho, animacion }) {
-    return (
-        <Lottie
-            animationData={animacion}
-            loop
-            autoplay
-            style={{ height: `${alto}px`, width: `${ancho}px` }}
-        />
+    const { View } = useLottie(
+        { animationData: animacion, loop: true, autoplay: true },
+        { height: `${alto}px`, width: `${ancho}px` }
     );
+    return View;
 }

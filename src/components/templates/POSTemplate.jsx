@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import styled from "styled-components";
-import { useUsuariosStore, useEmpresaStore, useSucursalesStore, BuscarProductos, BuscarProductoPorCodigo, UserAuth, RegistrarVenta, Lottieanimacion } from "../../index";
-import { toastExito, toastWarning } from "../../utils/toast";
+import { useUsuariosStore, useEmpresaStore, useSucursalesStore, BuscarProductos, BuscarProductoPorCodigo, UserAuth, RegistrarVenta, Lottieanimacion, useCartVentasStore } from "../../index";
+import { toastExito } from "../../utils/toast";
 import vacioanimacion from "../../assets/vacioanimacion.json";
 import { RiDeleteBin2Line } from "react-icons/ri";
 import { Switch1 } from "../../index";
@@ -12,6 +13,26 @@ export function POSTemplate() {
     const { dataempresa } = useEmpresaStore();
     const { dataSucursales, mostrarSucursales } = useSucursalesStore();
     const { user } = UserAuth();
+
+    const {
+        items: carrito,
+        metodoPago,
+        pagaCon,
+        mixto,
+        statePantallaCobro: modalPago,
+        ticketData,
+        agregarItem,
+        cambiarCantidad,
+        eliminarItem,
+        resetear,
+        setStatePantallaCobro,
+        cerrarPantallaCobro,
+        setMetodoPago: setMetodoPagoStore,
+        setPagaCon:    setPagoConStore,
+        setMixto:      setMixtoStore,
+        setTicketData,
+        cerrarTicket,
+    } = useCartVentasStore();
 
     useQuery({
         queryKey: ["sucursales-pos", dataempresa?.id],
@@ -28,12 +49,6 @@ export function POSTemplate() {
     const [fecha, setFecha] = useState("");
     const [lectora, setLectora] = useState(false);
     const [verPago, setVerPago] = useState(false);
-    const [carrito, setCarrito] = useState([]);
-
-    // Pago
-    const [metodoPago, setMetodoPago] = useState(null);
-    const [pagaCon, setPagaCon] = useState("");
-    const [mixto, setMixto] = useState({ efectivo: "", tarjeta: "", credito: "" });
     const [cobrando, setCobrando] = useState(false);
 
     // Búsqueda
@@ -124,48 +139,13 @@ export function POSTemplate() {
         }, 400);
     }, [dataempresa?.id]);
 
-    // Agregar producto al carrito
+    // Agregar producto al carrito (limpia búsqueda + delega al store)
     const agregarAlCarrito = (producto) => {
         setBusqueda("");
         setResultados([]);
         setDropdownAbierto(false);
-        const esGranel = producto.sevende_por === "Granel";
-        const paso = esGranel ? 0.5 : 1;
-        setCarrito(prev => {
-            const existe = prev.find(i => i.id === producto.id);
-            if (existe) {
-                return prev.map(i =>
-                    i.id === producto.id
-                        ? { ...i, cantidad: parseFloat((i.cantidad + paso).toFixed(2)) }
-                        : i
-                );
-            }
-            return [...prev, {
-                id: producto.id,
-                nombre: producto.nombre,
-                precio: producto.precio_venta,
-                aplica_iva: producto.aplica_iva ?? false,
-                maneja_inventarios: producto.maneja_inventarios ?? false,
-                esGranel,
-                cantidad: paso,
-            }];
-        });
+        agregarItem(producto);
     };
-
-    const cambiarCantidad = (id, delta) => {
-        setCarrito(prev =>
-            prev.map(i => {
-                if (i.id !== id) return i;
-                const paso = i.esGranel ? 0.5 : 1;
-                const minimo = i.esGranel ? 0.5 : 1;
-                const nueva = parseFloat((i.cantidad + paso * delta).toFixed(2));
-                return { ...i, cantidad: Math.max(minimo, nueva) };
-            })
-        );
-    };
-
-    const eliminarItem = (id) => setCarrito(prev => prev.filter(i => i.id !== id));
-    const resetear = () => setCarrito([]);
 
     // Totales: IVA solo a productos que lo tienen
     const subtotalSinIva = carrito.reduce((acc, i) => acc + i.precio * i.cantidad, 0);
@@ -194,11 +174,7 @@ export function POSTemplate() {
          metodoPago === "mixto"    ? Math.abs(faltaMixto) < 1 :
          true);
 
-    const seleccionarMetodo = (m) => {
-        setMetodoPago(m);
-        setPagaCon("");
-        setMixto({ efectivo: "", tarjeta: "", credito: "" });
-    };
+    const seleccionarMetodo = (m) => setMetodoPagoStore(m);
 
     const cobrar = async () => {
         if (!pagoValido || cobrando) return;
@@ -242,11 +218,24 @@ export function POSTemplate() {
             });
 
             toastExito(`Venta #${idVenta} registrada por ${formatCOP(total)}`, "POS › Cobrar");
-            // Reiniciar todo
-            setCarrito([]);
-            setMetodoPago(null);
-            setPagaCon("");
-            setMixto({ efectivo: "", tarjeta: "", credito: "" });
+            setTicketData({
+                idVenta,
+                fecha: new Date(),
+                empresa: dataempresa?.razon_social ?? "Mi empresa",
+                sucursal,
+                cajero: nombreMostrar,
+                items: carrito.map(i => ({ ...i })),
+                subtotal: subtotalSinIva,
+                iva: ivaTotal,
+                total,
+                metodoPago,
+                pagaCon: metodoPago === "efectivo" ? parseFloat(pagaCon) || 0 : null,
+                cambio:  metodoPago === "efectivo" ? Math.max(0, cambio)  : null,
+                mixtoEfectivo: metodoPago === "mixto" ? parseFloat(mixto.efectivo) || 0 : null,
+                mixtoTarjeta:  metodoPago === "mixto" ? parseFloat(mixto.tarjeta)  || 0 : null,
+                mixtoCredito:  metodoPago === "mixto" ? parseFloat(mixto.credito)  || 0 : null,
+            });
+            resetear();
             setVerPago(false);
         } finally {
             setCobrando(false);
@@ -398,7 +387,7 @@ export function POSTemplate() {
                                 min="0"
                                 placeholder="$ 0"
                                 value={pagaCon}
-                                onChange={e => setPagaCon(e.target.value)}
+                                onChange={e => setPagoConStore(e.target.value)}
                                 autoFocus
                             />
                             {pagaCon !== "" && (
@@ -426,7 +415,7 @@ export function POSTemplate() {
                                         min="0"
                                         placeholder="$ 0"
                                         value={mixto[key]}
-                                        onChange={e => setMixto(prev => ({ ...prev, [key]: e.target.value }))}
+                                        onChange={e => setMixtoStore({ [key]: e.target.value })}
                                     />
                                 </FilaMixto>
                             ))}
@@ -472,6 +461,170 @@ export function POSTemplate() {
             <Footer>
                 <BtnEliminar onClick={resetear}>Eliminar</BtnEliminar>
             </Footer>
+
+            {modalPago && metodoPago && createPortal(
+                <OverlayPago onClick={() => cerrarPantallaCobro()}>
+                    <ModalPago onClick={e => e.stopPropagation()}>
+                        <ScallopEdge $top />
+
+                        <ModalContenido>
+                            <BadgeMetodoPago $metodo={metodoPago}>
+                                {metodoPagoLabel(metodoPago)}
+                            </BadgeMetodoPago>
+
+                            <ModalEmpresa>
+                                <span className="emote">😎</span>
+                                <span className="sub">cliente</span>
+                                <span className="nombre">Sin registrar</span>
+                                <span className="almacen">{dataempresa?.razon_social ?? "Mi empresa"}</span>
+                            </ModalEmpresa>
+
+                            {metodoPago === "efectivo" && (
+                                <LabelInput>
+                                    <span>efectivo</span>
+                                    <InputPagoModal
+                                        type="number"
+                                        min="0"
+                                        placeholder="$ 0"
+                                        value={pagaCon}
+                                        onChange={e => setPagoConStore(e.target.value)}
+                                        onKeyDown={e => e.key === "Enter" && pagoValido && !cobrando && cobrar()}
+                                        autoFocus
+                                    />
+                                </LabelInput>
+                            )}
+
+                            {metodoPago === "mixto" && (
+                                <MixtoModal>
+                                    {[
+                                        { key: "efectivo", label: "Efectivo", color: "#4CAF50" },
+                                        { key: "tarjeta",  label: "Tarjeta",  color: "#FF9800" },
+                                        { key: "credito",  label: "Crédito",  color: "#E91E8C" },
+                                    ].map(({ key, label, color }) => (
+                                        <FilaMixtoModal key={key}>
+                                            <DotColor $color={color} />
+                                            <span>{label}</span>
+                                            <InputPagoModal
+                                                type="number"
+                                                min="0"
+                                                placeholder="$ 0"
+                                                value={mixto[key]}
+                                                onChange={e => setMixtoStore({ [key]: e.target.value })}
+                                                onKeyDown={e => e.key === "Enter" && pagoValido && !cobrando && cobrar()}
+                                                $inline
+                                            />
+                                        </FilaMixtoModal>
+                                    ))}
+                                </MixtoModal>
+                            )}
+
+                            <LineaModal />
+
+                            <ResumenModal>
+                                <FilaResumen>
+                                    <span>Total:</span>
+                                    <span>{formatCOP(total)}</span>
+                                </FilaResumen>
+                                {metodoPago === "efectivo" && (
+                                    <>
+                                        <FilaResumen $verde={cambio >= 0 && pagaCon !== ""}>
+                                            <span>Vuelto:</span>
+                                            <span>{pagaCon !== "" && cambio >= 0 ? formatCOP(cambio) : 0}</span>
+                                        </FilaResumen>
+                                        <FilaResumen $rojo={cambio < 0 && pagaCon !== ""}>
+                                            <span>Restante:</span>
+                                            <span>{pagaCon !== "" && cambio < 0 ? formatCOP(Math.abs(cambio)) : 0}</span>
+                                        </FilaResumen>
+                                    </>
+                                )}
+                                {metodoPago === "mixto" && (
+                                    <FilaResumen $verde={Math.abs(faltaMixto) < 1} $rojo={faltaMixto > 0}>
+                                        <span>{faltaMixto > 0 ? "Falta:" : faltaMixto < -0.9 ? "Excede:" : "Completo:"}</span>
+                                        <span>{Math.abs(faltaMixto) >= 1 ? formatCOP(Math.abs(faltaMixto)) : "✔"}</span>
+                                    </FilaResumen>
+                                )}
+                            </ResumenModal>
+
+                            <BtnCobrarModal $activo={pagoValido && !cobrando} onClick={cobrar}>
+                                {cobrando ? "⏳ Registrando..." : "COBRAR (enter)"}
+                            </BtnCobrarModal>
+                        </ModalContenido>
+
+                        <ScallopEdge />
+                    </ModalPago>
+                    <BtnVolverModal onClick={() => cerrarPantallaCobro()}>&lt; volver</BtnVolverModal>
+                </OverlayPago>,
+                document.body
+            )}
+
+            {ticketData && createPortal(
+                <OverlayTicket onClick={cerrarTicket}>
+                    <TicketCard onClick={e => e.stopPropagation()}>
+                        <TicketPerforacion $top />
+                        <TicketBody>
+                            <TicketEmpresa>
+                                <div className="nombre">{ticketData.empresa}</div>
+                                <div className="sucursal">{ticketData.sucursal}</div>
+                            </TicketEmpresa>
+                            <TicketMeta>
+                                <span>Venta #{ticketData.idVenta}</span>
+                                <span>{ticketData.fecha.toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" })}</span>
+                                <span>{ticketData.fecha.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</span>
+                                <span>Cajero: {ticketData.cajero}</span>
+                            </TicketMeta>
+
+                            <TicketLinea />
+
+                            <TicketItems>
+                                {ticketData.items.map(item => (
+                                    <FilaTicket key={item.id}>
+                                        <span className="desc">
+                                            {item.esGranel ? `${item.cantidad} kg` : `${item.cantidad}x`} {item.nombre}
+                                            {item.aplica_iva && <BadgeTicketIva>IVA</BadgeTicketIva>}
+                                        </span>
+                                        <span className="precio">{formatCOP(item.precio * item.cantidad)}</span>
+                                    </FilaTicket>
+                                ))}
+                            </TicketItems>
+
+                            <TicketLinea />
+
+                            <TicketTotales>
+                                <FilaTotTicket><span>Subtotal</span><span>{formatCOP(ticketData.subtotal)}</span></FilaTotTicket>
+                                <FilaTotTicket><span>IVA (19%)</span><span>{formatCOP(ticketData.iva)}</span></FilaTotTicket>
+                                <FilaTotTicket $bold><span>TOTAL</span><span>{formatCOP(ticketData.total)}</span></FilaTotTicket>
+                            </TicketTotales>
+
+                            <TicketLinea />
+
+                            <TicketPago>
+                                <div className="metodo">{metodoPagoLabel(ticketData.metodoPago)}</div>
+                                {ticketData.metodoPago === "efectivo" && (
+                                    <>
+                                        <FilaTotTicket><span>Paga con</span><span>{formatCOP(ticketData.pagaCon)}</span></FilaTotTicket>
+                                        <FilaTotTicket $verde><span>Cambio</span><span>{formatCOP(ticketData.cambio)}</span></FilaTotTicket>
+                                    </>
+                                )}
+                                {ticketData.metodoPago === "mixto" && (
+                                    <>
+                                        {ticketData.mixtoEfectivo > 0 && <FilaTotTicket><span>Efectivo</span><span>{formatCOP(ticketData.mixtoEfectivo)}</span></FilaTotTicket>}
+                                        {ticketData.mixtoTarjeta  > 0 && <FilaTotTicket><span>Tarjeta</span><span>{formatCOP(ticketData.mixtoTarjeta)}</span></FilaTotTicket>}
+                                        {ticketData.mixtoCredito  > 0 && <FilaTotTicket><span>Crédito</span><span>{formatCOP(ticketData.mixtoCredito)}</span></FilaTotTicket>}
+                                    </>
+                                )}
+                            </TicketPago>
+
+                            <TicketGracias>¡Gracias por tu compra!</TicketGracias>
+                        </TicketBody>
+                        <TicketPerforacion />
+                        <BotonesTicket>
+                            <BtnNuevaVenta onClick={cerrarTicket}>🛒 Nueva venta</BtnNuevaVenta>
+                            <BtnImprimirTicket onClick={() => window.print()}>🖨 Imprimir</BtnImprimirTicket>
+                        </BotonesTicket>
+                    </TicketCard>
+                </OverlayTicket>,
+                document.body
+            )}
         </Container>
     );
 }
@@ -860,4 +1013,365 @@ const BtnVolver = styled.button`
     background: transparent; color: ${({ theme }) => theme.text};
     font-size: 13px; cursor: pointer;
     @media (min-width: 768px) { display: none; }
+`;
+
+/* ── MODAL COBRO ────────────────────────────────────── */
+
+const coloresMetodo = {
+    efectivo: { bg: "#4CAF50", shadow: "#2E7D32", text: "#fff" },
+    tarjeta:  { bg: "#FF9800", shadow: "#E65100", text: "#fff" },
+    credito:  { bg: "#E91E8C", shadow: "#880E4F", text: "#fff" },
+    mixto:    { bg: "#9C27B0", shadow: "#4A148C", text: "#fff" },
+};
+
+const OverlayPago = styled.div`
+    position: fixed;
+    inset: 0;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    z-index: 9999;
+    padding: 20px;
+`;
+
+const ModalPago = styled.div`
+    position: relative;
+    box-sizing: border-box;
+    width: 400px;
+    max-width: calc(100vw - 40px);
+    padding: 24px 24px 20px;
+    box-shadow: 2px 2px 15px 0px rgba(226,226,226,0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background-color: #ffffff;
+    color: #000;
+    align-items: stretch;
+    font-size: 15px;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: -5px; left: 0; right: 0;
+        height: 6px;
+        background: radial-gradient(circle, transparent, transparent 50%, #fff 50%, #fff 100%) -7px -8px / 16px 16px repeat-x;
+    }
+    &::after {
+        content: '';
+        position: absolute;
+        bottom: -5px; left: 0; right: 0;
+        height: 6px;
+        background: radial-gradient(circle, transparent, transparent 50%, #fff 50%, #fff 100%) -7px -2px / 16px 16px repeat-x;
+    }
+`;
+
+const ScallopEdge = styled.div`display: none;`;
+const ModalContenido = styled.div`display: contents;`;
+
+const BadgeMetodoPago = styled.div`
+    position: absolute;
+    top: -12px;
+    right: 20px;
+    background: ${({ $metodo }) => coloresMetodo[$metodo]?.bg ?? "#555"};
+    color: #fff;
+    font-weight: 800;
+    font-size: 12px;
+    padding: 3px 14px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+`;
+
+const ModalEmpresa = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding-top: 4px;
+    .emote  { font-size: 28px; line-height: 1; }
+    .sub    { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+    .nombre {
+        font-size: 17px;
+        font-weight: 900;
+        color: #111;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        text-align: center;
+    }
+    .almacen {
+        font-size: 12px;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+`;
+
+const LabelInput = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    span { font-size: 13px; font-weight: 600; color: #6b7280; }
+`;
+
+const InputPagoModal = styled.input`
+    width: 100%;
+    padding: ${({ $inline }) => $inline ? "8px 10px" : "12px 16px"};
+    border: none;
+    border-bottom: 2px solid ${({ $inline }) => $inline ? "#e5e7eb" : "#d1d5db"};
+    font-size: ${({ $inline }) => $inline ? "15px" : "28px"};
+    font-weight: 700;
+    color: #111;
+    background: transparent;
+    outline: none;
+    box-sizing: border-box;
+    text-align: ${({ $inline }) => $inline ? "right" : "left"};
+    &:focus { border-bottom-color: #4f46e5; }
+`;
+
+const MixtoModal = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+`;
+
+const FilaMixtoModal = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    span { font-size: 14px; font-weight: 600; flex: 1; color: #374151; }
+    ${InputPagoModal} { flex: 0 0 130px; width: 130px; }
+`;
+
+const LineaModal = styled.hr`
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 0;
+`;
+
+const ResumenModal = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+`;
+
+const FilaResumen = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    color: ${({ $verde, $rojo }) => $verde ? "#166534" : $rojo ? "#991b1b" : "#374151"};
+    span:first-child { opacity: 0.65; }
+    span:last-child { font-weight: 700; }
+`;
+
+const BtnCobrarModal = styled.button`
+    width: 100%;
+    padding: 15px;
+    border-radius: 50px;
+    border: none;
+    background: ${({ $activo }) => $activo ? "#4CAF50" : "#e5e7eb"};
+    color: ${({ $activo }) => $activo ? "#fff" : "#9ca3af"};
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    cursor: ${({ $activo }) => $activo ? "pointer" : "not-allowed"};
+    transition: background 0.2s, transform 0.1s;
+    &:active { ${({ $activo }) => $activo ? "transform: scale(0.98);" : ""} }
+`;
+
+const BtnVolverModal = styled.button`
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    opacity: 0.85;
+    &:hover { opacity: 1; }
+`;
+
+/* ── TICKET MODAL ───────────────────────────────────── */
+
+const metodoPagoLabel = (m) => ({
+    efectivo: "💵 Efectivo",
+    tarjeta:  "💳 Tarjeta",
+    credito:  "🤝 Crédito",
+    mixto:    "🔀 Mixto",
+}[m] ?? m);
+
+const OverlayTicket = styled.div`
+    position: fixed;
+    inset: 0;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+`;
+
+const TicketCard = styled.div`
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 360px;
+    max-height: 92vh;
+    overflow-y: auto;
+    box-shadow: 2px 2px 15px 0px rgba(226,226,226,0.2);
+    background: #fff;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: -5px; left: 0; right: 0;
+        height: 6px;
+        background: radial-gradient(circle, transparent, transparent 50%, #fff 50%, #fff 100%) -7px -8px / 16px 16px repeat-x;
+    }
+    &::after {
+        content: '';
+        position: absolute;
+        bottom: -5px; left: 0; right: 0;
+        height: 6px;
+        background: radial-gradient(circle, transparent, transparent 50%, #fff 50%, #fff 100%) -7px -2px / 16px 16px repeat-x;
+    }
+`;
+
+const TicketPerforacion = styled.div`display: none;`;
+
+const TicketBody = styled.div`
+    background: #fff;
+    color: #111;
+    padding: 16px 20px;
+    font-family: 'Courier New', Courier, monospace;
+`;
+
+const TicketEmpresa = styled.div`
+    text-align: center;
+    margin-bottom: 10px;
+    .nombre {
+        font-size: 17px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .sucursal { font-size: 12px; opacity: 0.6; margin-top: 2px; }
+`;
+
+const TicketMeta = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 12px;
+    opacity: 0.65;
+    text-align: center;
+`;
+
+const TicketLinea = styled.hr`
+    border: none;
+    border-top: 1px dashed #bbb;
+    margin: 10px 0;
+`;
+
+const TicketItems = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+`;
+
+const FilaTicket = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-size: 13px;
+    gap: 8px;
+    .desc { flex: 1; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .precio { font-weight: 700; white-space: nowrap; }
+`;
+
+const BadgeTicketIva = styled.span`
+    font-size: 9px; font-weight: 700;
+    padding: 1px 4px; border-radius: 3px;
+    background: rgba(255,152,0,0.15);
+    color: #b45309;
+    border: 1px solid rgba(255,152,0,0.4);
+`;
+
+const TicketTotales = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+`;
+
+const FilaTotTicket = styled.div`
+    display: flex;
+    justify-content: space-between;
+    font-size: ${({ $bold }) => $bold ? "15px" : "13px"};
+    font-weight: ${({ $bold }) => $bold ? "900" : "400"};
+    color: ${({ $verde }) => $verde ? "#166534" : "inherit"};
+    padding: ${({ $bold }) => $bold ? "4px 0 0" : "0"};
+`;
+
+const TicketPago = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    .metodo {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+`;
+
+const TicketGracias = styled.div`
+    text-align: center;
+    margin-top: 14px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    opacity: 0.55;
+`;
+
+const BotonesTicket = styled.div`
+    display: flex;
+    gap: 8px;
+    background: #fff;
+    padding: 0 20px 18px;
+`;
+
+const BtnNuevaVenta = styled.button`
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    border: 2px solid #2E7D32;
+    background: #4CAF50;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 4px 4px #2E7D32;
+    transition: box-shadow 0.1s, transform 0.1s;
+    &:active { box-shadow: 2px 2px #2E7D32; transform: translate(2px,2px); }
+`;
+
+const BtnImprimirTicket = styled.button`
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    border: 2px solid #1e3a5f;
+    background: #1d4ed8;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 4px 4px #1e3a5f;
+    transition: box-shadow 0.1s, transform 0.1s;
+    &:active { box-shadow: 2px 2px #1e3a5f; transform: translate(2px,2px); }
 `;
