@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { Categorias, Configuraciones, Home, Login, Productos, ProtectedRoute, UserAuth, useEmpresaStore, useUsuariosStore } from "../index"
+import { Categorias, Configuraciones, Home, Login, POS, Productos, ProtectedRoute, UserAuth, useEmpresaStore, useUsuariosStore } from "../index"
 import { useQuery } from "@tanstack/react-query";
 import { Spinner1 } from "../components/moleculas/Spinner1";
 
@@ -35,6 +35,7 @@ export function Myroutes() {
         <Route path="/configuracion" element={<Configuraciones />} />
         <Route path="/configuracion/categorias" element={<Categorias />} />
         <Route path="/configuracion/productos" element={<Productos />} />
+        <Route path="/pos" element={<POS />} />
 
         <Route path="/configurar" element={<Navigate to="/configuracion" replace />} />
         <Route

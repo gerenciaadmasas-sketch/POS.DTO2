@@ -18,6 +18,7 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
     const { sucursalesItemSelect, dataSucursales, selectSucursal } = useSucursalesStore();
 
     const [stateInventarios, setStateInventarios] = useState(false);
+    const [aplicaIva, setAplicaIva] = useState(false);
     const [seVendePorUnidad, setSeVendePorUnidad] = useState(true);
     const [seVendePorGranel, setSeVendePorGranel] = useState(false);
     const [stateCategoriaLista, setStateCategoriaLista] = useState(false);
@@ -59,6 +60,7 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
     useEffect(() => {
         if (accion === "Editar" && dataSelect) {
             setStateInventarios(dataSelect.maneja_inventarios ?? false);
+            setAplicaIva(dataSelect.aplica_iva ?? false);
             setSeVendePorUnidad(dataSelect.sevende_por === "Unidad");
             setSeVendePorGranel(dataSelect.sevende_por === "Granel");
             const cat = datacategorias?.find(c => c.id === dataSelect.id_categoria);
@@ -107,6 +109,7 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                 _stock_minimo: stateInventarios ? (parseFloat(data.stock_minimo) || 0) : 0,
                 _maneja_inventarios: stateInventarios,
                 _maneja_multiprecios: false,
+                _aplica_iva: aplicaIva,
                 _idempresa: dataempresa.id,
                 _id: dataSelect.id,
             };
@@ -123,6 +126,7 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                 _stock_minimo: stateInventarios ? (parseFloat(data.stock_minimo) || 0) : 0,
                 _maneja_inventarios: stateInventarios,
                 _maneja_multiprecios: false,
+                _aplica_iva: aplicaIva,
                 _id_sucursal: stateInventarios ? (sucursalesItemSelect?.id ?? null) : null,
                 _stock: stateInventarios ? (parseFloat(data.stock) || 0) : 0,
             };
@@ -240,6 +244,17 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                                         <Switch1
                                             state={stateInventarios}
                                             setState={() => setStateInventarios(!stateInventarios)}
+                                        />
+                                    </ContainerSelector>
+                                </div>
+
+                                {/* Aplica IVA */}
+                                <div className="grupo">
+                                    <ContainerSelector>
+                                        <label className="grupo-label">Aplica IVA (19%):</label>
+                                        <Switch1
+                                            state={aplicaIva}
+                                            setState={() => setAplicaIva(!aplicaIva)}
                                         />
                                     </ContainerSelector>
                                 </div>
