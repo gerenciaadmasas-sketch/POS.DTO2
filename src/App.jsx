@@ -5,7 +5,6 @@ import { Myroutes } from "./routers/routes";
 import { useThemeStore } from "./store/ThemeStore";
 import {Device} from "./styles/breakpoints"
 import { Sidebar } from "./components/organismos/sidebar/Sidebar";
-import { MenuAmbur } from "./components/organismos/MenuAmbur";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
@@ -22,8 +21,7 @@ function App() {
       {
         !isLoginRoute?(<Container className={sidebarOpen?"active":""}>
       <section className="contentSidebar"><Sidebar state={sidebarOpen} setState={()=>setSidebarOpen(!sidebarOpen)}/></section>
-      <section className="contentMenuambur"><MenuAmbur /></section>
-      <section className="contentRouters"><PageWrapper key={pathname}><Myroutes/></PageWrapper></section>
+<section className="contentRouters"><PageWrapper key={pathname}><Myroutes/></PageWrapper></section>
     </Container>):(<Myroutes/>)
       }
       <ReactQueryDevtools initialIsOpen={true} />
@@ -40,10 +38,6 @@ const Container = styled.main`
     display: none;
     /*background-color: rgba(255, 255, 255, 0.5);*/
   }
-  .contentMenuambur{
-    position: absolute;
-    /*background-color: rgba(126, 33, 126, 0.5);*/
-  }
   .contentRouters{
    /* background-color: rgba(0, 0, 0, 0.5);*/
     grid-column: 1;
@@ -56,9 +50,6 @@ const Container = styled.main`
     }
     .contentSidebar{
       display: initial;
-    }
-    .contentMenuambur{
-    display: none;
     }
     .contentRouters{
     grid-column: 2;

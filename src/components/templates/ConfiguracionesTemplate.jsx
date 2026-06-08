@@ -34,7 +34,7 @@ export function ConfiguracionesTemplate() {
           return (
             <Link
               to={item.link}
-              className={item.state ? "card" : "card false"}
+              className={(item.check ?? item.state) ? "card" : "card false"}
               key={index}
             >
               <div className="card-content">

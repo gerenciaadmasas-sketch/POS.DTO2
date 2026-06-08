@@ -34,6 +34,10 @@ const Container = styled.nav`
     justify-content: space-around;
     z-index: 100;
 
+    @media (min-width: 768px) {
+        display: none;
+    }
+
     .link {
         display: flex;
         flex-direction: column;

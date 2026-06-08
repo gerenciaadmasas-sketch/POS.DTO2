@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import { useUsuariosStore, useEmpresaStore, useSucursalesStore, BuscarProductos, BuscarProductoPorCodigo, UserAuth, RegistrarVenta, Lottieanimacion, useCartVentasStore } from "../../index";
 import { toastExito } from "../../utils/toast";
 import vacioanimacion from "../../assets/vacioanimacion.json";
@@ -1015,6 +1015,16 @@ const BtnVolver = styled.button`
     @media (min-width: 768px) { display: none; }
 `;
 
+/* ── ANIMACIONES MODALES ────────────────────────────── */
+const fadeInOverlay = keyframes`
+    from { opacity: 0; }
+    to   { opacity: 1; }
+`;
+const slideUp = keyframes`
+    from { opacity: 0; transform: translateY(40px); }
+    to   { opacity: 1; transform: translateY(0); }
+`;
+
 /* ── MODAL COBRO ────────────────────────────────────── */
 
 const coloresMetodo = {
@@ -1035,6 +1045,7 @@ const OverlayPago = styled.div`
     gap: 20px;
     z-index: 9999;
     padding: 20px;
+    animation: ${fadeInOverlay} 0.25s ease both;
 `;
 
 const ModalPago = styled.div`
@@ -1051,6 +1062,7 @@ const ModalPago = styled.div`
     color: #000;
     align-items: stretch;
     font-size: 15px;
+    animation: ${slideUp} 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 
     &::before {
         content: '';
@@ -1215,6 +1227,7 @@ const OverlayTicket = styled.div`
     justify-content: center;
     z-index: 9999;
     padding: 20px;
+    animation: ${fadeInOverlay} 0.25s ease both;
 `;
 
 const TicketCard = styled.div`
@@ -1226,6 +1239,7 @@ const TicketCard = styled.div`
     overflow-y: auto;
     box-shadow: 2px 2px 15px 0px rgba(226,226,226,0.2);
     background: #fff;
+    animation: ${slideUp} 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 
     &::before {
         content: '';
