@@ -1,15 +1,11 @@
-import Swal from "sweetalert2";
+import { toastError } from "../utils/toast";
 import { supabase } from "../index";
-const tabla = "productos"
+const tabla = "productos";
 
 export async function InsertarProducto(p) {
     const { error, data } = await supabase.rpc("insertarproducto", p);
     if (error) {
-        Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: error.message,
-        });
+        toastError(error.message, "Productos › Insertar");
         throw new Error(error.message);
     }
     return data;
@@ -30,11 +26,7 @@ export async function BuscarProductos(p) {
 export async function EliminarProducto(p) {
     const { error } = await supabase.from(tabla).delete().eq("id", p.id);
     if (error) {
-        Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: error.message,
-        });
+        toastError(error.message, "Productos › Eliminar");
         throw new Error(error.message);
     }
 }
@@ -52,11 +44,7 @@ export async function BuscarProductoPorCodigo(p) {
 export async function EditarProducto(p) {
     const { error } = await supabase.rpc("editarproducto", p);
     if (error) {
-        Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: error.message,
-        });
+        toastError(error.message, "Productos › Editar");
         throw new Error(error.message);
     }
 }

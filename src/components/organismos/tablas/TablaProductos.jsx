@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { ContentAccionesTabla, Paginacion, Checkbox1 } from "../../../index";
-import Swal from "sweetalert2";
+import { confirmar } from "../../../utils/toast";
 import { v } from "../../../styles/variables";
 import { useState } from "react";
 import { useProductosStore } from "../../../store/ProductosStore";
@@ -16,18 +16,10 @@ export function TablaProductos({ data, SetopenRegistro, setdataSelect, setAccion
     const { eliminarProducto } = useProductosStore();
 
     function eliminar(p) {
-        Swal.fire({
-            title: "¿Estás seguro(a)(e)?",
-            text: "Una vez eliminado, ¡no podrá recuperar este registro!",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Si, eliminar",
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                await eliminarProducto({ id: p.id });
-            }
+        confirmar({
+            titulo: "¿Eliminar producto?",
+            texto: `Se eliminará "${p.nombre}". ¡Esta acción no se puede deshacer!`,
+            onConfirmar: () => eliminarProducto({ id: p.id }),
         });
     }
 

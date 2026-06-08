@@ -4,7 +4,7 @@ import {
   useCategoriasStore,
   Paginacion,ImagenContent, Icono
 } from "../../../index";
-import Swal from "sweetalert2";
+import { toastWarning, confirmar } from "../../../utils/toast";
 import { v } from "../../../styles/variables";
 import { useState } from "react";
 import {
@@ -30,36 +30,18 @@ export function TablaCategorias({
   const { eliminarCategoria } = useCategoriasStore();
   function eliminar(p) {
     if (p.nombre === "General") {
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Este registro no se permite modificar ya que es valor por defecto.",
-        footer: '<a href="">...</a>',
-      });
+      toastWarning("Este registro es el valor por defecto y no se puede eliminar.", "Categorías › Eliminar");
       return;
     }
-    Swal.fire({
-      title: "¿Estás seguro(a)(e)?",
-      text: "Una vez eliminado, ¡no podrá recuperar este registro!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Si, eliminar",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        await eliminarCategoria({ id: p.id });
-      }
+    confirmar({
+      titulo: "¿Eliminar categoría?",
+      texto: `Se eliminará "${p.nombre}". ¡Esta acción no se puede deshacer!`,
+      onConfirmar: () => eliminarCategoria({ id: p.id }),
     });
   }
   function editar(data) {
     if (data.nombre === "General") {
-      Swal.fire({
-        icon: "error",
-        title: "Oops...",
-        text: "Este registro no se permite modificar ya que es valor por defecto.",
-        footer: '<a href="">...</a>',
-      });
+      toastWarning("Este registro es el valor por defecto y no se puede modificar.", "Categorías › Editar");
       return;
     }
     SetopenRegistro(true);

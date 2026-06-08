@@ -1,12 +1,12 @@
-import Swal from "sweetalert2";
-import { supabase } from "./supabase.config"; // ← corregido
+import { toastError } from "../utils/toast";
+import { supabase } from "./supabase.config";
 const tabla = "modulos";
 export async function MostrarModulos() {
-    const { data, error } = await supabase  // ← agregar error
+    const { data, error } = await supabase
         .from(tabla)
-        .select()
+        .select();
     if (error) {
-        Swal.fire({ icon: "error", title: "Oops...", text: error.message });
+        toastError(error.message, "Módulos › Mostrar");
         return;
     }
     return data;

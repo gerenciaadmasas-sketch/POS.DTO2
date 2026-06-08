@@ -9,6 +9,7 @@ import { MenuAmbur } from "./components/organismos/MenuAmbur";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { blurin } from "./styles/keyframes";
 function App() {
   const [sidebarOpen,setSidebarOpen] = useState (false);
   const {themeStyle} = useThemeStore();
@@ -22,7 +23,7 @@ function App() {
         !isLoginRoute?(<Container className={sidebarOpen?"active":""}>
       <section className="contentSidebar"><Sidebar state={sidebarOpen} setState={()=>setSidebarOpen(!sidebarOpen)}/></section>
       <section className="contentMenuambur"><MenuAmbur /></section>
-      <section className="contentRouters"><Myroutes/></section>
+      <section className="contentRouters"><PageWrapper key={pathname}><Myroutes/></PageWrapper></section>
     </Container>):(<Myroutes/>)
       }
       <ReactQueryDevtools initialIsOpen={true} />
@@ -64,4 +65,8 @@ const Container = styled.main`
     }
   }
 `;
+const PageWrapper = styled.div`
+    animation: ${blurin} 0.4s linear both;
+`;
+
 export default App

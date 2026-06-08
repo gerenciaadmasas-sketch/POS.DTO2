@@ -1,4 +1,4 @@
-import Swal from "sweetalert2";
+import { toastError } from "../utils/toast";
 import { supabase } from "../index";
 const tabla="usuarios";
 export async function MostrarUsuarios (p){
@@ -15,11 +15,7 @@ export async function InsertarAdmin(p){
            if (error.code === "23505") {
                return null;
            }
-           Swal.fire({
-               icon: "error",
-               title: "Oops...",
-               text: error.message,
-           });
+           toastError(error.message, "Usuarios › Insertar admin");
            return;
        }
    return data;

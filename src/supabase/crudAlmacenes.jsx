@@ -1,15 +1,11 @@
-import Swal from "sweetalert2";
+import { toastError } from "../utils/toast";
 import { supabase } from "../index";
 const tabla = "almacen";
 
 export async function InsertarStockAlmacen(p) {
     const { error } = await supabase.from(tabla).insert(p);
     if (error) {
-        Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: error.message,
-        });
+        toastError(error.message, "Almacén › Insertar stock");
         throw new Error(error.message);
     }
 }
@@ -20,11 +16,7 @@ export async function MostrarStockAlmacen(p) {
         .select()
         .eq("id_producto", p.id_producto);
     if (error) {
-        Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: error.message,
-        });
+        toastError(error.message, "Almacén › Mostrar stock");
         return;
     }
     return data;
@@ -46,11 +38,7 @@ export async function EditarStockAlmacen(p) {
         .update({ stock: p.stock, stock_minimo: p.stock_minimo })
         .eq("id", p.id);
     if (error) {
-        Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: error.message,
-        });
+        toastError(error.message, "Almacén › Editar stock");
         throw new Error(error.message);
     }
 }
@@ -61,11 +49,7 @@ export async function EliminarStockAlmacen(p) {
         .delete()
         .eq("id_producto", p.id_producto);
     if (error) {
-        Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: error.message,
-        });
+        toastError(error.message, "Almacén › Eliminar stock");
         throw new Error(error.message);
     }
 }

@@ -6,7 +6,7 @@ import {
     Switch1, ContainerSelector, useSucursalesStore, ListaDesplegable, Selector, Checkbox1,
     BuscarProductoPorCodigo
 } from "../../../index";
-import Swal from "sweetalert2";
+import { toastWarning } from "../../../utils/toast";
 import { useForm } from "react-hook-form";
 import { useEmpresaStore } from "../../../store/EmpresaStore";
 import { useMutation } from "@tanstack/react-query";
@@ -90,11 +90,7 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
         const idCategoria = categoriaSelect?.id;
 
         if (!idCategoria) {
-            Swal.fire({
-                icon: "error",
-                title: "Oops...",
-                text: "Selecciona una categoría",
-            });
+            toastWarning("Selecciona una categoría antes de guardar.", "Productos › Formulario");
             throw new Error("Selecciona una categoría");
         }
 
