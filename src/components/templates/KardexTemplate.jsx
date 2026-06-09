@@ -256,7 +256,7 @@ export function KardexTemplate() {
                                             </CantBadge>
                                         </Td>
                                         <Td $center style={{ opacity: 0.7 }}>{m.stock_anterior}</Td>
-                                        <Td $center><b style={{ color: m.stock_nuevo < 0 ? "#f87171" : "inherit" }}>{m.stock_nuevo}</b></Td>
+                                        <Td $center><b style={{ color: m.stock_nuevo <= 0 ? "#f87171" : "inherit" }}>{m.stock_nuevo}</b></Td>
                                         <Td style={{ fontSize: 12, opacity: 0.7 }}>{m.descripcion ?? "—"}</Td>
                                     </FilaTr>
                                 );
