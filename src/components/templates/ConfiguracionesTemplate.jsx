@@ -1,283 +1,183 @@
 import styled from "styled-components";
 import { Link } from "react-router-dom";
+import { Icon } from "@iconify/react";
 import { useEffect, useRef } from "react";
 import { useModulosStore } from "../../store/ModulosStore";
+
 export function ConfiguracionesTemplate() {
-  const cardsRef = useRef(null);
-  const { dataModulos = [] } = useModulosStore();
+    const { dataModulos = [] } = useModulosStore();
+    const gridRef = useRef(null);
 
-  useEffect(() => {
-    const handleMouseMove = (e) => {
-      cardsRef.current?.querySelectorAll(".card").forEach((card) => {
-        const rect = card.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        card.style.setProperty("--mouse-x", `${x}px`);
-        card.style.setProperty("--mouse-y", `${y}px`);
-      });
-    };
-
-    const cardsContainer = cardsRef.current;
-    if (cardsContainer) {
-      cardsContainer.addEventListener("mousemove", handleMouseMove);
-
-      return () => {
-        cardsContainer.removeEventListener("mousemove", handleMouseMove);
-      };
-    }
-  }, []);
-  return (
-    <Container>
-      <div id="cards" ref={cardsRef}>
-        {dataModulos.map((item, index) => {
-          return (
-            <Link
-              to={item.link}
-              className={(item.check ?? item.state) ? "card" : "card false"}
-              key={index}
-            >
-              <div className="card-content">
-                <div className="card-image">
-                  <img src={item.icono} />
-                </div>
-
-                <div className="card-info-wrapper">
-                  <div className="card-info">
-                    <i className="fa-duotone fa-unicorn"></i>
-                    <div className="card-info-title">
-                      <h3>{item.nombre}</h3>
-                      <h4>{item.descripcion}</h4>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-    </Container>
-  );
-}
-const Container = styled.div`
-  --bg-color: rgb(20, 20, 20);
-  --card-color: rgb(23, 23, 23);
-  background-image: radial-gradient(
-    1200px 600px at 10% 10%,
-    rgba(255, 255, 255, 0.08),
-    transparent
-  );
-  align-items: center;
-  background-color: ${({ theme }) => theme.bgtotal};
-  display: flex;
-  height: 100vh;
-  justify-content: center;
-width:100%;
-align-items: flex-start;
-  #cards {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    max-width: 916px;
-    width: calc(100% - 20px);
-    padding: 10px;
-  }
-
-  #cards:hover > .card::after {
-    opacity: 1;
-  }
-
-  .card {
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 10px;
-    cursor: pointer;
-    display: flex;
-    height: 260px;
-    flex-direction: column;
-    position: relative;
-    width: 300px;
-    &:hover {
-      .card-image {
-        img {
-          filter: grayscale(0);
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            gridRef.current?.querySelectorAll(".card").forEach((card) => {
+                const rect = card.getBoundingClientRect();
+                card.style.setProperty("--mouse-x", `${e.clientX - rect.left}px`);
+                card.style.setProperty("--mouse-y", `${e.clientY - rect.top}px`);
+            });
+        };
+        const grid = gridRef.current;
+        if (grid) {
+            grid.addEventListener("mousemove", handleMouseMove);
+            return () => grid.removeEventListener("mousemove", handleMouseMove);
         }
-      }
-    }
-  }
+    }, []);
 
-  .card:hover::before {
-    opacity: 1;
-  }
+    return (
+        <Container>
+            <Grid id="cards" ref={gridRef}>
+                {dataModulos.map((item, index) => {
+                    const activo = item.check ?? item.state;
+                    const isUrl = item.icono?.startsWith("http");
+                    return (
+                        <CardWrap key={index} className="card" $activo={activo}>
+                            <CardInner
+                                to={activo ? item.link : "#"}
+                                as={activo ? Link : "div"}
+                                $activo={activo}
+                            >
+                                <IconArea>
+                                    {isUrl ? (
+                                        <img src={item.icono} alt={item.nombre} />
+                                    ) : (
+                                        <Icon icon={item.icono ?? "mdi:cog-outline"} />
+                                    )}
+                                </IconArea>
+                                <Info>
+                                    <h3>{item.nombre}</h3>
+                                    <p>{item.descripcion}</p>
+                                </Info>
+                            </CardInner>
+                        </CardWrap>
+                    );
+                })}
+            </Grid>
+        </Container>
+    );
+}
 
-  .card::before,
-  .card::after {
-    border-radius: inherit;
-    content: "";
-    height: 100%;
-    left: 0px;
-    opacity: 0;
-    position: absolute;
-    top: 0px;
-    transition: opacity 500ms;
+const Container = styled.div`
     width: 100%;
-  }
+    min-height: 100vh;
+    background-color: ${({ theme }) => theme.bgtotal};
+    padding: 24px 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+`;
 
-  .card::before {
-    background: radial-gradient(
-      800px circle at var(--mouse-x) var(--mouse-y),
-      rgba(255, 255, 255, 0.06),
-      transparent 40%
-    );
-    z-index: 3;
-  }
+const Grid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    max-width: 860px;
 
-  .card::after {
-    background: radial-gradient(
-      600px circle at var(--mouse-x) var(--mouse-y),
-      rgba(255, 255, 255, 0.4),
-      transparent 40%
-    );
-    z-index: 1;
-  }
+    &:hover > .card::after { opacity: 1; }
 
-  .card > .card-content {
-    background-color: ${({ theme }) => theme.bgcards};
-    border-radius: inherit;
+    @media (max-width: 700px) { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 420px) { grid-template-columns: 1fr; }
+`;
+
+const CardWrap = styled.div`
+    border-radius: 20px;
+    cursor: ${({ $activo }) => $activo ? "pointer" : "default"};
+
+    /* altura necesaria para que absolute-inset funcione */
+    height: 200px;
+
+    position: relative;
+
+    &::before, &::after {
+        border-radius: inherit;
+        content: "";
+        height: 100%;
+        left: 0;
+        opacity: 0;
+        position: absolute;
+        top: 0;
+        transition: opacity 500ms;
+        width: 100%;
+        pointer-events: none;
+        z-index: 3;
+    }
+
+    &:hover::before { opacity: 1; }
+
+    &::before {
+        background: radial-gradient(
+            800px circle at var(--mouse-x) var(--mouse-y),
+            rgba(255,255,255,0.06),
+            transparent 40%
+        );
+    }
+
+    &::after {
+        background: radial-gradient(
+            600px circle at var(--mouse-x) var(--mouse-y),
+            rgba(255,255,255,0.4),
+            transparent 40%
+        );
+        z-index: 1;
+    }
+
+    @media (max-width: 500px) { height: 170px; }
+`;
+
+const CardInner = styled(Link)`
     display: flex;
     flex-direction: column;
-    flex-grow: 1;
-    inset: 1px;
-    padding: 10px;
+    padding: 16px 14px 14px;
+    text-decoration: none;
+    background: ${({ theme }) => theme.bgcards};
+    border: 1px solid ${({ theme }) => theme.color2};
+    border-radius: 20px;
     position: absolute;
+    inset: 1px;
     z-index: 2;
-  }
+    transition: border-color 0.2s;
 
-  h1,
-  h2,
-  h3,
-  h4,
-  span {
-    color: ${({ theme }) => theme.colorsubtitlecard};
-    font-family: "Rubik", sans-serif;
-    font-weight: 600;
-    margin: 0px;
-  }
+    &:hover {
+        ${({ $activo }) => $activo && "border-color: rgba(255,255,255,0.15);"}
+    }
+`;
 
-  i {
-    color: ${({ theme }) => theme.colorsubtitlecard};
-  }
-
-  .card-image {
-    align-items: center;
+const IconArea = styled.div`
+    flex: 1;
     display: flex;
-    height: 140px;
+    align-items: center;
     justify-content: center;
 
     img {
-      transition: 0.3s;
-      height: 70%;
-      filter: grayscale(100%);
-    }
-  }
-
-  .card-info-wrapper {
-    align-items: center;
-    display: flex;
-    flex-grow: 1;
-    justify-content: flex-start;
-    padding: 0px 20px;
-  }
-
-  .card-info {
-    align-items: flex-start;
-    display: flex;
-    gap: 10px;
-  }
-
-  .card-info > i {
-    font-size: 1em;
-    height: 20px;
-    line-height: 20px;
-  }
-
-  .card-info-title > h3 {
-    font-size: 1.1em;
-    line-height: 20px;
-  }
-
-  .card-info-title > h4 {
-    color: ${({ theme }) => theme.colortitlecard};
-    font-size: 0.85em;
-    margin-top: 8px;
-    font-weight: 500;
-  }
-  #cards:hover > .card::after {
-    opacity: 1;
-  }
-  &::before {
-    background: radial-gradient(
-      800px circle at var(--mouse-x) var(--mouse-y),
-      rgba(255, 255, 255, 0.06),
-      transparent 40%
-    );
-    z-index: 3;
-  }
-
-  &::after {
-    background: radial-gradient(
-      600px circle at var(--mouse-x) var(--mouse-y),
-      ${(props) => props.$color0},
-      transparent 40%
-    );
-    z-index: 1;
-  }
-
-
-
-  @media (max-width: 1000px) {
-    align-items: flex-start;
-    overflow: auto;
-
-    #cards {
-      max-width: 1000px;
+        width: 64px;
+        height: 64px;
+        object-fit: contain;
+        filter: grayscale(100%);
+        transition: filter 0.3s;
     }
 
-    .card {
-      flex-shrink: 1;
-      width: calc(50% - 4px);
-    }
-  }
-
-  @media (max-width: 500px) {
-    .card {
-      height: 180px;
+    svg, .iconify {
+        font-size: 58px;
+        color: ${({ theme }) => theme.text};
+        opacity: 0.7;
+        transition: opacity 0.3s;
     }
 
-    .card-image {
-      height: 80px;
+    ${CardWrap}:hover & {
+        img { filter: grayscale(0); }
+        svg, .iconify { opacity: 1; }
     }
+`;
 
-    .card-image > i {
-      font-size: 3em;
+const Info = styled.div`
+    h3 {
+        font-size: 13px;
+        font-weight: 700;
+        color: ${({ theme }) => theme.text};
+        margin: 0 0 3px;
     }
-
-    .card-info-wrapper {
-      padding: 0px 10px;
+    p {
+        font-size: 11px;
+        color: ${({ theme }) => theme.colorsubtitlecard};
+        margin: 0;
+        line-height: 1.4;
     }
-
-    .card-info > i {
-      font-size: 0.8em;
-    }
-
-    .card-info-title > h3 {
-      font-size: 0.9em;
-    }
-
-    .card-info-title > h4 {
-      font-size: 0.8em;
-      margin-top: 4px;
-    }
-  }
-
- 
 `;

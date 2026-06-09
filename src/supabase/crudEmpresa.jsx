@@ -15,3 +15,12 @@ export async function MostrarEmpresaXidusuario(p) {
         .maybeSingle();
     return data;
 }
+export async function EditarEmpresa(p) {
+    const { id, ...campos } = p;
+    const { data, error } = await supabase.from(tabla).update(campos).eq("id", id).select();
+    if (error) {
+        toastError(error.message, "Empresa › Editar");
+        return;
+    }
+    return data?.[0];
+}

@@ -9,7 +9,7 @@ export const useCartVentasStore = create(
             items:              [],
             metodoPago:         null,
             pagaCon:            "",
-            mixto:              { efectivo: "", tarjeta: "", credito: "" },
+            mixto:              { efectivo: "", qr: "", transferencia: "" },
             statePantallaCobro: false,
             ticketData:         null,
 
@@ -75,7 +75,7 @@ export const useCartVentasStore = create(
                     items:              [],
                     metodoPago:         null,
                     pagaCon:            "",
-                    mixto:              { efectivo: "", tarjeta: "", credito: "" },
+                    mixto:              { efectivo: "", qr: "", transferencia: "" },
                     statePantallaCobro: false,
                     ticketData:         null,
                 }),
@@ -85,7 +85,7 @@ export const useCartVentasStore = create(
                 set({
                     metodoPago:         m,
                     pagaCon:            "",
-                    mixto:              { efectivo: "", tarjeta: "", credito: "" },
+                    mixto:              { efectivo: "", qr: "", transferencia: "" },
                     statePantallaCobro: true,
                 }),
 

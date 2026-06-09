@@ -2,17 +2,30 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import styled, { keyframes } from "styled-components";
-import { useUsuariosStore, useEmpresaStore, useSucursalesStore, BuscarProductos, BuscarProductoPorCodigo, UserAuth, RegistrarVenta, Lottieanimacion, useCartVentasStore } from "../../index";
+import { useUsuariosStore, useEmpresaStore, useSucursalesStore, BuscarProductos, BuscarProductoPorCodigo, UserAuth, RegistrarVenta, Lottieanimacion, useCartVentasStore, useAlmacenesConfigStore } from "../../index";
 import { toastExito } from "../../utils/toast";
+import { AbrirSesionCaja, CerrarSesionCaja, ObtenerTotalesVentasTurno, ObtenerSesionAbierta } from "../../supabase/crudSesionesCaja";
 import vacioanimacion from "../../assets/vacioanimacion.json";
-import { RiDeleteBin2Line } from "react-icons/ri";
+import { RiDeleteBin2Line, RiCloseLine } from "react-icons/ri";
 import { Switch1 } from "../../index";
 
 export function POSTemplate() {
     const { datausuarios } = useUsuariosStore();
     const { dataempresa } = useEmpresaStore();
     const { dataSucursales, mostrarSucursales } = useSucursalesStore();
+    const { dataAlmacenes, mostrarAlmacenes } = useAlmacenesConfigStore();
     const { user } = UserAuth();
+
+    const [almacenActivo,  setAlmacenActivo]  = useState(null);
+    const [cajaAbierta,    setCajaAbierta]    = useState(false);
+    const [saldoInicial,   setSaldoInicial]   = useState("");
+    const [sesionActiva,   setSesionActiva]   = useState(null);
+    const [modalCierre,    setModalCierre]    = useState(false);
+    const [conteoFisico,   setConteoFisico]   = useState("");
+    const [notasCierre,    setNotasCierre]    = useState("");
+    const [cerrandoCaja,   setCerrandoCaja]   = useState(false);
+    const [totalesTurno,   setTotalesTurno]   = useState(null);
+    const [cargandoSesion, setCargandoSesion] = useState(true);
 
     const {
         items: carrito,
@@ -40,6 +53,38 @@ export function POSTemplate() {
         enabled: !!dataempresa?.id && dataSucursales.length === 0,
         refetchOnWindowFocus: false,
     });
+
+    useQuery({
+        queryKey: ["almacenes-pos", dataempresa?.id],
+        queryFn: () => mostrarAlmacenes({ id_empresa: dataempresa.id }),
+        enabled: !!dataempresa?.id,
+        refetchOnWindowFocus: false,
+    });
+
+    // Al cargar almacenes, seleccionar el primero de la sucursal activa
+    useEffect(() => {
+        if (!almacenActivo && dataAlmacenes.length > 0 && dataSucursales?.[0]?.id) {
+            const deEstaSucursal = dataAlmacenes.filter(a => a.id_sucursal === dataSucursales[0].id);
+            if (deEstaSucursal.length > 0) setAlmacenActivo(deEstaSucursal[0]);
+        }
+    }, [dataAlmacenes, dataSucursales, almacenActivo]);
+
+    // Verificar si ya hay sesión abierta hoy para este almacén
+    useEffect(() => {
+        if (!almacenActivo || !dataempresa?.id) return;
+        (async () => {
+            setCargandoSesion(true);
+            const sesionExistente = await ObtenerSesionAbierta({
+                id_empresa: dataempresa.id,
+                id_almacen: almacenActivo.id,
+            });
+            if (sesionExistente) {
+                setSesionActiva(sesionExistente);
+                setCajaAbierta(true);
+            }
+            setCargandoSesion(false);
+        })();
+    }, [almacenActivo?.id, dataempresa?.id]);
 
     const nombreMostrar = (datausuarios?.nombres && datausuarios.nombres !== "-")
         ? datausuarios.nombres
@@ -163,7 +208,7 @@ export function POSTemplate() {
         : 0;
 
     const totalMixto = metodoPago === "mixto"
-        ? (parseFloat(mixto.efectivo) || 0) + (parseFloat(mixto.tarjeta) || 0) + (parseFloat(mixto.credito) || 0)
+        ? (parseFloat(mixto.efectivo) || 0) + (parseFloat(mixto.qr) || 0) + (parseFloat(mixto.transferencia) || 0)
         : 0;
     const faltaMixto = total - totalMixto;
 
@@ -205,6 +250,7 @@ export function POSTemplate() {
                 id_empresa:     dataempresa.id,
                 id_sucursal:    dataSucursales[0].id,
                 id_usuario:     datausuarios.id,
+                id_almacen:     almacenActivo?.id ?? null,
                 subtotal:       subtotalSinIva,
                 iva:            ivaTotal,
                 total,
@@ -212,8 +258,8 @@ export function POSTemplate() {
                 paga_con:       metodoPago === "efectivo" ? parseFloat(pagaCon) : 0,
                 cambio:         metodoPago === "efectivo" ? Math.max(0, cambio)  : 0,
                 mixto_efectivo: metodoPago === "mixto" ? parseFloat(mixto.efectivo) || 0 : 0,
-                mixto_tarjeta:  metodoPago === "mixto" ? parseFloat(mixto.tarjeta)  || 0 : 0,
-                mixto_credito:  metodoPago === "mixto" ? parseFloat(mixto.credito)  || 0 : 0,
+                mixto_qr:  metodoPago === "mixto" ? parseFloat(mixto.qr)  || 0 : 0,
+                mixto_transferencia:  metodoPago === "mixto" ? parseFloat(mixto.transferencia)  || 0 : 0,
                 detalle,
             });
 
@@ -232,8 +278,8 @@ export function POSTemplate() {
                 pagaCon: metodoPago === "efectivo" ? parseFloat(pagaCon) || 0 : null,
                 cambio:  metodoPago === "efectivo" ? Math.max(0, cambio)  : null,
                 mixtoEfectivo: metodoPago === "mixto" ? parseFloat(mixto.efectivo) || 0 : null,
-                mixtoTarjeta:  metodoPago === "mixto" ? parseFloat(mixto.tarjeta)  || 0 : null,
-                mixtoCredito:  metodoPago === "mixto" ? parseFloat(mixto.credito)  || 0 : null,
+                mixtoQR:  metodoPago === "mixto" ? parseFloat(mixto.qr)  || 0 : null,
+                mixtoCredito:  metodoPago === "mixto" ? parseFloat(mixto.transferencia)  || 0 : null,
             });
             resetear();
             setVerPago(false);
@@ -242,11 +288,126 @@ export function POSTemplate() {
         }
     };
 
+    /* ── Helpers caja ── */
+    const abrirCaja = async (omitir = false) => {
+        const saldo = omitir ? 0 : (parseFloat(saldoInicial) || 0);
+        const sesion = await AbrirSesionCaja({
+            id_empresa:    dataempresa?.id,
+            id_sucursal:   dataSucursales?.[0]?.id ?? null,
+            id_almacen:    almacenActivo?.id ?? null,
+            id_usuario:    datausuarios?.id  ?? null,
+            saldo_inicial: saldo,
+        });
+        setSesionActiva(sesion);
+        setCajaAbierta(true);
+    };
+
+    const cerrarCaja = async () => {
+        if (!sesionActiva) return;
+        setCerrandoCaja(true);
+        try {
+            // Consultar ventas reales del turno desde la hora de apertura
+            const { total, efectivo } = await ObtenerTotalesVentasTurno({
+                id_empresa: dataempresa?.id,
+                id_almacen: almacenActivo?.id,
+                desde:      sesionActiva.hora_apertura,
+            });
+
+            const saldoEsperado = (sesionActiva.saldo_inicial ?? 0) + efectivo;
+            const contado       = parseFloat(conteoFisico) || 0;
+
+            await CerrarSesionCaja({
+                id:             sesionActiva.id,
+                total_ventas:   total,
+                total_efectivo: efectivo,
+                saldo_esperado: saldoEsperado,
+                saldo_contado:  contado,
+                notas:          notasCierre,
+            });
+
+            toastExito("Turno cerrado correctamente", "Arqueo de Caja");
+            setModalCierre(false);
+            setCajaAbierta(false);
+            setSesionActiva(null);
+            setSaldoInicial("");
+            setConteoFisico("");
+            setNotasCierre("");
+            resetear();
+        } finally {
+            setCerrandoCaja(false);
+        }
+    };
+
+    /* ── Cargando sesión ── */
+    if (cargandoSesion) {
+        return (
+            <AperturaOverlay>
+                <AperturaCard style={{ gap: 20 }}>
+                    <AperturaIcon>🏪</AperturaIcon>
+                    <AperturaTitulo>Verificando sesión...</AperturaTitulo>
+                </AperturaCard>
+            </AperturaOverlay>
+        );
+    }
+
+    /* ── Modal apertura de caja ── */
+    if (!cajaAbierta) {
+        const sucursalNombre = dataSucursales?.[0]?.nombre ?? "Principal";
+        const cajaNombre     = almacenActivo?.nombre ?? "Caja principal";
+
+        return (
+            <AperturaOverlay>
+                <AperturaCard>
+                    <AperturaIcon>🏪</AperturaIcon>
+                    <AperturaTitulo>Seleccione una caja a aperturar</AperturaTitulo>
+
+                    <CajaItem>
+                        <CajaNombre>{cajaNombre.toUpperCase()} <CajaLibre>LIBRE</CajaLibre></CajaNombre>
+                        <CajaSucursal>Sucursal: {sucursalNombre}</CajaSucursal>
+
+                        <AperturaLabel>Aperturar caja con:</AperturaLabel>
+                        <AperturaInput
+                            type="number" min="0" step="100" placeholder="0.00"
+                            value={saldoInicial}
+                            onChange={e => setSaldoInicial(e.target.value)}
+                            onKeyDown={e => e.key === "Enter" && abrirCaja(false)}
+                            autoFocus
+                        />
+                    </CajaItem>
+
+                    <AperturaBtns>
+                        <BtnOmitir onClick={() => abrirCaja(true)}>OMITIR</BtnOmitir>
+                        <BtnAperturar onClick={() => abrirCaja(false)}>APERTURAR</BtnAperturar>
+                    </AperturaBtns>
+                </AperturaCard>
+            </AperturaOverlay>
+        );
+    }
+
     return (
         <Container>
             {/* HEADER */}
             <Header>
-                <FilaSucursal>SUCURSAL: {sucursal}</FilaSucursal>
+                <FilaSucursal>
+                    <span>SUCURSAL: {sucursal}</span>
+                    {dataAlmacenes.filter(a => a.id_sucursal === dataSucursales?.[0]?.id).length > 0 && (
+                        <AlmacenSelector>
+                            <span>ALMACÉN:</span>
+                            <SelectAlmacen
+                                value={almacenActivo?.id ?? ""}
+                                onChange={e => {
+                                    const alm = dataAlmacenes.find(a => a.id === Number(e.target.value));
+                                    if (alm) setAlmacenActivo(alm);
+                                }}
+                            >
+                                {dataAlmacenes
+                                    .filter(a => a.id_sucursal === dataSucursales?.[0]?.id)
+                                    .map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)
+                                }
+                            </SelectAlmacen>
+                        </AlmacenSelector>
+                    )}
+                </FilaSucursal>
                 <FilaInfo>
                     <div className="usuario">
                         <Avatar src={user?.user_metadata?.avatar_url} alt="foto">
@@ -370,10 +531,10 @@ export function POSTemplate() {
                     <GridPagos>
                         <BtnPago $color="#4CAF50" $shadow="#2E7D32" $activo={metodoPago === "efectivo"}
                             onClick={() => seleccionarMetodo("efectivo")}>EFECTIVO</BtnPago>
-                        <BtnPago $color="#E91E8C" $shadow="#880E4F" $activo={metodoPago === "credito"}
-                            onClick={() => seleccionarMetodo("credito")}>CRÉDITO</BtnPago>
-                        <BtnPago $color="#FF9800" $shadow="#E65100" $activo={metodoPago === "tarjeta"}
-                            onClick={() => seleccionarMetodo("tarjeta")}>TARJETA</BtnPago>
+                        <BtnPago $color="#E91E8C" $shadow="#880E4F" $activo={metodoPago === "transferencia"}
+                            onClick={() => seleccionarMetodo("transferencia")}>TRANSFERENCIA</BtnPago>
+                        <BtnPago $color="#FF9800" $shadow="#E65100" $activo={metodoPago === "qr"}
+                            onClick={() => seleccionarMetodo("qr")}>QR</BtnPago>
                         <BtnPago $color="#9C27B0" $shadow="#4A148C" $activo={metodoPago === "mixto"}
                             onClick={() => seleccionarMetodo("mixto")}>MIXTO</BtnPago>
                     </GridPagos>
@@ -404,8 +565,8 @@ export function POSTemplate() {
                         <PanelPago>
                             {[
                                 { key: "efectivo", label: "Efectivo",  color: "#4CAF50" },
-                                { key: "tarjeta",  label: "Tarjeta",   color: "#FF9800" },
-                                { key: "credito",  label: "Crédito",   color: "#E91E8C" },
+                                { key: "qr",  label: "QR",   color: "#FF9800" },
+                                { key: "transferencia",  label: "Transferencia",   color: "#E91E8C" },
                             ].map(({ key, label, color }) => (
                                 <FilaMixto key={key}>
                                     <DotColor $color={color} />
@@ -460,6 +621,17 @@ export function POSTemplate() {
             {/* FOOTER */}
             <Footer>
                 <BtnEliminar onClick={resetear}>Eliminar</BtnEliminar>
+                <BtnCerrarTurnoFooter onClick={async () => {
+                    const t = await ObtenerTotalesVentasTurno({
+                        id_empresa: dataempresa?.id,
+                        id_almacen: almacenActivo?.id,
+                        desde:      sesionActiva?.hora_apertura,
+                    });
+                    setTotalesTurno(t);
+                    setModalCierre(true);
+                }}>
+                    🔒 Cerrar turno
+                </BtnCerrarTurnoFooter>
             </Footer>
 
             {modalPago && metodoPago && createPortal(
@@ -498,8 +670,8 @@ export function POSTemplate() {
                                 <MixtoModal>
                                     {[
                                         { key: "efectivo", label: "Efectivo", color: "#4CAF50" },
-                                        { key: "tarjeta",  label: "Tarjeta",  color: "#FF9800" },
-                                        { key: "credito",  label: "Crédito",  color: "#E91E8C" },
+                                        { key: "qr",  label: "QR",  color: "#FF9800" },
+                                        { key: "transferencia",  label: "Transferencia",  color: "#E91E8C" },
                                     ].map(({ key, label, color }) => (
                                         <FilaMixtoModal key={key}>
                                             <DotColor $color={color} />
@@ -608,8 +780,8 @@ export function POSTemplate() {
                                 {ticketData.metodoPago === "mixto" && (
                                     <>
                                         {ticketData.mixtoEfectivo > 0 && <FilaTotTicket><span>Efectivo</span><span>{formatCOP(ticketData.mixtoEfectivo)}</span></FilaTotTicket>}
-                                        {ticketData.mixtoTarjeta  > 0 && <FilaTotTicket><span>Tarjeta</span><span>{formatCOP(ticketData.mixtoTarjeta)}</span></FilaTotTicket>}
-                                        {ticketData.mixtoCredito  > 0 && <FilaTotTicket><span>Crédito</span><span>{formatCOP(ticketData.mixtoCredito)}</span></FilaTotTicket>}
+                                        {ticketData.mixtoQR  > 0 && <FilaTotTicket><span>QR</span><span>{formatCOP(ticketData.mixtoQR)}</span></FilaTotTicket>}
+                                        {ticketData.mixtoCredito  > 0 && <FilaTotTicket><span>Transferencia</span><span>{formatCOP(ticketData.mixtoCredito)}</span></FilaTotTicket>}
                                     </>
                                 )}
                             </TicketPago>
@@ -625,11 +797,180 @@ export function POSTemplate() {
                 </OverlayTicket>,
                 document.body
             )}
+
+            {/* ── Modal Cierre de turno ── */}
+            {modalCierre && createPortal(
+                <CierreOverlay onClick={() => setModalCierre(false)}>
+                    <CierreCard onClick={e => e.stopPropagation()}>
+                        <CierreHeader>
+                            <span>🔒 Cierre de turno</span>
+                            <button onClick={() => setModalCierre(false)}><RiCloseLine /></button>
+                        </CierreHeader>
+
+                        <CierreBody>
+                            {/* Resumen del día */}
+                            <CierreSeccion>
+                                <CierreSectionTitle>Resumen del día</CierreSectionTitle>
+                                <CierreFilaInfo>
+                                    <span>Almacén</span>
+                                    <strong>{almacenActivo?.nombre ?? "—"}</strong>
+                                </CierreFilaInfo>
+                                <CierreFilaInfo>
+                                    <span>Base inicial</span>
+                                    <strong>{new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",minimumFractionDigits:0}).format(sesionActiva?.saldo_inicial ?? 0)}</strong>
+                                </CierreFilaInfo>
+                                <CierreFilaInfo>
+                                    <span>Hora apertura</span>
+                                    <strong>{sesionActiva?.hora_apertura ? new Date(sesionActiva.hora_apertura).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"}) : "—"}</strong>
+                                </CierreFilaInfo>
+                                <CierreFilaInfo>
+                                    <span>Total ventas del turno</span>
+                                    <strong style={{color:"#4ade80"}}>{new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",minimumFractionDigits:0}).format(totalesTurno?.total ?? 0)}</strong>
+                                </CierreFilaInfo>
+                                <CierreFilaInfo>
+                                    <span>Transacciones</span>
+                                    <strong>{totalesTurno?.cantidad ?? 0}</strong>
+                                </CierreFilaInfo>
+                            </CierreSeccion>
+
+                            <CierreDivider />
+
+                            {/* Conteo físico */}
+                            <CierreSeccion>
+                                <CierreSectionTitle>Arqueo de efectivo</CierreSectionTitle>
+                                <CierreLabel>Conteo físico del dinero en caja</CierreLabel>
+                                <CierreInput
+                                    type="number" min="0" step="100" placeholder="$ 0"
+                                    value={conteoFisico}
+                                    onChange={e => setConteoFisico(e.target.value)}
+                                    autoFocus
+                                />
+                                <CierreLabel>Notas (opcional)</CierreLabel>
+                                <CierreTextarea
+                                    placeholder="Observaciones del turno..."
+                                    value={notasCierre}
+                                    onChange={e => setNotasCierre(e.target.value)}
+                                    rows={2}
+                                />
+                            </CierreSeccion>
+                        </CierreBody>
+
+                        <CierreBtns>
+                            <BtnCancelCierre onClick={() => setModalCierre(false)}>Cancelar</BtnCancelCierre>
+                            <BtnConfirmCierre onClick={cerrarCaja} disabled={cerrandoCaja}>
+                                {cerrandoCaja ? "Cerrando..." : "✓ Confirmar cierre"}
+                            </BtnConfirmCierre>
+                        </CierreBtns>
+                    </CierreCard>
+                </CierreOverlay>,
+                document.body
+            )}
         </Container>
     );
 }
 
 /* ── STYLED COMPONENTS ─────────────────────────────── */
+
+const fadeOverlay = keyframes`from{opacity:0}to{opacity:1}`;
+const slideUpModal = keyframes`from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}`;
+
+const BtnCerrarTurno = styled.button`
+    padding: 5px 12px; border-radius: 8px;
+    border: 1.5px solid rgba(248,113,113,0.4);
+    background: rgba(248,113,113,0.1); color: #f87171;
+    font-size: 11px; font-weight: 800; cursor: pointer;
+    font-family: "Poppins", sans-serif;
+    transition: all 0.15s;
+    &:hover { background: rgba(248,113,113,0.2); }
+`;
+
+const CierreOverlay = styled.div`
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; animation: ${fadeOverlay} 0.2s ease;
+`;
+
+const CierreCard = styled.div`
+    background: ${({ theme }) => theme.bgcards};
+    border: 1px solid ${({ theme }) => theme.color2};
+    border-radius: 20px; width: 420px; max-width: 95vw;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+    animation: ${slideUpModal} 0.3s cubic-bezier(0.34,1.56,0.64,1) both;
+    overflow: hidden;
+`;
+
+const CierreHeader = styled.div`
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px; border-bottom: 1px solid ${({ theme }) => theme.color2};
+    span { font-size: 15px; font-weight: 900; color: ${({ theme }) => theme.text}; }
+    button { background: none; border: none; cursor: pointer; font-size: 20px;
+             color: ${({ theme }) => theme.colorsubtitlecard}; display: flex; align-items: center; }
+`;
+
+const CierreBody = styled.div`padding: 20px; display: flex; flex-direction: column; gap: 16px;`;
+
+const CierreSeccion = styled.div`display: flex; flex-direction: column; gap: 10px;`;
+
+const CierreSectionTitle = styled.div`
+    font-size: 11px; font-weight: 800; color: ${({ theme }) => theme.colorsubtitlecard};
+    text-transform: uppercase; letter-spacing: 0.8px;
+`;
+
+const CierreFilaInfo = styled.div`
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; padding: 6px 0;
+    border-bottom: 1px solid ${({ theme }) => theme.color2};
+    span { color: ${({ theme }) => theme.colorsubtitlecard}; }
+    strong { color: ${({ theme }) => theme.text}; }
+`;
+
+const CierreDivider = styled.div`height: 1px; background: ${({ theme }) => theme.color2};`;
+
+const CierreLabel = styled.label`
+    font-size: 11px; font-weight: 700; color: ${({ theme }) => theme.colorsubtitlecard};
+    text-transform: uppercase; letter-spacing: 0.5px;
+`;
+
+const CierreInput = styled.input`
+    padding: 10px 14px; border-radius: 10px;
+    border: 1.5px solid ${({ theme }) => theme.color2};
+    background: ${({ theme }) => theme.bgtotal}; color: ${({ theme }) => theme.text};
+    font-size: 16px; font-weight: 700; font-family: "Poppins", sans-serif; outline: none; width: 100%;
+    box-sizing: border-box;
+    &:focus { border-color: #22c55e; }
+`;
+
+const CierreTextarea = styled.textarea`
+    padding: 10px 14px; border-radius: 10px;
+    border: 1.5px solid ${({ theme }) => theme.color2};
+    background: ${({ theme }) => theme.bgtotal}; color: ${({ theme }) => theme.text};
+    font-size: 13px; font-family: "Poppins", sans-serif; outline: none; width: 100%;
+    box-sizing: border-box; resize: none;
+    &:focus { border-color: #60a5fa; }
+`;
+
+const CierreBtns = styled.div`
+    display: flex; gap: 10px; padding: 16px 20px;
+    border-top: 1px solid ${({ theme }) => theme.color2};
+`;
+
+const BtnCancelCierre = styled.button`
+    flex: 1; padding: 11px; border-radius: 10px;
+    border: 1.5px solid ${({ theme }) => theme.color2};
+    background: transparent; color: ${({ theme }) => theme.text};
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    font-family: "Poppins", sans-serif; transition: background 0.15s;
+    &:hover { background: ${({ theme }) => theme.bgtotal}; }
+`;
+
+const BtnConfirmCierre = styled.button`
+    flex: 2; padding: 11px; border-radius: 10px; border: none;
+    background: #16a34a; color: #fff;
+    font-size: 13px; font-weight: 800; cursor: pointer;
+    font-family: "Poppins", sans-serif; transition: background 0.15s;
+    &:hover:not(:disabled) { background: #15803d; }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+`;
 
 const Container = styled.div`
     height: 100vh;
@@ -652,14 +993,43 @@ const Header = styled.div`
 `;
 
 const FilaSucursal = styled.div`
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    opacity: 0.6;
+    opacity: 0.7;
     padding: 4px 20px;
     border-bottom: 1px solid ${({ theme }) => theme.color2};
+`;
+
+const AlmacenSelector = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    opacity: 1;
+`;
+
+const SelectAlmacen = styled.select`
+    background: ${({ theme }) => theme.bgtotal};
+    border: 1px solid ${({ theme }) => theme.color2};
+    border-radius: 6px;
+    color: ${({ theme }) => theme.text};
+    font-size: 11px;
+    font-weight: 700;
+    font-family: "Poppins", sans-serif;
+    padding: 2px 6px;
+    outline: none;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    &:focus { border-color: #4f46e5; }
 `;
 
 const FilaInfo = styled.div`
@@ -988,11 +1358,21 @@ const BtnFooter = styled.button`
 `;
 
 const BtnEliminar = styled(BtnFooter)`
+    flex: 1;
     border: 2px solid #b71c1c;
     color: #f44336;
     box-shadow: 4px 4px #b71c1c;
     transition: box-shadow 0.1s, transform 0.1s;
     &:active { box-shadow: 2px 2px #b71c1c; transform: translate(2px, 2px); }
+`;
+
+const BtnCerrarTurnoFooter = styled(BtnFooter)`
+    flex: 1;
+    border: 2px solid #b45309;
+    color: #f59e0b;
+    box-shadow: 4px 4px #b45309;
+    transition: box-shadow 0.1s, transform 0.1s;
+    &:active { box-shadow: 2px 2px #b45309; transform: translate(2px, 2px); }
 `;
 
 const BtnVerPago = styled.button`
@@ -1020,6 +1400,141 @@ const fadeInOverlay = keyframes`
     from { opacity: 0; }
     to   { opacity: 1; }
 `;
+
+/* ── Apertura de caja ── */
+const slideUpApertura = keyframes`
+    from { opacity: 0; transform: translateY(40px); }
+    to   { opacity: 1; transform: translateY(0); }
+`;
+
+const AperturaOverlay = styled.div`
+    min-height: 100vh;
+    background: ${({ theme }) => theme.bgtotal};
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: ${fadeInOverlay} 0.3s ease;
+`;
+
+const AperturaCard = styled.div`
+    background: ${({ theme }) => theme.bgcards};
+    border: 1px solid ${({ theme }) => theme.color2};
+    border-radius: 20px;
+    padding: 36px 40px;
+    width: 420px;
+    max-width: 95vw;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+    animation: ${slideUpApertura} 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+`;
+
+const AperturaIcon = styled.div`font-size: 40px; line-height: 1;`;
+
+const AperturaTitulo = styled.h2`
+    font-size: 16px;
+    font-weight: 800;
+    color: ${({ theme }) => theme.text};
+    margin: 0;
+    text-align: center;
+`;
+
+const CajaItem = styled.div`
+    width: 100%;
+    border: 2px solid #22c55e;
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+`;
+
+const CajaNombre = styled.div`
+    font-size: 15px;
+    font-weight: 900;
+    color: #22c55e;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+`;
+
+const CajaLibre = styled.span`
+    font-size: 10px;
+    background: rgba(34,197,94,0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-weight: 700;
+`;
+
+const CajaSucursal = styled.div`
+    font-size: 13px;
+    font-weight: 600;
+    color: ${({ theme }) => theme.text};
+`;
+
+const AperturaLabel = styled.label`
+    font-size: 12px;
+    font-weight: 700;
+    color: ${({ theme }) => theme.colorsubtitlecard};
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+`;
+
+const AperturaInput = styled.input`
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1.5px solid ${({ theme }) => theme.color2};
+    background: ${({ theme }) => theme.bgtotal};
+    color: ${({ theme }) => theme.text};
+    font-size: 16px;
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    &:focus { border-color: #22c55e; }
+`;
+
+const AperturaBtns = styled.div`
+    display: flex;
+    gap: 10px;
+    width: 100%;
+`;
+
+const BtnOmitir = styled.button`
+    flex: 1;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1.5px solid ${({ theme }) => theme.color2};
+    background: transparent;
+    color: ${({ theme }) => theme.text};
+    font-size: 13px;
+    font-weight: 800;
+    font-family: "Poppins", sans-serif;
+    cursor: pointer;
+    transition: background 0.15s;
+    &:hover { background: ${({ theme }) => theme.bgAlpha}; }
+`;
+
+const BtnAperturar = styled.button`
+    flex: 2;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: #16a34a;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    font-family: "Poppins", sans-serif;
+    cursor: pointer;
+    transition: background 0.15s;
+    &:hover { background: #15803d; }
+`;
 const slideUp = keyframes`
     from { opacity: 0; transform: translateY(40px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -1029,8 +1544,8 @@ const slideUp = keyframes`
 
 const coloresMetodo = {
     efectivo: { bg: "#4CAF50", shadow: "#2E7D32", text: "#fff" },
-    tarjeta:  { bg: "#FF9800", shadow: "#E65100", text: "#fff" },
-    credito:  { bg: "#E91E8C", shadow: "#880E4F", text: "#fff" },
+    qr:  { bg: "#FF9800", shadow: "#E65100", text: "#fff" },
+    transferencia:  { bg: "#E91E8C", shadow: "#880E4F", text: "#fff" },
     mixto:    { bg: "#9C27B0", shadow: "#4A148C", text: "#fff" },
 };
 
@@ -1213,8 +1728,8 @@ const BtnVolverModal = styled.button`
 
 const metodoPagoLabel = (m) => ({
     efectivo: "💵 Efectivo",
-    tarjeta:  "💳 Tarjeta",
-    credito:  "🤝 Crédito",
+    qr:  "📱 QR",
+    transferencia:  "🏦 Transferencia",
     mixto:    "🔀 Mixto",
 }[m] ?? m);
 

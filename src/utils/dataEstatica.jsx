@@ -37,8 +37,13 @@ export const LinksArray = [
     to: "/pos",
   },
   {
-    label: "Kardex",
+    label: "Inventario",
     icon: "flat-ui:box",
+    to: "/inventario",
+  },
+  {
+    label: "Kardex",
+    icon: "flat-color-icons:overtime",
     to: "/kardex",
   },
   {
@@ -46,7 +51,11 @@ export const LinksArray = [
     icon: "flat-ui:graph",
     to: "/reportes",
   },
- 
+  {
+    label: "Arqueo",
+    icon: "flat-color-icons:currency-exchange",
+    to: "/arqueo",
+  },
 ];
 export const SecondarylinksArray = [
  
