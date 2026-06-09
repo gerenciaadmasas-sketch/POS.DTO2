@@ -3,6 +3,7 @@ import styled, { keyframes } from "styled-components";
 import { useAuthStore } from "../../store/AuthStore";
 import { Footer } from "../organismos/Footer";
 import { v } from "../../styles/variables";
+import { ObtenerEmailPorUsuario } from "../../supabase/crudUsuarios";
 
 const modos = [
     {
@@ -39,7 +40,12 @@ export function LoginTemplate() {
         setCargando(true);
         setErrorMsg("");
         try {
-            await loginEmail({ email, password });
+            const realEmail = await ObtenerEmailPorUsuario(email.trim());
+            if (!realEmail) {
+                setErrorMsg("Usuario no encontrado. Verifica con tu administrador.");
+                return;
+            }
+            await loginEmail({ email: realEmail, password });
         } catch (err) {
             setErrorMsg("Credenciales incorrectas. Verifica con tu administrador.");
         } finally {

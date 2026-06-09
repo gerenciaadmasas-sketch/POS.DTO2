@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { v } from "../../../styles/variables";
 import {
     InputText, Btn1, useProductosStore, useCategoriasStore, ConvertirCapitalize,
-    Switch1, ContainerSelector, useSucursalesStore, ListaDesplegable, Selector, Checkbox1,
+    ContainerSelector, useSucursalesStore, ListaDesplegable, Selector, Checkbox1,
     BuscarProductoPorCodigo
 } from "../../../index";
 import { toastWarning } from "../../../utils/toast";
@@ -17,7 +17,6 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
     const { dataempresa } = useEmpresaStore();
     const { sucursalesItemSelect, dataSucursales, selectSucursal } = useSucursalesStore();
 
-    const [stateInventarios, setStateInventarios] = useState(false);
     const [aplicaIva, setAplicaIva] = useState(false);
     const [seVendePorUnidad, setSeVendePorUnidad] = useState(true);
     const [seVendePorGranel, setSeVendePorGranel] = useState(false);
@@ -41,7 +40,6 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
             setValue("stock_minimo", result.stock_minimo);
             setSeVendePorUnidad(result.sevende_por === "Unidad");
             setSeVendePorGranel(result.sevende_por === "Granel");
-            setStateInventarios(result.maneja_inventarios ?? false);
             const cat = datacategorias?.find(c => c.id === result.id_categoria);
             if (cat) setCategoriaSelect(cat);
         }
@@ -59,7 +57,6 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
 
     useEffect(() => {
         if (accion === "Editar" && dataSelect) {
-            setStateInventarios(dataSelect.maneja_inventarios ?? false);
             setAplicaIva(dataSelect.aplica_iva ?? false);
             setSeVendePorUnidad(dataSelect.sevende_por === "Unidad");
             setSeVendePorGranel(dataSelect.sevende_por === "Granel");
@@ -102,8 +99,8 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                 _id_categoria: idCategoria,
                 _codigo_barra: data.codigo_barra || "-",
                 _sevende_por: seVendePor,
-                _stock_minimo: stateInventarios ? (parseFloat(data.stock_minimo) || 0) : 0,
-                _maneja_inventarios: stateInventarios,
+                _stock_minimo: parseFloat(data.stock_minimo) || 0,
+                _maneja_inventarios: true,
                 _maneja_multiprecios: false,
                 _aplica_iva: aplicaIva,
                 _idempresa: dataempresa.id,
@@ -119,12 +116,12 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                 _codigo_barra: data.codigo_barra || "-",
                 _id_empresa: dataempresa.id,
                 _sevende_por: seVendePor,
-                _stock_minimo: stateInventarios ? (parseFloat(data.stock_minimo) || 0) : 0,
-                _maneja_inventarios: stateInventarios,
+                _stock_minimo: parseFloat(data.stock_minimo) || 0,
+                _maneja_inventarios: true,
                 _maneja_multiprecios: false,
                 _aplica_iva: aplicaIva,
-                _id_sucursal: stateInventarios ? (sucursalesItemSelect?.id ?? null) : null,
-                _stock: stateInventarios ? (parseFloat(data.stock) || 0) : 0,
+                _id_sucursal: sucursalesItemSelect?.id ?? null,
+                _stock: parseFloat(data.stock) || 0,
             };
             await insertarProducto(p);
         }
@@ -233,17 +230,6 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                                     </ContainerSelector>
                                 </div>
 
-                                {/* Controlar stock */}
-                                <div className="grupo">
-                                    <ContainerSelector>
-                                        <label className="grupo-label">Controlar stock:</label>
-                                        <Switch1
-                                            state={stateInventarios}
-                                            setState={() => setStateInventarios(!stateInventarios)}
-                                        />
-                                    </ContainerSelector>
-                                </div>
-
                                 {/* Aplica IVA */}
                                 <div className="grupo">
                                     <ContainerSelector>
@@ -255,45 +241,43 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                                     </ContainerSelector>
                                 </div>
 
-                                {/* Stock — solo si el switch está activo */}
-                                {stateInventarios && (
-                                    <ContainerStock>
-                                        <div className="grupo">
-                                            <label className="grupo-label">Sucursal:</label>
-                                            <ContainerSelector style={{ position: "relative" }}>
-                                                <Selector
-                                                    state={stateSucursalesLista}
-                                                    funcion={() => setStateSucursalesLista(!stateSucursalesLista)}
-                                                    texto1="🏢"
-                                                    texto2={sucursalesItemSelect?.nombre ?? "-- elegir --"}
-                                                    color="#fc6027"
-                                                />
-                                                <ListaDesplegable
-                                                    funcion={selectSucursal}
-                                                    state={stateSucursalesLista}
-                                                    data={dataSucursales}
-                                                    top="3rem"
-                                                    scroll="auto"
-                                                    setState={() => setStateSucursalesLista(false)}
-                                                />
-                                            </ContainerSelector>
-                                        </div>
+                                {/* Stock — siempre visible */}
+                                <ContainerStock>
+                                    <div className="grupo">
+                                        <label className="grupo-label">Sucursal:</label>
+                                        <ContainerSelector style={{ position: "relative" }}>
+                                            <Selector
+                                                state={stateSucursalesLista}
+                                                funcion={() => setStateSucursalesLista(!stateSucursalesLista)}
+                                                texto1="🏢"
+                                                texto2={sucursalesItemSelect?.nombre ?? "-- elegir --"}
+                                                color="#fc6027"
+                                            />
+                                            <ListaDesplegable
+                                                funcion={selectSucursal}
+                                                state={stateSucursalesLista}
+                                                data={dataSucursales}
+                                                top="3rem"
+                                                scroll="auto"
+                                                setState={() => setStateSucursalesLista(false)}
+                                            />
+                                        </ContainerSelector>
+                                    </div>
 
-                                        <InputText icono={<v.iconostock />}>
-                                            <input className="form__field" type="number" step="0.01" placeholder="stock"
-                                                {...register("stock", { required: true })} />
-                                            <label className="form__label">stock</label>
-                                            {errors.stock && <p>Campo requerido</p>}
-                                        </InputText>
+                                    <InputText icono={<v.iconostock />}>
+                                        <input className="form__field" type="number" step="0.01" placeholder="stock inicial (0 si no tienes)"
+                                            defaultValue={0}
+                                            {...register("stock")} />
+                                        <label className="form__label">stock inicial</label>
+                                    </InputText>
 
-                                        <InputText icono={<v.iconostockminimo />}>
-                                            <input className="form__field" type="number" step="0.01" placeholder="stock minimo"
-                                                {...register("stock_minimo", { required: true })} />
-                                            <label className="form__label">stock minimo</label>
-                                            {errors.stock_minimo && <p>Campo requerido</p>}
-                                        </InputText>
-                                    </ContainerStock>
-                                )}
+                                    <InputText icono={<v.iconostockminimo />}>
+                                        <input className="form__field" type="number" step="0.01" placeholder="stock minimo"
+                                            defaultValue={0}
+                                            {...register("stock_minimo")} />
+                                        <label className="form__label">stock minimo</label>
+                                    </InputText>
+                                </ContainerStock>
                             </div>
                         </div>
 

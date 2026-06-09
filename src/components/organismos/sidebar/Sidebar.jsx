@@ -6,10 +6,19 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useAuthStore } from "../../../store/AuthStore";
 import { useEmpresaStore } from "../../../store/EmpresaStore";
+import { useUsuariosStore } from "../../../store/UsuariosStore";
+
+const LINKS_CAJERO = ["/", "/pos", "/inventario"];
 
 export function Sidebar({ state, setState }) {
     const { cerrarSesion } = useAuthStore();
     const { dataempresa } = useEmpresaStore();
+    const { datausuarios } = useUsuariosStore();
+
+    const esCajero = datausuarios?.tipo === "cajero";
+    const linksVisibles = esCajero
+        ? LinksArray.filter(l => LINKS_CAJERO.includes(l.to))
+        : LinksArray;
 
     return (
         <Wrap $isopen={state}>
@@ -28,7 +37,7 @@ export function Sidebar({ state, setState }) {
 
             {/* Links primarios */}
             <Nav>
-                {LinksArray.map(({ icon, label, to }) => (
+                {linksVisibles.map(({ icon, label, to }) => (
                     <NavLink
                         key={label}
                         to={to}
@@ -41,7 +50,7 @@ export function Sidebar({ state, setState }) {
 
                 <Divider />
 
-                {SecondarylinksArray.map(({ icon, label, to, color }) => (
+                {!esCajero && SecondarylinksArray.map(({ icon, label, to, color }) => (
                     <NavLink
                         key={label}
                         to={to}

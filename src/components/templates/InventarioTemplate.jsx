@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaStore } from "../../store/EmpresaStore";
 import { useSucursalesStore } from "../../store/SucursalesStore";
 import { useAlmacenesConfigStore } from "../../store/AlmacenesConfigStore";
+import { useUsuariosStore } from "../../store/UsuariosStore";
 import { RiEditLine, RiCheckLine, RiCloseLine, RiStore2Line } from "react-icons/ri";
 import { MostrarInventarioPorAlmacen, AjustarStock } from "../../supabase/crudAlmacenes";
 import { toastExito } from "../../utils/toast";
@@ -12,8 +13,8 @@ const formatCOP = (n) =>
     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n ?? 0);
 
 function getEstado(stock, min) {
-    if (stock === 0) return "agotado";
-    if (stock > 0 && stock <= min) return "bajo";
+    if (stock <= 0) return "agotado";
+    if (stock <= min) return "bajo";
     return "normal";
 }
 
@@ -23,7 +24,10 @@ export function InventarioTemplate() {
     const { dataempresa }    = useEmpresaStore();
     const { dataSucursales, mostrarSucursales } = useSucursalesStore();
     const { dataAlmacenes, mostrarAlmacenes }   = useAlmacenesConfigStore();
+    const { datausuarios } = useUsuariosStore();
     const queryClient = useQueryClient();
+
+    const esCajero = datausuarios?.tipo === "cajero";
 
     const id_empresa = dataempresa?.id;
 
@@ -67,9 +71,10 @@ export function InventarioTemplate() {
     // Inventario del almacén activo
     const { data: inventario = [], isFetching } = useQuery({
         queryKey: ["inventario", id_empresa, almacenId],
-        queryFn:  () => MostrarInventarioPorAlmacen({ id_empresa, id_almacen: almacenId }),
+        queryFn:  () => MostrarInventarioPorAlmacen({ id_empresa, id_almacen: almacenId, soloConInventario: false }),
         enabled:  !!id_empresa && !!almacenId,
-        refetchOnWindowFocus: false,
+        refetchOnWindowFocus: true,
+        staleTime: 0,
     });
 
     const mutAjustar = useMutation({
@@ -204,16 +209,16 @@ export function InventarioTemplate() {
                                 <Th $center>Stock</Th>
                                 <Th $center>Mín.</Th>
                                 <Th>Estado</Th>
-                                <Th>Acción</Th>
+                                {!esCajero && <Th>Acción</Th>}
                             </tr>
                         </thead>
                         <tbody>
                             {!almacenId ? (
-                                <tr><TdVacio colSpan={6}>Selecciona un almacén para ver su inventario</TdVacio></tr>
+                                <tr><TdVacio colSpan={esCajero ? 5 : 6}>Selecciona un almacén para ver su inventario</TdVacio></tr>
                             ) : isFetching ? (
-                                <tr><TdVacio colSpan={6}>Cargando inventario...</TdVacio></tr>
+                                <tr><TdVacio colSpan={esCajero ? 5 : 6}>Cargando inventario...</TdVacio></tr>
                             ) : productosFiltrados.length === 0 ? (
-                                <tr><TdVacio colSpan={6}>Sin productos{busqueda ? ` para "${busqueda}"` : " en este almacén"}</TdVacio></tr>
+                                <tr><TdVacio colSpan={esCajero ? 5 : 6}>Sin productos{busqueda ? ` para "${busqueda}"` : " en este almacén"}</TdVacio></tr>
                             ) : productosFiltrados.map(p => {
                                 const estado   = getEstado(p.stock, p.stock_minimo);
                                 const enEdicion = editando === p.id;
@@ -238,16 +243,18 @@ export function InventarioTemplate() {
                                                 {estado === "normal" ? "Normal" : estado === "bajo" ? "Bajo" : "Agotado"}
                                             </EstadoBadge>
                                         </Td>
-                                        <Td>
-                                            {enEdicion ? (
-                                                <AccionesRow>
-                                                    <BtnIco $verde onClick={() => guardarEdicion(p)} disabled={mutAjustar.isPending}><RiCheckLine /></BtnIco>
-                                                    <BtnIco onClick={() => setEditando(null)}><RiCloseLine /></BtnIco>
-                                                </AccionesRow>
-                                            ) : (
-                                                <BtnIco onClick={() => iniciarEdicion(p)}><RiEditLine /></BtnIco>
-                                            )}
-                                        </Td>
+                                        {!esCajero && (
+                                            <Td>
+                                                {enEdicion ? (
+                                                    <AccionesRow>
+                                                        <BtnIco $verde onClick={() => guardarEdicion(p)} disabled={mutAjustar.isPending}><RiCheckLine /></BtnIco>
+                                                        <BtnIco onClick={() => setEditando(null)}><RiCloseLine /></BtnIco>
+                                                    </AccionesRow>
+                                                ) : (
+                                                    <BtnIco onClick={() => iniciarEdicion(p)}><RiEditLine /></BtnIco>
+                                                )}
+                                            </Td>
+                                        )}
                                     </FilaTr>
                                 );
                             })}

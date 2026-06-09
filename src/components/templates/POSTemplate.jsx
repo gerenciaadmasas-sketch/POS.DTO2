@@ -69,14 +69,15 @@ export function POSTemplate() {
         }
     }, [dataAlmacenes, dataSucursales, almacenActivo]);
 
-    // Verificar si ya hay sesión abierta hoy para este almacén
+    // Verificar si ya hay sesión abierta HOY para este usuario+almacén
     useEffect(() => {
-        if (!almacenActivo || !dataempresa?.id) return;
+        if (!almacenActivo || !dataempresa?.id || !datausuarios?.id) return;
         (async () => {
             setCargandoSesion(true);
             const sesionExistente = await ObtenerSesionAbierta({
                 id_empresa: dataempresa.id,
                 id_almacen: almacenActivo.id,
+                id_usuario: datausuarios.id,
             });
             if (sesionExistente) {
                 setSesionActiva(sesionExistente);
@@ -84,7 +85,7 @@ export function POSTemplate() {
             }
             setCargandoSesion(false);
         })();
-    }, [almacenActivo?.id, dataempresa?.id]);
+    }, [almacenActivo?.id, dataempresa?.id, datausuarios?.id]);
 
     const nombreMostrar = (datausuarios?.nombres && datausuarios.nombres !== "-")
         ? datausuarios.nombres
@@ -359,7 +360,7 @@ export function POSTemplate() {
             <AperturaOverlay>
                 <AperturaCard>
                     <AperturaIcon>🏪</AperturaIcon>
-                    <AperturaTitulo>Seleccione una caja a aperturar</AperturaTitulo>
+                    <AperturaTitulo>Confirma el dinero con el que inicias el día</AperturaTitulo>
 
                     <CajaItem>
                         <CajaNombre>{cajaNombre.toUpperCase()} <CajaLibre>LIBRE</CajaLibre></CajaNombre>
@@ -376,7 +377,6 @@ export function POSTemplate() {
                     </CajaItem>
 
                     <AperturaBtns>
-                        <BtnOmitir onClick={() => abrirCaja(true)}>OMITIR</BtnOmitir>
                         <BtnAperturar onClick={() => abrirCaja(false)}>APERTURAR</BtnAperturar>
                     </AperturaBtns>
                 </AperturaCard>

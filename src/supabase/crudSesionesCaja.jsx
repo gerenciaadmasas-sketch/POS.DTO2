@@ -4,6 +4,7 @@ import { toastError } from "../utils/toast";
 const tabla = "sesiones_caja";
 
 export async function AbrirSesionCaja(p) {
+    const ahora = new Date();
     const { data, error } = await supabase
         .from(tabla)
         .insert({
@@ -13,6 +14,8 @@ export async function AbrirSesionCaja(p) {
             id_usuario:    p.id_usuario   ?? null,
             saldo_inicial: p.saldo_inicial ?? 0,
             estado:        "abierta",
+            hora_apertura: ahora.toISOString(),
+            fecha:         ahora.toISOString().split("T")[0],
         })
         .select()
         .maybeSingle();
@@ -46,10 +49,11 @@ export async function ObtenerSesionAbierta(p) {
     const { data, error } = await supabase
         .from(tabla)
         .select()
-        .eq("id_empresa", p.id_empresa)
-        .eq("id_almacen", p.id_almacen)
-        .eq("estado", "abierta")
-        .eq("fecha", hoy)
+        .eq("id_empresa",  p.id_empresa)
+        .eq("id_almacen",  p.id_almacen)
+        .eq("id_usuario",  p.id_usuario)   // solo la sesión del propio usuario
+        .eq("estado",      "abierta")
+        .gte("created_at", `${hoy}T00:00:00`) // solo de hoy
         .order("created_at", { ascending: false })
         .limit(1);
     if (error) { toastError(error.message, "Caja › Consultar"); return null; }
@@ -76,8 +80,8 @@ export async function ListarSesionesCaja({ id_empresa, desde, hasta, page = 1, p
         .select("*", { count: "exact" })
         .eq("id_empresa", id_empresa)
         .order("created_at", { ascending: false });
-    if (desde) q = q.gte("fecha", desde);
-    if (hasta) q = q.lte("fecha", hasta);
+    if (desde) q = q.gte("created_at", `${desde}T00:00:00`);
+    if (hasta) q = q.lte("created_at", `${hasta}T23:59:59`);
     q = q.range((page - 1) * pageSize, page * pageSize - 1);
     const { data, error, count } = await q;
     if (error) { toastError(error.message, "Caja › Listar"); return { data: [], count: 0 }; }

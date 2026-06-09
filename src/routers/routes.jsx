@@ -5,19 +5,35 @@ import { MiPerfil } from "../pages/MiPerfil";
 import { Arqueo } from "../pages/Arqueo";
 import { useQuery } from "@tanstack/react-query";
 import { Spinner1 } from "../components/moleculas/Spinner1";
+import { MostrarEmpresaPorId } from "../supabase/crudEmpresa";
 
 export function Myroutes() {
   const { user } = UserAuth();
   const { datausuarios, mostrarusuarios } = useUsuariosStore();
-  const { mostrarempresa, dataempresa } = useEmpresaStore();
+  const { mostrarempresa, dataempresa, setEmpresa } = useEmpresaStore();
+
   const { isLoading, error } = useQuery({
     queryKey: ["Mostrar Usuarios"],
     queryFn: mostrarusuarios, refetchOnWindowFocus: false
   });
-  const { data: dtempresa } = useQuery({
+
+  // Carga empresa por id_auth del usuario (funciona para administrador/superadmin)
+  useQuery({
     queryKey: ["Mostrar Empresa", datausuarios?.id],
     queryFn: () => mostrarempresa({ _id_usuario: datausuarios?.id }),
     enabled: !!datausuarios?.id, refetchOnWindowFocus: false
+  });
+
+  // Fallback para empleados: cargar empresa directamente por id_empresa del usuario
+  useQuery({
+    queryKey: ["Mostrar Empresa por id", datausuarios?.id_empresa],
+    queryFn: async () => {
+      const data = await MostrarEmpresaPorId(datausuarios.id_empresa);
+      if (data) setEmpresa(data);
+      return data;
+    },
+    enabled: !!datausuarios?.id_empresa && !dataempresa?.id,
+    refetchOnWindowFocus: false,
   });
 
   if (isLoading) {

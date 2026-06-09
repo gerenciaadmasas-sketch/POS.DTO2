@@ -3,6 +3,7 @@ import { InsertarEmpresa, MostrarEmpresaXidusuario, EditarEmpresa } from "../ind
 
 export const useEmpresaStore = create((set) => ({
     dataempresa: [],
+    setEmpresa: (data) => set({ dataempresa: data }),
     mostrarempresa: async (p) => {
         const response = await MostrarEmpresaXidusuario(p);
         set({ dataempresa: response });

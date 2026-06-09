@@ -2,6 +2,7 @@ import styled, { keyframes } from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { useEmpresaStore } from "../../store/EmpresaStore";
 import { useUsuariosStore } from "../../store/UsuariosStore";
+import { useAlmacenesConfigStore } from "../../store/AlmacenesConfigStore";
 import { Icon } from "@iconify/react";
 import { blurin } from "../../styles/keyframes";
 
@@ -25,10 +26,14 @@ export function HomeTemplates() {
     const navigate  = useNavigate();
     const { dataempresa }  = useEmpresaStore();
     const { datausuarios } = useUsuariosStore();
+    const { dataAlmacenes } = useAlmacenesConfigStore();
 
     const hora = new Date().getHours();
     const saludo = hora < 12 ? "Buenos días" : hora < 18 ? "Buenas tardes" : "Buenas noches";
     const nombre = datausuarios?.nombres?.split(" ")[0] ?? "bienvenido";
+
+    const almacenUsuario = dataAlmacenes?.find(a => a.id === datausuarios?.id_almacen);
+    const etiquetaContexto = almacenUsuario?.nombre ?? dataempresa?.razon_social ?? "Tu empresa";
 
     return (
         <Page>
@@ -40,7 +45,7 @@ export function HomeTemplates() {
                         {saludo},<br />
                         <Nombre>{nombre} 👋</Nombre>
                     </Titulo>
-                    <Empresa>{dataempresa?.razon_social ?? "Tu empresa"}</Empresa>
+                    <Empresa>{etiquetaContexto}</Empresa>
                     <Desc>
                         Gestiona tus ventas, inventario y reportes desde un solo lugar.
                         Diseñado para negocios que necesitan velocidad y control.

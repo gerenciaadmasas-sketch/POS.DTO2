@@ -49,16 +49,30 @@ export async function CrearUsuarioEmpleado(p) {
         },
     });
     if (error) {
-        // Extraer el mensaje real del cuerpo de la respuesta 4xx
         let msg = error.message;
         try {
             const body = await error.context?.json?.();
             if (body?.error) msg = body.error;
-        } catch { /* ignorar si no se puede parsear */ }
+        } catch { /* ignorar */ }
         toastError(msg, "Usuarios › Crear empleado");
         throw new Error(msg);
     }
+    // Guardar email en la fila de usuarios para poder buscarlo en el login
+    await supabase
+        .from(tabla)
+        .update({ email: p.email })
+        .eq("usuario", p.usuario)
+        .eq("id_empresa", p.id_empresa);
     return data;
+}
+
+export async function ObtenerEmailPorUsuario(usuario) {
+    const { data } = await supabase
+        .from(tabla)
+        .select("email")
+        .eq("usuario", usuario)
+        .maybeSingle();
+    return data?.email ?? null;
 }
 
 export async function ActualizarUsuario(p) {

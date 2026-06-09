@@ -15,6 +15,11 @@ export async function MostrarEmpresaXidusuario(p) {
         .maybeSingle();
     return data;
 }
+export async function MostrarEmpresaPorId(id) {
+    const { data } = await supabase.from(tabla).select().eq("id", id).maybeSingle();
+    return data ?? null;
+}
+
 export async function EditarEmpresa(p) {
     const { id, ...campos } = p;
     const { data, error } = await supabase.from(tabla).update(campos).eq("id", id).select();
