@@ -16,10 +16,19 @@ const modos = [
         border: "#F5A14299",
     },
     {
-        key: "empleado",
-        titulo: "Empleado",
-        desc: "vende y crece",
-        emoji: "🪖",
+        key: "supervisor",
+        titulo: "Supervisor",
+        desc: "supervisa y gestiona",
+        emoji: "🔍",
+        bg: "#2d2d2d",
+        shadow: "#111111",
+        border: "#55555599",
+    },
+    {
+        key: "cajero",
+        titulo: "Cajero",
+        desc: "vende y cobra",
+        emoji: "🧾",
         bg: "#1C1108",
         shadow: "#0A0603",
         border: "#5c3d1e99",
@@ -100,13 +109,15 @@ export function LoginTemplate() {
                         </BtnGoogle>
                     </PanelLogin>
                 ) : (
-                    <PanelLogin key="empleado">
+                    <PanelLogin key={modo}>
                         <BtnVolver onClick={volverAModo}>← volver</BtnVolver>
                         <Logo>
                             <img src={v.logo} alt="logo" />
                             <span>POS DL v1</span>
                         </Logo>
-                        <BadgeModoActivo $color="#3a2010">🪖 Empleado</BadgeModoActivo>
+                        <BadgeModoActivo $color={modo === "supervisor" ? "#888" : "#3a2010"}>
+                            {modos.find(m => m.key === modo)?.emoji} {modos.find(m => m.key === modo)?.titulo}
+                        </BadgeModoActivo>
                         <Form onSubmit={handleLoginEmail}>
                             <InputField
                                 type="text"
@@ -124,7 +135,7 @@ export function LoginTemplate() {
                                 required
                             />
                             {errorMsg && <MsgError>{errorMsg}</MsgError>}
-                            <BtnIngresar type="submit" disabled={cargando || !email || !password}>
+                            <BtnIngresar type="submit" disabled={cargando || !email || !password} $gray={modo === "supervisor"}>
                                 {cargando ? "Ingresando..." : "Ingresar"}
                             </BtnIngresar>
                         </Form>
@@ -336,16 +347,16 @@ const BtnIngresar = styled.button`
     width: 100%;
     padding: 14px;
     border-radius: 14px;
-    border: 2px solid #0A0603;
-    background: ${({ disabled }) => disabled ? "#9ca3af" : "#1C1108"};
+    border: 2px solid ${({ disabled, $gray }) => disabled ? "#9ca3af" : $gray ? "#111" : "#0A0603"};
+    background: ${({ disabled, $gray }) => disabled ? "#9ca3af" : $gray ? "#2d2d2d" : "#1C1108"};
     color: #fff;
     font-size: 15px;
     font-weight: 800;
     cursor: ${({ disabled }) => disabled ? "not-allowed" : "pointer"};
     letter-spacing: 0.5px;
-    box-shadow: ${({ disabled }) => disabled ? "none" : "4px 4px 0 #0A0603"};
+    box-shadow: ${({ disabled, $gray }) => disabled ? "none" : $gray ? "4px 4px 0 #111" : "4px 4px 0 #0A0603"};
     transition: box-shadow 0.1s, transform 0.1s;
     &:active {
-        ${({ disabled }) => !disabled && "box-shadow: 2px 2px 0 #0A0603; transform: translate(2px, 2px);"}
+        ${({ disabled, $gray }) => !disabled && ($gray ? "box-shadow: 2px 2px 0 #111; transform: translate(2px, 2px);" : "box-shadow: 2px 2px 0 #0A0603; transform: translate(2px, 2px);")}
     }
 `;

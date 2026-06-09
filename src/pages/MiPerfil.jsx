@@ -117,13 +117,12 @@ export function MiPerfil() {
                     </Card>
 
                     {/* Editar datos personales */}
-                    <Card>
+                    <Card $align="stretch">
                         <CardHeaderRow>
                             <CardTitle><RiEditLine /> Datos personales</CardTitle>
-                            {!editandoDatos
-                                ? <BtnAccion onClick={() => setEditandoDatos(true)}>Editar</BtnAccion>
-                                : <BtnAccion $cancel onClick={() => setEditandoDatos(false)}><RiCloseLine /> Cancelar</BtnAccion>
-                            }
+                            {!editandoDatos && (
+                                <BtnAccion onClick={() => setEditandoDatos(true)}>Editar</BtnAccion>
+                            )}
                         </CardHeaderRow>
 
                         {editandoDatos ? (
@@ -131,20 +130,24 @@ export function MiPerfil() {
                                 <Campo>
                                     <label>Nombres</label>
                                     <Input placeholder="Nombre completo" {...regDatos("nombres", { required: true })} $error={!!errDatos.nombres} />
+                                    {errDatos.nombres && <ErrMsg>Campo requerido</ErrMsg>}
                                 </Campo>
-                                <FilaDos>
-                                    <Campo>
-                                        <label>Nro. documento</label>
-                                        <Input placeholder="000000" {...regDatos("nro_doc")} />
-                                    </Campo>
-                                    <Campo>
-                                        <label>Teléfono</label>
-                                        <Input placeholder="300 000 0000" {...regDatos("telefono")} />
-                                    </Campo>
-                                </FilaDos>
-                                <BtnGuardar type="submit" disabled={mutDatos.isPending}>
-                                    <RiSaveLine /> {mutDatos.isPending ? "Guardando..." : "Guardar cambios"}
-                                </BtnGuardar>
+                                <Campo>
+                                    <label>Nro. documento</label>
+                                    <Input placeholder="000000" {...regDatos("nro_doc")} />
+                                </Campo>
+                                <Campo>
+                                    <label>Teléfono</label>
+                                    <Input placeholder="300 000 0000" {...regDatos("telefono")} />
+                                </Campo>
+                                <FilaBtns>
+                                    <BtnSecundario type="button" onClick={() => setEditandoDatos(false)}>
+                                        <RiCloseLine /> Cancelar
+                                    </BtnSecundario>
+                                    <BtnGuardar type="submit" disabled={mutDatos.isPending}>
+                                        <RiSaveLine /> {mutDatos.isPending ? "Guardando..." : "Guardar cambios"}
+                                    </BtnGuardar>
+                                </FilaBtns>
                             </FormDatos>
                         ) : (
                             <InfoGrid>
@@ -156,13 +159,12 @@ export function MiPerfil() {
                     </Card>
 
                     {/* Cambiar contraseña */}
-                    <Card>
+                    <Card $align="stretch">
                         <CardHeaderRow>
                             <CardTitle><RiLockLine /> Contraseña</CardTitle>
-                            {!editandoClave
-                                ? <BtnAccion onClick={() => setEditandoClave(true)}>Cambiar</BtnAccion>
-                                : <BtnAccion $cancel onClick={() => { setEditandoClave(false); resetClave(); }}><RiCloseLine /> Cancelar</BtnAccion>
-                            }
+                            {!editandoClave && (
+                                <BtnAccion onClick={() => setEditandoClave(true)}>Cambiar</BtnAccion>
+                            )}
                         </CardHeaderRow>
 
                         {editandoClave && (
@@ -186,9 +188,14 @@ export function MiPerfil() {
                                     />
                                     {errClave.confirmar && <ErrMsg>{errClave.confirmar.message}</ErrMsg>}
                                 </Campo>
-                                <BtnGuardar type="submit" disabled={mutClave.isPending}>
-                                    <RiSaveLine /> {mutClave.isPending ? "Actualizando..." : "Actualizar contraseña"}
-                                </BtnGuardar>
+                                <FilaBtns>
+                                    <BtnSecundario type="button" onClick={() => { setEditandoClave(false); resetClave(); }}>
+                                        <RiCloseLine /> Cancelar
+                                    </BtnSecundario>
+                                    <BtnGuardar type="submit" disabled={mutClave.isPending}>
+                                        <RiSaveLine /> {mutClave.isPending ? "Actualizando..." : "Actualizar contraseña"}
+                                    </BtnGuardar>
+                                </FilaBtns>
                             </FormDatos>
                         )}
                     </Card>
@@ -235,8 +242,8 @@ const Card = styled.div`
     border: 1px solid ${({ theme }) => theme.color2};
     border-radius: 18px; padding: 24px;
     display: flex; flex-direction: column;
-    align-items: ${({ $wide }) => $wide ? "flex-start" : "center"};
-    gap: 10px;
+    align-items: ${({ $wide, $align }) => $wide ? "flex-start" : $align === "stretch" ? "stretch" : "center"};
+    gap: 12px;
     flex: ${({ $wide }) => $wide ? 1 : "none"};
     min-width: ${({ $wide }) => $wide ? "280px" : "auto"};
 `;
@@ -294,6 +301,23 @@ const Campo = styled.div`
 `;
 
 const FilaDos = styled.div`display: grid; grid-template-columns: 1fr 1fr; gap: 10px;`;
+
+const FilaBtns = styled.div`
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 4px;
+`;
+
+const BtnSecundario = styled.button`
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 10px; border-radius: 10px;
+    border: 1.5px solid ${({ theme }) => theme.color2};
+    background: transparent; color: ${({ theme }) => theme.colorsubtitlecard};
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    font-family: "Poppins", sans-serif; transition: all 0.15s;
+    &:hover { border-color: #f87171; color: #f87171; background: rgba(248,113,113,0.06); }
+`;
 
 const Input = styled.input`
     padding: 9px 12px; border-radius: 9px;

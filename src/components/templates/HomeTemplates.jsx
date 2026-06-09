@@ -15,11 +15,16 @@ const FEATURES = [
     { icon: "flat-color-icons:combo-chart",      label: "Kardex",          desc: "Historial completo de movimientos de inventario" },
 ];
 
-const ACCESOS = [
-    { icon: "flat-color-icons:shop",          label: "Vender",        to: "/pos",                      color: "#f88533" },
-    { icon: "flat-color-icons:bar-chart",     label: "Reportes",      to: "/reportes",                 color: "#60a5fa" },
-    { icon: "flat-color-icons:factory",       label: "Inventario",    to: "/inventario",               color: "#4ade80" },
-    { icon: "flat-color-icons:settings",      label: "Configuración", to: "/configuracion",            color: "#a78bfa" },
+const ACCESOS_ADMIN = [
+    { icon: "flat-color-icons:bar-chart",     label: "Reportes",      to: "/reportes",      color: "#60a5fa" },
+    { icon: "flat-color-icons:factory",       label: "Inventario",    to: "/inventario",    color: "#4ade80" },
+    { icon: "flat-color-icons:combo-chart",   label: "Kardex",        to: "/kardex",        color: "#f59e0b" },
+    { icon: "flat-color-icons:settings",      label: "Configuración", to: "/configuracion", color: "#a78bfa" },
+];
+
+const ACCESOS_CAJERO = [
+    { icon: "flat-color-icons:shop",          label: "Vender",        to: "/pos",           color: "#f88533" },
+    { icon: "flat-color-icons:factory",       label: "Inventario",    to: "/inventario",    color: "#4ade80" },
 ];
 
 export function HomeTemplates() {
@@ -27,6 +32,9 @@ export function HomeTemplates() {
     const { dataempresa }  = useEmpresaStore();
     const { datausuarios } = useUsuariosStore();
     const { dataAlmacenes } = useAlmacenesConfigStore();
+
+    const esCajero = datausuarios?.tipo === "cajero";
+    const accesos  = esCajero ? ACCESOS_CAJERO : ACCESOS_ADMIN;
 
     const hora = new Date().getHours();
     const saludo = hora < 12 ? "Buenos días" : hora < 18 ? "Buenas tardes" : "Buenas noches";
@@ -53,7 +61,7 @@ export function HomeTemplates() {
 
                     {/* Accesos rápidos */}
                     <AccesosGrid>
-                        {ACCESOS.map(({ icon, label, to, color }, i) => (
+                        {accesos.map(({ icon, label, to, color }, i) => (
                             <AccesoBtn key={label} $color={color} $i={i} onClick={() => navigate(to)}>
                                 <Icon icon={icon} style={{ fontSize: 26 }} />
                                 <span>{label}</span>

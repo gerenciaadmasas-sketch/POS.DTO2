@@ -9,6 +9,7 @@ import { useEmpresaStore } from "../../../store/EmpresaStore";
 import { useUsuariosStore } from "../../../store/UsuariosStore";
 
 const LINKS_CAJERO = ["/", "/pos", "/inventario"];
+const LINKS_ADMIN  = ["/", "/inventario", "/kardex", "/reportes", "/arqueo"]; // sin POS
 
 export function Sidebar({ state, setState }) {
     const { cerrarSesion } = useAuthStore();
@@ -18,7 +19,7 @@ export function Sidebar({ state, setState }) {
     const esCajero = datausuarios?.tipo === "cajero";
     const linksVisibles = esCajero
         ? LinksArray.filter(l => LINKS_CAJERO.includes(l.to))
-        : LinksArray;
+        : LinksArray.filter(l => LINKS_ADMIN.includes(l.to));
 
     return (
         <Wrap $isopen={state}>

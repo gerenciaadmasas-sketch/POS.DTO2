@@ -5,6 +5,7 @@ import { useEmpresaStore } from "../../store/EmpresaStore";
 import { useSucursalesStore } from "../../store/SucursalesStore";
 import { useAlmacenesConfigStore } from "../../store/AlmacenesConfigStore";
 import { useUsuariosStore } from "../../store/UsuariosStore";
+import { supabase } from "../../index";
 import { MostrarKardexPorAlmacen, InsertarMovimientoKardex } from "../../supabase/crudKardex";
 import { MostrarInventarioPorAlmacen } from "../../supabase/crudAlmacenes";
 import { AjustarStock } from "../../supabase/crudAlmacenes";
@@ -84,6 +85,27 @@ export function KardexTemplate() {
         refetchOnWindowFocus: false,
         placeholderData: prev => prev,
     });
+
+    // Usuarios de la empresa para mostrar responsable
+    const { data: listaUsuarios = [] } = useQuery({
+        queryKey: ["usuarios-kdx", id_empresa],
+        queryFn:  async () => {
+            const { data } = await supabase
+                .from("usuarios")
+                .select("id, usuario, nombres")
+                .eq("id_empresa", id_empresa);
+            return data ?? [];
+        },
+        enabled: !!id_empresa,
+        refetchOnWindowFocus: false,
+    });
+    const usuariosMap = useMemo(() => {
+        const map = {};
+        listaUsuarios.forEach(u => {
+            map[u.id] = u.nombres && u.nombres !== "-" ? u.nombres.split(" ")[0] : (u.usuario ?? "—");
+        });
+        return map;
+    }, [listaUsuarios]);
 
     // Productos del almacén para el modal
     const { data: productos = [] } = useQuery({
@@ -227,16 +249,17 @@ export function KardexTemplate() {
                                 <Th $center>Cantidad</Th>
                                 <Th $center>Stock ant.</Th>
                                 <Th $center>Stock nuevo</Th>
+                                <Th>Usuario</Th>
                                 <Th>Descripción</Th>
                             </tr>
                         </thead>
                         <tbody>
                             {!almacenId ? (
-                                <tr><TdVacio colSpan={7}>Selecciona un almacén para ver su kardex</TdVacio></tr>
+                                <tr><TdVacio colSpan={8}>Selecciona un almacén para ver su kardex</TdVacio></tr>
                             ) : isFetching ? (
-                                <tr><TdVacio colSpan={7}>Cargando movimientos...</TdVacio></tr>
+                                <tr><TdVacio colSpan={8}>Cargando movimientos...</TdVacio></tr>
                             ) : movimientos.length === 0 ? (
-                                <tr><TdVacio colSpan={7}>Sin movimientos registrados en este almacén</TdVacio></tr>
+                                <tr><TdVacio colSpan={8}>Sin movimientos registrados en este almacén</TdVacio></tr>
                             ) : movimientos.map(m => {
                                 const tipo = TIPOS[m.tipo] ?? TIPOS.ajuste;
                                 const TipoIcon = tipo.icon;
@@ -257,6 +280,7 @@ export function KardexTemplate() {
                                         </Td>
                                         <Td $center style={{ opacity: 0.7 }}>{m.stock_anterior}</Td>
                                         <Td $center><b style={{ color: m.stock_nuevo <= 0 ? "#f87171" : "inherit" }}>{m.stock_nuevo}</b></Td>
+                                        <Td><UsuarioBadge>{m.id_usuario ? (usuariosMap[m.id_usuario] ?? `#${m.id_usuario}`) : "—"}</UsuarioBadge></Td>
                                         <Td style={{ fontSize: 12, opacity: 0.7 }}>{m.descripcion ?? "—"}</Td>
                                     </FilaTr>
                                 );
@@ -496,6 +520,16 @@ const FilaTr = styled.tr`
     &:hover td { background: ${({ theme }) => theme.bgtotal}; }
 `;
 const NombreProd = styled.span`font-weight: 700;`;
+const UsuarioBadge = styled.span`
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(99,102,241,0.12);
+    color: #818cf8;
+    white-space: nowrap;
+`;
 const TipoBadge = styled.span`
     display: inline-flex; align-items: center; gap: 5px;
     padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
