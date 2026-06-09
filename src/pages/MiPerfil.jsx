@@ -48,6 +48,7 @@ export function MiPerfil() {
 
     const u  = datausuarios;
     const tc = TIPO_COLORS[u?.tipo] ?? TIPO_COLORS.cajero;
+    const nombreCompleto = [u?.nombres, u?.apellidos].filter(Boolean).join(" ") || "Sin nombre";
     const inicial = (u?.nombres ?? "?")[0]?.toUpperCase();
 
     const asignacion = u?.tipo === "cajero"
@@ -62,7 +63,7 @@ export function MiPerfil() {
 
     /* ── Formulario datos personales ── */
     const { register: regDatos, handleSubmit: hdDatos, formState: { errors: errDatos } } = useForm({
-        defaultValues: { nombres: u?.nombres ?? "", nro_doc: u?.nro_doc ?? "", telefono: u?.telefono ?? "" },
+        defaultValues: { nombres: u?.nombres ?? "", apellidos: u?.apellidos ?? "", nro_doc: u?.nro_doc ?? "", telefono: u?.telefono ?? "" },
     });
 
     const mutDatos = useMutation({
@@ -104,7 +105,7 @@ export function MiPerfil() {
                     {/* Avatar + info */}
                     <Card>
                         <AvatarGrande>{inicial}</AvatarGrande>
-                        <Nombre>{u?.nombres ?? "Sin nombre"}</Nombre>
+                        <Nombre>{nombreCompleto}</Nombre>
                         <Usuario>@{u?.usuario ?? u?.email ?? "—"}</Usuario>
                         <TipoBadge $bg={tc.bg} $color={tc.color}>{u?.tipo ?? "cajero"}</TipoBadge>
 
@@ -127,11 +128,18 @@ export function MiPerfil() {
 
                         {editandoDatos ? (
                             <FormDatos onSubmit={hdDatos(vals => mutDatos.mutate(vals))}>
-                                <Campo>
-                                    <label>Nombres</label>
-                                    <Input placeholder="Nombre completo" {...regDatos("nombres", { required: true })} $error={!!errDatos.nombres} />
-                                    {errDatos.nombres && <ErrMsg>Campo requerido</ErrMsg>}
-                                </Campo>
+                                <FilaDos>
+                                    <Campo>
+                                        <label>Nombre</label>
+                                        <Input placeholder="Ej: Juan" {...regDatos("nombres", { required: true })} $error={!!errDatos.nombres} />
+                                        {errDatos.nombres && <ErrMsg>Requerido</ErrMsg>}
+                                    </Campo>
+                                    <Campo>
+                                        <label>Apellido</label>
+                                        <Input placeholder="Ej: Pérez" {...regDatos("apellidos", { required: true })} $error={!!errDatos.apellidos} />
+                                        {errDatos.apellidos && <ErrMsg>Requerido</ErrMsg>}
+                                    </Campo>
+                                </FilaDos>
                                 <Campo>
                                     <label>Nro. documento</label>
                                     <Input placeholder="000000" {...regDatos("nro_doc")} />
@@ -151,7 +159,8 @@ export function MiPerfil() {
                             </FormDatos>
                         ) : (
                             <InfoGrid>
-                                <InfoItem><span>Nombres</span><strong>{u?.nombres ?? "—"}</strong></InfoItem>
+                                <InfoItem><span>Nombre</span><strong>{u?.nombres ?? "—"}</strong></InfoItem>
+                                <InfoItem><span>Apellido</span><strong>{u?.apellidos ?? "—"}</strong></InfoItem>
                                 <InfoItem><span>Documento</span><strong>{u?.nro_doc ?? "—"}</strong></InfoItem>
                                 <InfoItem><span>Teléfono</span><strong>{u?.telefono ?? "—"}</strong></InfoItem>
                             </InfoGrid>
@@ -303,15 +312,15 @@ const Campo = styled.div`
 const FilaDos = styled.div`display: grid; grid-template-columns: 1fr 1fr; gap: 10px;`;
 
 const FilaBtns = styled.div`
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    display: flex;
+    gap: 8px;
     margin-top: 4px;
+    justify-content: flex-end;
 `;
 
 const BtnSecundario = styled.button`
     display: flex; align-items: center; justify-content: center; gap: 6px;
-    padding: 10px; border-radius: 10px;
+    padding: 9px 16px; border-radius: 10px; white-space: nowrap;
     border: 1.5px solid ${({ theme }) => theme.color2};
     background: transparent; color: ${({ theme }) => theme.colorsubtitlecard};
     font-size: 13px; font-weight: 700; cursor: pointer;
@@ -332,7 +341,7 @@ const ErrMsg = styled.span`font-size: 11px; color: #f87171;`;
 
 const BtnGuardar = styled.button`
     display: flex; align-items: center; justify-content: center; gap: 6px;
-    padding: 10px; border-radius: 10px; border: none;
+    padding: 9px 16px; border-radius: 10px; border: none; white-space: nowrap;
     background: #2563eb; color: #fff;
     font-size: 13px; font-weight: 700; cursor: pointer;
     font-family: "Poppins", sans-serif; transition: background 0.15s;

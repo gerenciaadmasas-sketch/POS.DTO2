@@ -69,10 +69,11 @@ export async function CrearUsuarioEmpleado(p) {
 export async function ObtenerEmailPorUsuario(usuario) {
     const { data } = await supabase
         .from(tabla)
-        .select("email")
+        .select("email, tipo")
         .eq("usuario", usuario)
         .maybeSingle();
-    return data?.email ?? null;
+    if (!data) return null;
+    return { email: data.email ?? null, tipo: data.tipo ?? null };
 }
 
 export async function ActualizarUsuario(p) {

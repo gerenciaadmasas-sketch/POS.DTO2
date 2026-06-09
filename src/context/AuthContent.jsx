@@ -2,8 +2,6 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabase/supabase.config";
 import { InsertarEmpresa } from "../supabase/crudEmpresa";
-import { MostrarRolesXnombre } from "../supabase/crudRol";
-import { MostrarTipoDocumento } from "../supabase/crudTipodocumentos";
 import { InsertarAdmin, MostrarUsuarios } from "../supabase/crudUsuarios";
 
 const AuthContext = createContext();
@@ -70,7 +68,7 @@ export const AuthContextProvider = ({ children }) => {
     }
   };
 
-  const insertarDatos = async (idAuth, correo) => {
+  const insertarDatos = async (idAuth, email) => {
     if (perfilandoIds.current.has(idAuth)) return;
     perfilandoIds.current.add(idAuth);
 
@@ -83,7 +81,7 @@ export const AuthContextProvider = ({ children }) => {
 
     try {
       const { data: empresaExistente } = await obtenerEmpresa();
-      const usuarioExistente = await MostrarUsuarios({ correo });
+      const usuarioExistente = await MostrarUsuarios({ id_auth: idAuth });
 
       if (usuarioExistente?.id) {
         if (empresaExistente && !empresaExistente.id_usuario) {
@@ -118,26 +116,21 @@ export const AuthContextProvider = ({ children }) => {
 
       if (!idEmpresa) return;
 
-      const responseRol = await MostrarRolesXnombre({ nombre: "superadmin" });
-      const responseTipoDoc = await MostrarTipoDocumento({ id_empresa: idEmpresa });
-      if (!responseRol || !responseTipoDoc || responseTipoDoc.length === 0) return;
-
       const pUser = {
-        nombres: "-",
-        apellidos: "-",
-        id_tipodocumento: responseTipoDoc[0].id,
-        nro_doc: "-",
-        celular: "-",
-        correo,
-        direccion: "-",
-        id_rol: responseRol.id,
-        fecha_de_ingreso: new Date().toISOString().split("T")[0],
-        estado: "ACTIVO",
+        id_auth:    idAuth,
+        email,
+        nombres:    "-",
+        apellidos:  "-",
+        nro_doc:    "-",
+        telefono:   "-",
+        tipo:       "administrador",
+        id_empresa: idEmpresa,
+        permisos:   {},
       };
 
       let responseUser = await InsertarAdmin(pUser);
       if (!responseUser?.id) {
-        responseUser = await MostrarUsuarios({ correo });
+        responseUser = await MostrarUsuarios({ id_auth: idAuth });
       }
 
       if (responseUser?.id) {

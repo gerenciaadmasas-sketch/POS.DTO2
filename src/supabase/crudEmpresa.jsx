@@ -20,6 +20,11 @@ export async function MostrarEmpresaPorId(id) {
     return data ?? null;
 }
 
+export async function MostrarTodasEmpresas() {
+    const { data } = await supabase.from(tabla).select().order("razon_social");
+    return data ?? [];
+}
+
 export async function EditarEmpresa(p) {
     const { id, ...campos } = p;
     const { data, error } = await supabase.from(tabla).update(campos).eq("id", id).select();

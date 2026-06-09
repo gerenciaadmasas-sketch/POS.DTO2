@@ -13,7 +13,6 @@ import { FaReact } from "react-icons/fa";
 import { BsArrowDown, BsArrowUpShort } from "react-icons/bs";
 import { FaBalanceScale } from "react-icons/fa";
 import logo from "../assets/punto-de-venta.png";
-import { FcGoogle } from "react-icons/fc";
 
 import { RiCloseLine } from "react-icons/ri";
 import { BiSave } from "react-icons/bi";
@@ -106,7 +105,6 @@ export const v = {
   flechaarribalarga: BsArrowUpShort,
   balance: FaBalanceScale,
   logo: logo,
-  iconogoogle: FcGoogle,
   iconocerrar: RiCloseLine,
   iconoguardar: BiSave,
   iconoayuda: BsQuestionCircle,

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaStore } from "../../store/EmpresaStore";
@@ -7,9 +7,12 @@ import { useAlmacenesConfigStore } from "../../store/AlmacenesConfigStore";
 import { useUsuariosStore } from "../../store/UsuariosStore";
 import { supabase } from "../../index";
 import { MostrarKardexPorAlmacen, InsertarMovimientoKardex } from "../../supabase/crudKardex";
-import { MostrarInventarioPorAlmacen } from "../../supabase/crudAlmacenes";
-import { AjustarStock } from "../../supabase/crudAlmacenes";
-import { RiStore2Line, RiAddLine, RiCloseLine, RiArrowUpLine, RiArrowDownLine, RiEqualizerLine, RiCalendarLine, RiFilterOffLine } from "react-icons/ri";
+import { MostrarInventarioPorAlmacen, AjustarStock } from "../../supabase/crudAlmacenes";
+import { MostrarTodasEmpresas } from "../../supabase/crudEmpresa";
+import { MostrarTodasSucursales } from "../../supabase/crudSucursales";
+import { MostrarTodosAlmacenes } from "../../supabase/crudAlmacenesConfig";
+import { RiStore2Line, RiAddLine, RiCloseLine, RiArrowUpLine, RiArrowDownLine, RiEqualizerLine, RiCalendarLine, RiFilterOffLine, RiArrowDownSLine } from "react-icons/ri";
+import { FaBuilding } from "react-icons/fa";
 import { toastExito } from "../../utils/toast";
 
 const formatCOP = (n) =>
@@ -40,63 +43,129 @@ export function KardexTemplate() {
     const { datausuarios }   = useUsuariosStore();
     const queryClient = useQueryClient();
 
-    const id_empresa = dataempresa?.id;
+    const esSuperAdmin = datausuarios?.tipo === "superadmin";
+    const id_empresa   = dataempresa?.id;
 
+    /* ── Queries usuario normal ── */
     useQuery({
         queryKey: ["sucursales-kdx", id_empresa],
         queryFn:  () => mostrarSucursales({ id_empresa }),
-        enabled:  !!id_empresa, refetchOnWindowFocus: false,
+        enabled:  !!id_empresa && !esSuperAdmin,
+        refetchOnWindowFocus: false,
     });
     useQuery({
         queryKey: ["almacenes-kdx", id_empresa],
         queryFn:  () => mostrarAlmacenes({ id_empresa }),
-        enabled:  !!id_empresa, refetchOnWindowFocus: false,
+        enabled:  !!id_empresa && !esSuperAdmin,
+        refetchOnWindowFocus: false,
     });
 
-    const [almacenActivo, setAlmacenActivo] = useState(null);
-    const [filtroTipo,    setFiltroTipo]    = useState("todos");
-    const [desde,         setDesde]         = useState("");
-    const [hasta,         setHasta]         = useState("");
-    const [page,          setPage]          = useState(0);
-    const [modalAbierto,  setModalAbierto]  = useState(false);
+    /* ── Queries superadmin (todas las empresas) ── */
+    const { data: todasEmpresas = [] } = useQuery({
+        queryKey: ["todas-empresas"],
+        queryFn:  MostrarTodasEmpresas,
+        enabled:  esSuperAdmin,
+        staleTime: 60000,
+        refetchOnWindowFocus: false,
+    });
+    const { data: todasSucursales = [] } = useQuery({
+        queryKey: ["todas-sucursales"],
+        queryFn:  MostrarTodasSucursales,
+        enabled:  esSuperAdmin,
+        staleTime: 60000,
+        refetchOnWindowFocus: false,
+    });
+    const { data: todosAlmacenes = [] } = useQuery({
+        queryKey: ["todos-almacenes"],
+        queryFn:  MostrarTodosAlmacenes,
+        enabled:  esSuperAdmin,
+        staleTime: 60000,
+        refetchOnWindowFocus: false,
+    });
 
-    // Form nuevo movimiento
-    const [formTipo,     setFormTipo]     = useState("entrada");
-    const [formProducto, setFormProducto] = useState(null);
-    const [formCantidad, setFormCantidad] = useState("");
-    const [formDesc,     setFormDesc]     = useState("");
+    /* ── Estado local ── */
+    const [almacenActivo,       setAlmacenActivo]       = useState(null);
+    const [empresasExpandidas,  setEmpresasExpandidas]  = useState(new Set());
+    const [filtroTipo,          setFiltroTipo]          = useState("todos");
+    const [desde,               setDesde]               = useState("");
+    const [hasta,               setHasta]               = useState("");
+    const [page,                setPage]                = useState(0);
+    const [modalAbierto,        setModalAbierto]        = useState(false);
+    const [formTipo,            setFormTipo]            = useState("entrada");
+    const [formProducto,        setFormProducto]        = useState(null);
+    const [formCantidad,        setFormCantidad]        = useState("");
+    const [formDesc,            setFormDesc]            = useState("");
+    const autoExpandRef = useRef(false);
 
-    const almacenId  = almacenActivo ?? dataAlmacenes?.[0]?.id ?? null;
-    const almacenObj = dataAlmacenes?.find(a => a.id === almacenId);
-    const sucursalObj = dataSucursales?.find(s => s.id === almacenObj?.id_sucursal);
-    const colorAlmacen = COLORES[(dataAlmacenes?.findIndex(a => a.id === almacenId) ?? 0) % COLORES.length];
+    /* Auto-expandir primera empresa al cargar */
+    useEffect(() => {
+        if (esSuperAdmin && todasEmpresas.length > 0 && !autoExpandRef.current) {
+            autoExpandRef.current = true;
+            setEmpresasExpandidas(new Set([todasEmpresas[0].id]));
+        }
+    }, [todasEmpresas, esSuperAdmin]);
 
+    function toggleEmpresa(id) {
+        setEmpresasExpandidas(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id); else next.add(id);
+            return next;
+        });
+    }
+
+    /* ── Datos agrupados ── */
     const grupos = useMemo(() => {
         return (dataSucursales ?? [])
             .map(s => ({ ...s, almacenes: (dataAlmacenes ?? []).filter(a => a.id_sucursal === s.id) }))
             .filter(s => s.almacenes.length > 0);
     }, [dataSucursales, dataAlmacenes]);
 
-    // Kardex del almacén activo
+    const empresaGrupos = useMemo(() => {
+        return todasEmpresas.map(emp => ({
+            ...emp,
+            sucursales: todasSucursales
+                .filter(s => s.id_empresa === emp.id)
+                .map(suc => ({
+                    ...suc,
+                    almacenes: todosAlmacenes.filter(a => a.id_sucursal === suc.id),
+                })),
+        }));
+    }, [todasEmpresas, todasSucursales, todosAlmacenes]);
+
+    /* ── Resolución del almacén activo ── */
+    const listAlmacenes  = esSuperAdmin ? todosAlmacenes  : (dataAlmacenes  ?? []);
+    const listSucursales = esSuperAdmin ? todasSucursales : (dataSucursales ?? []);
+
+    const almacenId   = almacenActivo ?? (esSuperAdmin ? null : (dataAlmacenes?.[0]?.id ?? null));
+    const almacenObj  = listAlmacenes.find(a => a.id === almacenId);
+    const sucursalObj = listSucursales.find(s => s.id === almacenObj?.id_sucursal);
+    const empresaObj  = esSuperAdmin
+        ? todasEmpresas.find(e => e.id === sucursalObj?.id_empresa)
+        : dataempresa;
+
+    const id_empresa_query = esSuperAdmin ? (sucursalObj?.id_empresa ?? null) : id_empresa;
+    const colorAlmacen = COLORES[(listAlmacenes.findIndex(a => a.id === almacenId) ?? 0) % COLORES.length];
+
+    /* ── Kardex del almacén activo ── */
     const { data: kardexData, isFetching } = useQuery({
-        queryKey: ["kardex", id_empresa, almacenId, filtroTipo, desde, hasta, page],
-        queryFn:  () => MostrarKardexPorAlmacen({ id_empresa, id_almacen: almacenId, tipo: filtroTipo, desde: desde || undefined, hasta: hasta || undefined, page, pageSize: PAGE_SIZE }),
-        enabled:  !!id_empresa && !!almacenId,
+        queryKey: ["kardex", id_empresa_query, almacenId, filtroTipo, desde, hasta, page],
+        queryFn:  () => MostrarKardexPorAlmacen({ id_empresa: id_empresa_query, id_almacen: almacenId, tipo: filtroTipo, desde: desde || undefined, hasta: hasta || undefined, page, pageSize: PAGE_SIZE }),
+        enabled:  !!id_empresa_query && !!almacenId,
         refetchOnWindowFocus: false,
         placeholderData: prev => prev,
     });
 
-    // Usuarios de la empresa para mostrar responsable
+    /* ── Usuarios de la empresa activa ── */
     const { data: listaUsuarios = [] } = useQuery({
-        queryKey: ["usuarios-kdx", id_empresa],
+        queryKey: ["usuarios-kdx", id_empresa_query],
         queryFn:  async () => {
             const { data } = await supabase
                 .from("usuarios")
                 .select("id, usuario, nombres")
-                .eq("id_empresa", id_empresa);
+                .eq("id_empresa", id_empresa_query);
             return data ?? [];
         },
-        enabled: !!id_empresa,
+        enabled: !!id_empresa_query,
         refetchOnWindowFocus: false,
     });
     const usuariosMap = useMemo(() => {
@@ -107,26 +176,26 @@ export function KardexTemplate() {
         return map;
     }, [listaUsuarios]);
 
-    // Productos del almacén para el modal
+    /* ── Productos del almacén para el modal ── */
     const { data: productos = [] } = useQuery({
-        queryKey: ["inventario-kdx", id_empresa, almacenId],
-        queryFn:  () => MostrarInventarioPorAlmacen({ id_empresa, id_almacen: almacenId, soloConInventario: false }),
-        enabled:  !!id_empresa && !!almacenId && modalAbierto,
+        queryKey: ["inventario-kdx", id_empresa_query, almacenId],
+        queryFn:  () => MostrarInventarioPorAlmacen({ id_empresa: id_empresa_query, id_almacen: almacenId, soloConInventario: false }),
+        enabled:  !!id_empresa_query && !!almacenId && modalAbierto,
         refetchOnWindowFocus: false,
     });
 
     const movimientos = kardexData?.data ?? [];
-    const totalRows = kardexData?.count ?? 0;
-    const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+    const totalRows   = kardexData?.count ?? 0;
+    const totalPages  = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
 
     const mutRegistrar = useMutation({
         mutationFn: async () => {
             if (!formProducto || !formCantidad) return;
             const prod = productos.find(p => p.id === Number(formProducto));
             if (!prod) return;
-            const cantidad = Number(formCantidad) || 0;
+            const cantidad     = Number(formCantidad) || 0;
             const stockAnterior = prod.stock ?? 0;
-            const stockNuevo = formTipo === "entrada"
+            const stockNuevo   = formTipo === "entrada"
                 ? stockAnterior + cantidad
                 : stockAnterior - cantidad;
 
@@ -135,7 +204,7 @@ export function KardexTemplate() {
                 id_producto:     prod.id,
                 id_almacen:      almacenId,
                 id_sucursal:     almacenObj?.id_sucursal ?? null,
-                id_empresa,
+                id_empresa:      id_empresa_query,
                 stock:           stockNuevo,
                 stock_minimo:    prod.stock_minimo,
                 stock_anterior:  stockAnterior,
@@ -147,9 +216,9 @@ export function KardexTemplate() {
         },
         onSuccess: () => {
             toastExito("Movimiento registrado", "Kardex");
-            queryClient.invalidateQueries({ queryKey: ["kardex",     id_empresa, almacenId] });
-            queryClient.invalidateQueries({ queryKey: ["inventario", id_empresa, almacenId] });
-            queryClient.invalidateQueries({ queryKey: ["inventario-kdx", id_empresa, almacenId] });
+            queryClient.invalidateQueries({ queryKey: ["kardex",         id_empresa_query, almacenId] });
+            queryClient.invalidateQueries({ queryKey: ["inventario",     id_empresa_query, almacenId] });
+            queryClient.invalidateQueries({ queryKey: ["inventario-kdx", id_empresa_query, almacenId] });
             setModalAbierto(false);
             setFormProducto(null);
             setFormCantidad("");
@@ -157,40 +226,110 @@ export function KardexTemplate() {
         },
     });
 
+    function seleccionarAlmacen(id) {
+        setAlmacenActivo(id);
+        setPage(0);
+    }
+
     return (
         <Layout>
             {/* ── Panel izquierdo ── */}
             <PanelAlmacenes>
-                <PanelTitulo>Almacenes</PanelTitulo>
-                {grupos.map(suc => (
-                    <GrupoSucursal key={suc.id}>
-                        <GrupoLabel><RiStore2Line style={{ fontSize: 12 }} />{suc.nombre}</GrupoLabel>
-                        {suc.almacenes.map(alm => {
-                            const idx    = dataAlmacenes?.findIndex(a => a.id === alm.id) ?? 0;
-                            const color  = COLORES[idx % COLORES.length];
-                            const activo = almacenId === alm.id;
-                            return (
-                                <AlmacenItem key={alm.id} $activo={activo} $color={color}
-                                    onClick={() => { setAlmacenActivo(alm.id); setPage(0); }}>
-                                    <AlmacenDot $color={color} />
-                                    <AlmacenInfo>
-                                        <span className="nombre">{alm.nombre}</span>
-                                        <span className="sucursal">{suc.nombre}</span>
-                                    </AlmacenInfo>
-                                    {activo && <Chevron>›</Chevron>}
-                                </AlmacenItem>
-                            );
-                        })}
-                    </GrupoSucursal>
-                ))}
+                <PanelTitulo>{esSuperAdmin ? "Clientes" : "Almacenes"}</PanelTitulo>
+
+                {esSuperAdmin ? (
+                    empresaGrupos.length === 0 ? (
+                        <SinAlmacenes>Cargando clientes...</SinAlmacenes>
+                    ) : empresaGrupos.map(emp => {
+                        const expandida  = empresasExpandidas.has(emp.id);
+                        const tieneDatos = emp.sucursales.some(s => s.almacenes.length > 0);
+                        return (
+                            <GrupoEmpresa key={emp.id}>
+                                <EmpresaItem
+                                    $expandida={expandida}
+                                    $activa={empresaObj?.id === emp.id}
+                                    onClick={() => toggleEmpresa(emp.id)}
+                                >
+                                    <FaBuilding className="icono-empresa" />
+                                    <span className="nombre-empresa">{emp.razon_social}</span>
+                                    <RiArrowDownSLine className={`chevron ${expandida ? "abierto" : ""}`} />
+                                </EmpresaItem>
+
+                                {expandida && (
+                                    <ContenidoEmpresa>
+                                        {!tieneDatos ? (
+                                            <SinAlmacenes style={{ padding: "8px 12px", fontSize: 11 }}>
+                                                Sin sucursales
+                                            </SinAlmacenes>
+                                        ) : emp.sucursales.map(suc =>
+                                            suc.almacenes.length === 0 ? null : (
+                                                <GrupoSucursal key={suc.id}>
+                                                    <GrupoLabel>
+                                                        <RiStore2Line style={{ fontSize: 12 }} />
+                                                        {suc.nombre}
+                                                    </GrupoLabel>
+                                                    {suc.almacenes.map(alm => {
+                                                        const idx    = todosAlmacenes.findIndex(a => a.id === alm.id);
+                                                        const color  = COLORES[idx % COLORES.length];
+                                                        const activo = almacenId === alm.id;
+                                                        return (
+                                                            <AlmacenItem key={alm.id} $activo={activo} $color={color}
+                                                                onClick={() => seleccionarAlmacen(alm.id)}>
+                                                                <AlmacenDot $color={color} />
+                                                                <AlmacenInfo>
+                                                                    <span className="nombre">{alm.nombre}</span>
+                                                                    <span className="sucursal">{suc.nombre}</span>
+                                                                </AlmacenInfo>
+                                                                {activo && <Chevron>›</Chevron>}
+                                                            </AlmacenItem>
+                                                        );
+                                                    })}
+                                                </GrupoSucursal>
+                                            )
+                                        )}
+                                    </ContenidoEmpresa>
+                                )}
+                            </GrupoEmpresa>
+                        );
+                    })
+                ) : (
+                    grupos.map(suc => (
+                        <GrupoSucursal key={suc.id}>
+                            <GrupoLabel><RiStore2Line style={{ fontSize: 12 }} />{suc.nombre}</GrupoLabel>
+                            {suc.almacenes.map(alm => {
+                                const idx    = dataAlmacenes?.findIndex(a => a.id === alm.id) ?? 0;
+                                const color  = COLORES[idx % COLORES.length];
+                                const activo = almacenId === alm.id;
+                                return (
+                                    <AlmacenItem key={alm.id} $activo={activo} $color={color}
+                                        onClick={() => seleccionarAlmacen(alm.id)}>
+                                        <AlmacenDot $color={color} />
+                                        <AlmacenInfo>
+                                            <span className="nombre">{alm.nombre}</span>
+                                            <span className="sucursal">{suc.nombre}</span>
+                                        </AlmacenInfo>
+                                        {activo && <Chevron>›</Chevron>}
+                                    </AlmacenItem>
+                                );
+                            })}
+                        </GrupoSucursal>
+                    ))
+                )}
             </PanelAlmacenes>
 
             {/* ── Contenido ── */}
             <Contenido>
-                {/* Header almacén activo */}
                 <AlmacenHeader $color={colorAlmacen}>
                     <HeaderLeft>
-                        <AlmacenNombre>{almacenObj?.nombre ?? "Selecciona un almacén"}</AlmacenNombre>
+                        {esSuperAdmin && empresaObj && (
+                            <EmpresaTag>
+                                <FaBuilding />
+                                {empresaObj.razon_social}
+                            </EmpresaTag>
+                        )}
+                        <AlmacenNombre>
+                            {almacenObj?.nombre ?? (esSuperAdmin ? "Selecciona un cliente y almacén" : "Selecciona un almacén")}
+                        </AlmacenNombre>
                         {sucursalObj && <AlmacenSucursal>Sucursal: {sucursalObj.nombre}</AlmacenSucursal>}
                     </HeaderLeft>
                     <BtnNuevo onClick={() => setModalAbierto(true)} disabled={!almacenId}>
@@ -209,18 +348,8 @@ export function KardexTemplate() {
                         </FiltroChip>
                     ))}
                     <FiltroSep />
-                    <DateInput
-                        type="date"
-                        value={desde}
-                        onChange={e => { setDesde(e.target.value); setPage(0); }}
-                        title="Desde"
-                    />
-                    <DateInput
-                        type="date"
-                        value={hasta}
-                        onChange={e => { setHasta(e.target.value); setPage(0); }}
-                        title="Hasta"
-                    />
+                    <DateInput type="date" value={desde} onChange={e => { setDesde(e.target.value); setPage(0); }} title="Desde" />
+                    <DateInput type="date" value={hasta} onChange={e => { setHasta(e.target.value); setPage(0); }} title="Hasta" />
                     {(desde || hasta) && (
                         <BtnLimpiar title="Limpiar fechas" onClick={() => { setDesde(""); setHasta(""); setPage(0); }}>
                             <RiFilterOffLine />
@@ -228,7 +357,6 @@ export function KardexTemplate() {
                     )}
                 </FiltrosRow>
 
-                {/* Contador */}
                 {almacenId && !isFetching && (
                     <TotalInfo>
                         {totalRows} movimiento{totalRows !== 1 ? "s" : ""}
@@ -238,7 +366,6 @@ export function KardexTemplate() {
                     </TotalInfo>
                 )}
 
-                {/* Tabla de movimientos */}
                 <TablaCard>
                     <Tabla>
                         <thead>
@@ -255,7 +382,11 @@ export function KardexTemplate() {
                         </thead>
                         <tbody>
                             {!almacenId ? (
-                                <tr><TdVacio colSpan={8}>Selecciona un almacén para ver su kardex</TdVacio></tr>
+                                <tr><TdVacio colSpan={8}>
+                                    {esSuperAdmin
+                                        ? "Expande un cliente y selecciona un almacén para ver su kardex"
+                                        : "Selecciona un almacén para ver su kardex"}
+                                </TdVacio></tr>
                             ) : isFetching ? (
                                 <tr><TdVacio colSpan={8}>Cargando movimientos...</TdVacio></tr>
                             ) : movimientos.length === 0 ? (
@@ -288,7 +419,6 @@ export function KardexTemplate() {
                         </tbody>
                     </Tabla>
 
-                    {/* Paginación */}
                     <Paginacion>
                         <BtnPag disabled={page === 0} onClick={() => setPage(0)}>«</BtnPag>
                         <BtnPag disabled={page === 0} onClick={() => setPage(p => p - 1)}>‹</BtnPag>
@@ -309,7 +439,6 @@ export function KardexTemplate() {
                         </ModalHeader>
 
                         <ModalBody>
-                            {/* Tipo */}
                             <Campo>
                                 <label>Tipo de movimiento</label>
                                 <TiposGrid>
@@ -327,7 +456,6 @@ export function KardexTemplate() {
                                 </TiposGrid>
                             </Campo>
 
-                            {/* Producto */}
                             <Campo>
                                 <label>Producto</label>
                                 <Select value={formProducto ?? ""} onChange={e => setFormProducto(e.target.value)}>
@@ -340,7 +468,6 @@ export function KardexTemplate() {
                                 </Select>
                             </Campo>
 
-                            {/* Cantidad */}
                             <Campo>
                                 <label>Cantidad</label>
                                 <Input
@@ -352,13 +479,12 @@ export function KardexTemplate() {
                                 />
                             </Campo>
 
-                            {/* Vista previa stock */}
                             {formProducto && formCantidad && (
                                 <PreviewStock>
                                     {(() => {
                                         const p = productos.find(x => x.id === Number(formProducto));
                                         if (!p) return null;
-                                        const ant = p.stock ?? 0;
+                                        const ant   = p.stock ?? 0;
                                         const nuevo = formTipo === "entrada"
                                             ? ant + Number(formCantidad)
                                             : ant - Number(formCantidad);
@@ -373,7 +499,6 @@ export function KardexTemplate() {
                                 </PreviewStock>
                             )}
 
-                            {/* Descripción */}
                             <Campo>
                                 <label>Descripción <Opcional>(opcional)</Opcional></label>
                                 <Input
@@ -404,6 +529,7 @@ export function KardexTemplate() {
 const fadeUp   = keyframes`from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}`;
 const fadeIn   = keyframes`from{opacity:0}to{opacity:1}`;
 const slideUp  = keyframes`from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}`;
+const slideDown = keyframes`from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}`;
 
 /* ── Layout ── */
 const Layout = styled.div`
@@ -413,29 +539,60 @@ const Layout = styled.div`
     animation: ${fadeUp} 0.3s ease;
 `;
 
-/* ── Panel izquierdo (mismo que Inventario) ── */
+/* ── Panel izquierdo ── */
 const PanelAlmacenes = styled.aside`
-    width: 220px; flex-shrink: 0;
+    width: 230px; flex-shrink: 0;
     border-right: 1px solid ${({ theme }) => theme.color2};
-    padding: 24px 12px;
+    padding: 24px 10px;
     display: flex; flex-direction: column; gap: 4px;
     background: ${({ theme }) => theme.bgcards};
+    overflow-y: auto;
 `;
 const PanelTitulo = styled.div`
     font-size: 11px; font-weight: 800; letter-spacing: 1.2px;
     text-transform: uppercase; color: ${({ theme }) => theme.colorsubtitlecard};
     padding: 0 8px; margin-bottom: 12px;
 `;
-const GrupoSucursal = styled.div`margin-bottom: 12px;`;
+const SinAlmacenes = styled.div`
+    font-size: 12px; color: ${({ theme }) => theme.colorsubtitlecard};
+    text-align: center; padding: 20px 8px;
+`;
+
+/* ── Empresa level (superadmin) ── */
+const GrupoEmpresa = styled.div`margin-bottom: 4px;`;
+const EmpresaItem = styled.button`
+    width: 100%; display: flex; align-items: center; gap: 7px;
+    padding: 9px 10px; border-radius: 10px;
+    border: 1.5px solid ${({ $activa, theme }) => $activa ? "rgba(248,133,51,0.4)" : theme.color2};
+    background: ${({ $activa, theme }) => $activa ? "rgba(248,133,51,0.08)" : theme.bgtotal};
+    cursor: pointer; transition: all 0.15s; text-align: left;
+    &:hover { border-color: rgba(248,133,51,0.3); background: rgba(248,133,51,0.05); }
+    .icono-empresa { font-size: 13px; color: #f88533; flex-shrink: 0; }
+    .nombre-empresa {
+        flex: 1; font-size: 12px; font-weight: 800; color: ${({ theme }) => theme.text};
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.1px;
+    }
+    .chevron { font-size: 16px; color: ${({ theme }) => theme.colorsubtitlecard}; flex-shrink: 0; transition: transform 0.2s; }
+    .chevron.abierto { transform: rotate(180deg); }
+`;
+const ContenidoEmpresa = styled.div`
+    padding-left: 10px;
+    animation: ${slideDown} 0.18s ease;
+`;
+
+/* ── Sucursal level ── */
+const GrupoSucursal = styled.div`margin-bottom: 8px;`;
 const GrupoLabel = styled.div`
     display: flex; align-items: center; gap: 5px;
     font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
     text-transform: uppercase; color: ${({ theme }) => theme.colorsubtitlecard};
-    padding: 4px 8px; margin-bottom: 4px; opacity: 0.7;
+    padding: 4px 8px; margin-bottom: 3px; opacity: 0.7;
 `;
+
+/* ── Almacen level ── */
 const AlmacenItem = styled.button`
     width: 100%; display: flex; align-items: center; gap: 10px;
-    padding: 10px; border-radius: 10px; border: none;
+    padding: 9px 10px; border-radius: 10px; border: none;
     background: ${({ $activo, $color }) => $activo ? `${$color}18` : "transparent"};
     cursor: pointer; text-align: left;
     outline: ${({ $activo, $color }) => $activo ? `1.5px solid ${$color}50` : "none"};
@@ -443,12 +600,12 @@ const AlmacenItem = styled.button`
     &:hover { background: ${({ $color }) => `${$color}12`}; }
 `;
 const AlmacenDot = styled.div`
-    width: 10px; height: 10px; border-radius: 50%;
+    width: 9px; height: 9px; border-radius: 50%;
     background: ${({ $color }) => $color}; flex-shrink: 0;
 `;
 const AlmacenInfo = styled.div`
     flex: 1; display: flex; flex-direction: column; min-width: 0;
-    .nombre { font-size: 13px; font-weight: 700; color: ${({ theme }) => theme.text}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nombre { font-size: 12px; font-weight: 700; color: ${({ theme }) => theme.text}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sucursal { font-size: 10px; color: ${({ theme }) => theme.colorsubtitlecard}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 `;
 const Chevron = styled.span`font-size: 18px; font-weight: 700; color: ${({ theme }) => theme.colorsubtitlecard};`;
@@ -465,7 +622,11 @@ const AlmacenHeader = styled.div`
     border-radius: 12px; padding: 16px 20px;
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
 `;
-const HeaderLeft = styled.div`display: flex; flex-direction: column; gap: 4px;`;
+const HeaderLeft = styled.div`display: flex; flex-direction: column; gap: 3px;`;
+const EmpresaTag = styled.div`
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 700; color: #f88533; letter-spacing: 0.2px;
+`;
 const AlmacenNombre = styled.div`font-size: 18px; font-weight: 900; color: ${({ theme }) => theme.text};`;
 const AlmacenSucursal = styled.div`font-size: 12px; font-weight: 600; color: ${({ theme }) => theme.colorsubtitlecard};`;
 
@@ -521,14 +682,9 @@ const FilaTr = styled.tr`
 `;
 const NombreProd = styled.span`font-weight: 700;`;
 const UsuarioBadge = styled.span`
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 700;
-    background: rgba(99,102,241,0.12);
-    color: #818cf8;
-    white-space: nowrap;
+    display: inline-block; padding: 2px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+    background: rgba(99,102,241,0.12); color: #818cf8; white-space: nowrap;
 `;
 const TipoBadge = styled.span`
     display: inline-flex; align-items: center; gap: 5px;
@@ -649,7 +805,6 @@ const BtnLimpiar = styled.button`
     font-size: 14px; cursor: pointer;
     &:hover { background: rgba(248,113,113,0.2); }
 `;
-
 const BtnCancelar = styled.button`
     flex: 1; padding: 11px; border-radius: 10px;
     border: 1px solid ${({ theme }) => theme.color2};

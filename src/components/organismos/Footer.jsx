@@ -6,17 +6,17 @@ export function Footer() {
       <section className="lock">
         <GiPadlock />
         <span>
-          Esta es una página segura de codigo369. Si tienes dudas sobre la
+          Esta es una página segura de ADMA BI. Si tienes dudas sobre la
           autenticidad de la web, comunícate con
-          <br /> nosotros al 311-9898 o a través de nuestros medios digitales.
+          <br /> nosotros al 311 830 3017 solo por WhatsApp.
         </span>
       </section>
       <section className="derechos">
-        <span>Ada369 S.A - RUC: 20100047218</span>
+        <span>ADMA BI</span>
         <div className="separador"></div>
         <span>Todos los derechos reservados</span>
         <div className="separador"></div>
-        <span>© 2023 codigo369.com</span>
+        <span>© 2026 adma.bi</span>
       </section>
     </Container>
   );
@@ -25,18 +25,22 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   font-size: 12.2px;
-  color: #91a4b7;
+  color: ${({ theme }) => theme.colorSubtitle ?? "#91a4b7"};
   gap:5px;
   margin:10px;
   .lock {
     border-bottom: 1px solid rgba(145, 164, 183,0.3);
-    gap:5px;
-    display:flex;
-    align-items:center;
+    gap: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding-bottom: 6px;
   }
   .derechos {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 16px;
    .separador{
     width:1px;
     background-color:rgba(145, 164, 183,0.3);

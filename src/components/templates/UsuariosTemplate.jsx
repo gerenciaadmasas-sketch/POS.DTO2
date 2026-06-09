@@ -5,6 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { useEmpresaStore } from "../../store/EmpresaStore";
 import { useSucursalesStore } from "../../store/SucursalesStore";
 import { useAlmacenesConfigStore } from "../../store/AlmacenesConfigStore";
+import { useUsuariosStore } from "../../store/UsuariosStore";
 import {
     ListarUsuariosEmpresa, CrearUsuarioEmpleado,
     ActualizarUsuario, EliminarUsuarioEmpleado,
@@ -33,7 +34,7 @@ const PERMISOS = [
     { key: "serializacion",           label: "Serialización de comprobantes" },
 ];
 
-const TIPOS = ["cajero", "administrador", "supervisor"];
+const TIPOS = ["cajero", "supervisor", "administrador"];
 
 const TIPO_COLORS = {
     cajero:        { bg: "rgba(96,165,250,0.12)",  color: "#60a5fa" },
@@ -58,8 +59,10 @@ export function UsuariosTemplate() {
     const { dataempresa }    = useEmpresaStore();
     const { dataSucursales, mostrarSucursales } = useSucursalesStore();
     const { dataAlmacenes, mostrarAlmacenes }   = useAlmacenesConfigStore();
+    const { datausuarios }   = useUsuariosStore();
     const queryClient = useQueryClient();
-    const id_empresa = dataempresa?.id;
+    const id_empresa  = dataempresa?.id;
+    const sucursalCreador = datausuarios?.id_sucursal ?? null;
 
     const [modalAbierto, setModalAbierto] = useState(false);
     const [editando,     setEditando]     = useState(null); // usuario a editar
@@ -84,13 +87,13 @@ export function UsuariosTemplate() {
     });
 
     const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm({
-        defaultValues: { usuario: "", password: "", nombres: "", nro_doc: "", telefono: "", id_sucursal: "", id_almacen: "", tipo: "cajero" },
+        defaultValues: { usuario: "", password: "", nombres: "", apellidos: "", nro_doc: "", telefono: "", id_sucursal: "", id_almacen: "", tipo: "cajero" },
     });
 
     const tipoWatched = watch("tipo");
 
     function abrirNuevo() {
-        reset({ usuario: "", password: "", nombres: "", nro_doc: "", telefono: "", id_sucursal: "", id_almacen: "", tipo: "cajero" });
+        reset({ usuario: "", password: "", nombres: "", apellidos: "", nro_doc: "", telefono: "", id_sucursal: "", id_almacen: "", tipo: "cajero" });
         setPermisos(permisosFromTipo("cajero"));
         setEditando(null);
         setModalAbierto(true);
@@ -98,11 +101,12 @@ export function UsuariosTemplate() {
 
     function abrirEditar(u) {
         reset({
-            usuario:     u.usuario    ?? "",
+            usuario:     u.usuario     ?? "",
             password:    "",
-            nombres:     u.nombres    ?? "",
-            nro_doc:     u.nro_doc    ?? "",
-            telefono:    u.telefono   ?? "",
+            nombres:     u.nombres     ?? "",
+            apellidos:   u.apellidos   ?? "",
+            nro_doc:     u.nro_doc     ?? "",
+            telefono:    u.telefono    ?? "",
             id_sucursal: u.id_sucursal ?? "",
             id_almacen:  u.id_almacen  ?? "",
             tipo:        u.tipo        ?? "cajero",
@@ -123,14 +127,19 @@ export function UsuariosTemplate() {
         setPermisos(permisosFromTipo(tipo));
     }
 
+    const getSucursalDeAlmacen = (id_almacen) =>
+        dataAlmacenes?.find(a => String(a.id) === String(id_almacen))?.id_sucursal ?? null;
+
     const mutCrear = useMutation({
         mutationFn: (vals) => CrearUsuarioEmpleado({
             ...vals,
             id_empresa,
             permisos,
             email:       `${vals.usuario}@emp${id_empresa}.pos`,
-            id_sucursal: vals.tipo === "supervisor"    ? (vals.id_sucursal || null) : null,
-            id_almacen:  vals.tipo === "cajero"        ? (vals.id_almacen  || null) : null,
+            id_almacen:  vals.tipo === "cajero"      ? (vals.id_almacen  || null) : null,
+            id_sucursal: vals.tipo === "supervisor"  ? (vals.id_sucursal || null)
+                       : vals.tipo === "cajero"      ? getSucursalDeAlmacen(vals.id_almacen)
+                       : sucursalCreador,
         }),
         onSuccess: () => {
             toastExito("Usuario creado", "Usuarios");
@@ -143,10 +152,13 @@ export function UsuariosTemplate() {
         mutationFn: (vals) => ActualizarUsuario({
             id:          editando.id,
             nombres:     vals.nombres,
+            apellidos:   vals.apellidos,
             nro_doc:     vals.nro_doc,
             telefono:    vals.telefono,
-            id_sucursal: vals.tipo === "supervisor"    ? (vals.id_sucursal || null) : null,
-            id_almacen:  vals.tipo === "cajero"        ? (vals.id_almacen  || null) : null,
+            id_almacen:  vals.tipo === "cajero"      ? (vals.id_almacen  || null) : null,
+            id_sucursal: vals.tipo === "supervisor"  ? (vals.id_sucursal || null)
+                       : vals.tipo === "cajero"      ? getSucursalDeAlmacen(vals.id_almacen)
+                       : sucursalCreador,
             tipo:        vals.tipo,
             permisos,
         }),
@@ -195,12 +207,13 @@ export function UsuariosTemplate() {
                         : u.tipo === "supervisor"
                         ? (dataSucursales?.find(s => s.id === u.id_sucursal)?.nombre ?? "Sin sucursal")
                         : "Toda la empresa";
+                    const nombreCompleto = [u.nombres, u.apellidos].filter(Boolean).join(" ") || "Sin nombre";
                     const inicial = (u.nombres ?? "?")[0]?.toUpperCase();
                     return (
                         <UserCard key={u.id}>
                             <UserAvatar>{inicial}</UserAvatar>
                             <UserInfo>
-                                <UserNombre>{u.nombres ?? "Sin nombre"}</UserNombre>
+                                <UserNombre>{nombreCompleto}</UserNombre>
                                 <UserEmail>@{u.usuario ?? u.email ?? "—"}</UserEmail>
                                 <UserMeta>
                                     <TipoBadge $bg={tc.bg} $color={tc.color}>{u.tipo ?? "cajero"}</TipoBadge>
@@ -257,14 +270,24 @@ export function UsuariosTemplate() {
                                     </Campo>
                                 )}
 
-                                <Campo>
-                                    <label>Nombres</label>
-                                    <Input
-                                        placeholder="Nombre completo"
-                                        {...register("nombres", { required: true })}
-                                        $error={!!errors.nombres}
-                                    />
-                                </Campo>
+                                <FilaDos>
+                                    <Campo>
+                                        <label>Nombre</label>
+                                        <Input
+                                            placeholder="Ej: Juan"
+                                            {...register("nombres", { required: true })}
+                                            $error={!!errors.nombres}
+                                        />
+                                    </Campo>
+                                    <Campo>
+                                        <label>Apellido</label>
+                                        <Input
+                                            placeholder="Ej: Pérez"
+                                            {...register("apellidos", { required: true })}
+                                            $error={!!errors.apellidos}
+                                        />
+                                    </Campo>
+                                </FilaDos>
 
                                 <FilaDos>
                                     <Campo>

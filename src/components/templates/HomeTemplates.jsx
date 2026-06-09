@@ -35,6 +35,7 @@ export function HomeTemplates() {
 
     const esCajero = datausuarios?.tipo === "cajero";
     const accesos  = esCajero ? ACCESOS_CAJERO : ACCESOS_ADMIN;
+    // superadmin cae en ACCESOS_ADMIN (mismo flujo que administrador por ahora)
 
     const hora = new Date().getHours();
     const saludo = hora < 12 ? "Buenos días" : hora < 18 ? "Buenas tardes" : "Buenas noches";

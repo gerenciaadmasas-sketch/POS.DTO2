@@ -8,17 +8,23 @@ import { useAuthStore } from "../../../store/AuthStore";
 import { useEmpresaStore } from "../../../store/EmpresaStore";
 import { useUsuariosStore } from "../../../store/UsuariosStore";
 
-const LINKS_CAJERO = ["/", "/pos", "/inventario"];
-const LINKS_ADMIN  = ["/", "/inventario", "/kardex", "/reportes", "/arqueo"]; // sin POS
+const LINKS_CAJERO     = ["/", "/pos", "/inventario"];
+const LINKS_ADMIN      = ["/", "/inventario", "/kardex", "/reportes", "/arqueo"];
+const LINKS_SUPERADMIN = ["/", "/inventario", "/kardex", "/reportes", "/arqueo"];
 
 export function Sidebar({ state, setState }) {
     const { cerrarSesion } = useAuthStore();
     const { dataempresa } = useEmpresaStore();
     const { datausuarios } = useUsuariosStore();
 
-    const esCajero = datausuarios?.tipo === "cajero";
+    const tipo = datausuarios?.tipo;
+    const esCajero     = tipo === "cajero";
+    const esSuperAdmin = tipo === "superadmin";
+
     const linksVisibles = esCajero
         ? LinksArray.filter(l => LINKS_CAJERO.includes(l.to))
+        : esSuperAdmin
+        ? LinksArray.filter(l => LINKS_SUPERADMIN.includes(l.to))
         : LinksArray.filter(l => LINKS_ADMIN.includes(l.to));
 
     return (
@@ -51,7 +57,7 @@ export function Sidebar({ state, setState }) {
 
                 <Divider />
 
-                {!esCajero && SecondarylinksArray.map(({ icon, label, to, color }) => (
+                {(!esCajero) && SecondarylinksArray.map(({ icon, label, to, color }) => (
                     <NavLink
                         key={label}
                         to={to}

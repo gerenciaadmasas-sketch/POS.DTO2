@@ -4,16 +4,26 @@ import { useAuthStore } from "../../store/AuthStore";
 import { Footer } from "../organismos/Footer";
 import { v } from "../../styles/variables";
 import { ObtenerEmailPorUsuario } from "../../supabase/crudUsuarios";
+import { RiArrowLeftSLine } from "react-icons/ri";
 
 const modos = [
     {
         key: "superadmin",
         titulo: "Super admin",
-        desc: "crea y gestiona tu empresa",
+        desc: "acceso exclusivo del sistema",
         emoji: "👑",
         bg: "#E8891A",
         shadow: "#B56B12",
         border: "#F5A14299",
+    },
+    {
+        key: "administrador",
+        titulo: "Administrador",
+        desc: "gestiona tu negocio",
+        emoji: "😎",
+        bg: "#0f3460",
+        shadow: "#081f3f",
+        border: "#1a5276aa",
     },
     {
         key: "supervisor",
@@ -36,12 +46,26 @@ const modos = [
 ];
 
 export function LoginTemplate() {
-    const { loginGoogle, loginEmail } = useAuthStore();
+    const { loginEmail } = useAuthStore();
     const [modo, setModo] = useState(null);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [cargando, setCargando] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
+
+    const TIPO_POR_MODO = {
+        cajero:        "cajero",
+        supervisor:    "supervisor",
+        administrador: "administrador",
+        superadmin:    "superadmin",
+    };
+
+    const LABEL_POR_MODO = {
+        cajero:        "cajeros",
+        supervisor:    "supervisores",
+        administrador: "administradores",
+        superadmin:    "super admins",
+    };
 
     const handleLoginEmail = async (e) => {
         e.preventDefault();
@@ -49,12 +73,17 @@ export function LoginTemplate() {
         setCargando(true);
         setErrorMsg("");
         try {
-            const realEmail = await ObtenerEmailPorUsuario(email.trim());
-            if (!realEmail) {
+            const resultado = await ObtenerEmailPorUsuario(email.trim());
+            if (!resultado || !resultado.email) {
                 setErrorMsg("Usuario no encontrado. Verifica con tu administrador.");
                 return;
             }
-            await loginEmail({ email: realEmail, password });
+            const tipoEsperado = TIPO_POR_MODO[modo];
+            if (resultado.tipo !== tipoEsperado) {
+                setErrorMsg(`Este acceso es solo para ${LABEL_POR_MODO[modo]}.`);
+                return;
+            }
+            await loginEmail({ email: resultado.email, password });
         } catch (err) {
             setErrorMsg("Credenciales incorrectas. Verifica con tu administrador.");
         } finally {
@@ -97,25 +126,46 @@ export function LoginTemplate() {
                     </PanelSeleccion>
                 ) : modo === "superadmin" ? (
                     <PanelLogin key="superadmin">
-                        <BtnVolver onClick={volverAModo}>← volver</BtnVolver>
+                        <BtnVolver onClick={volverAModo}><RiArrowLeftSLine size={18} /> volver</BtnVolver>
                         <Logo>
                             <img src={v.logo} alt="logo" />
                             <span>POS DL v1</span>
                         </Logo>
                         <BadgeModoActivo $color="#C8720F">👑 Super admin</BadgeModoActivo>
-                        <BtnGoogle onClick={loginGoogle}>
-                            <v.iconogoogle size={22} />
-                            <span>Continuar con Google</span>
-                        </BtnGoogle>
+                        <Form onSubmit={handleLoginEmail}>
+                            <InputField
+                                type="text"
+                                placeholder="Usuario"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                autoFocus
+                                required
+                            />
+                            <InputField
+                                type="password"
+                                placeholder="Contraseña"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
+                            {errorMsg && <MsgError>{errorMsg}</MsgError>}
+                            <BtnIngresar type="submit" disabled={cargando || !email || !password} $gold>
+                                {cargando ? "Ingresando..." : "Ingresar"}
+                            </BtnIngresar>
+                        </Form>
                     </PanelLogin>
                 ) : (
                     <PanelLogin key={modo}>
-                        <BtnVolver onClick={volverAModo}>← volver</BtnVolver>
+                        <BtnVolver onClick={volverAModo}><RiArrowLeftSLine size={18} /> volver</BtnVolver>
                         <Logo>
                             <img src={v.logo} alt="logo" />
                             <span>POS DL v1</span>
                         </Logo>
-                        <BadgeModoActivo $color={modo === "supervisor" ? "#888" : "#3a2010"}>
+                        <BadgeModoActivo $color={
+                            modo === "supervisor"    ? "#aaa"    :
+                            modo === "administrador" ? "#60a5fa" :
+                            "#f88533"
+                        }>
                             {modos.find(m => m.key === modo)?.emoji} {modos.find(m => m.key === modo)?.titulo}
                         </BadgeModoActivo>
                         <Form onSubmit={handleLoginEmail}>
@@ -135,7 +185,7 @@ export function LoginTemplate() {
                                 required
                             />
                             {errorMsg && <MsgError>{errorMsg}</MsgError>}
-                            <BtnIngresar type="submit" disabled={cargando || !email || !password} $gray={modo === "supervisor"}>
+                            <BtnIngresar type="submit" disabled={cargando || !email || !password} $gray={modo === "supervisor"} $blue={modo === "administrador"}>
                                 {cargando ? "Ingresando..." : "Ingresar"}
                             </BtnIngresar>
                         </Form>
@@ -156,7 +206,7 @@ const fadeUp = keyframes`
 /* ── Layout base ───────────────────────────── */
 const Fondo = styled.div`
     min-height: 100vh;
-    background: #e8eaed;
+    background: ${({ theme }) => theme.bgtotal};
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -186,7 +236,7 @@ const Logo = styled.div`
     span {
         font-weight: 800;
         font-size: 15px;
-        color: #222;
+        color: ${({ theme }) => theme.text};
         letter-spacing: 0.3px;
     }
 `;
@@ -202,7 +252,7 @@ const Titulo = styled.h2`
     text-align: center;
     font-size: 26px;
     font-weight: 900;
-    color: #111;
+    color: ${({ theme }) => theme.text};
     margin: 0 0 4px;
     letter-spacing: -0.3px;
 `;
@@ -268,14 +318,29 @@ const PanelLogin = styled.div`
 
 const BtnVolver = styled.button`
     align-self: flex-start;
-    background: none;
-    border: none;
-    color: #555;
-    font-size: 14px;
-    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 7px 14px 7px 10px;
+    border-radius: 999px;
+    border: 1.5px solid ${({ theme }) => theme.color2};
+    background: ${({ theme }) => theme.bgcards};
+    color: ${({ theme }) => theme.colorsubtitlecard};
+    font-size: 13px;
+    font-weight: 700;
+    font-family: "Poppins", sans-serif;
     cursor: pointer;
-    padding: 0;
-    &:hover { color: #111; }
+    letter-spacing: 0.2px;
+    transition: all 0.18s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    &:hover {
+        border-color: #f88533;
+        color: #f88533;
+        background: rgba(248,133,51,0.08);
+        transform: translateX(-2px);
+        box-shadow: 0 4px 14px rgba(248,133,51,0.15);
+    }
+    &:active { transform: translateX(0); }
 `;
 
 const BadgeModoActivo = styled.div`
@@ -287,26 +352,6 @@ const BadgeModoActivo = styled.div`
     letter-spacing: 0.3px;
 `;
 
-const BtnGoogle = styled.button`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    padding: 14px;
-    border-radius: 14px;
-    border: 2px solid #d1d5db;
-    background: #fff;
-    color: #222;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08), 4px 4px 0 #d1d5db;
-    transition: box-shadow 0.1s, transform 0.1s;
-    &:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12), 4px 4px 0 #d1d5db; }
-    &:active { box-shadow: 2px 2px 0 #d1d5db; transform: translate(2px, 2px); }
-    span { font-family: "Poppins", sans-serif; }
-`;
 
 /* ── Formulario empleado ───────────────────── */
 const Form = styled.form`
@@ -319,16 +364,17 @@ const InputField = styled.input`
     width: 100%;
     padding: 13px 16px;
     border-radius: 12px;
-    border: 2px solid #d1d5db;
-    background: #fff;
-    color: #111;
+    border: 2px solid ${({ theme }) => theme.color2};
+    background: ${({ theme }) => theme.bgcards};
+    color: ${({ theme }) => theme.text};
     font-size: 15px;
     font-family: "Poppins", sans-serif;
     outline: none;
     box-sizing: border-box;
     transition: border-color 0.2s;
-    &:focus { border-color: #1C1108; }
-    &::placeholder { color: #9ca3af; }
+    &:focus { border-color: #f88533; }
+    &::placeholder { color: ${({ theme }) => theme.colorSubtitle}; }
+    &::-ms-reveal { filter: invert(1); }
 `;
 
 const MsgError = styled.p`
@@ -347,16 +393,25 @@ const BtnIngresar = styled.button`
     width: 100%;
     padding: 14px;
     border-radius: 14px;
-    border: 2px solid ${({ disabled, $gray }) => disabled ? "#9ca3af" : $gray ? "#111" : "#0A0603"};
-    background: ${({ disabled, $gray }) => disabled ? "#9ca3af" : $gray ? "#2d2d2d" : "#1C1108"};
+    border: 2px solid ${({ disabled, $gold, $gray, $blue }) =>
+        disabled ? "#9ca3af" : $gold ? "#B56B12" : $blue ? "#1e40af" : $gray ? "#111" : "#0A0603"};
+    background: ${({ disabled, $gold, $gray, $blue }) =>
+        disabled ? "#9ca3af" : $gold ? "#E8891A" : $blue ? "#1d4ed8" : $gray ? "#2d2d2d" : "#1C1108"};
     color: #fff;
     font-size: 15px;
     font-weight: 800;
     cursor: ${({ disabled }) => disabled ? "not-allowed" : "pointer"};
     letter-spacing: 0.5px;
-    box-shadow: ${({ disabled, $gray }) => disabled ? "none" : $gray ? "4px 4px 0 #111" : "4px 4px 0 #0A0603"};
+    box-shadow: ${({ disabled, $gold, $gray, $blue }) =>
+        disabled ? "none" : $gold ? "4px 4px 0 #B56B12" : $blue ? "4px 4px 0 #1e40af" : $gray ? "4px 4px 0 #111" : "4px 4px 0 #0A0603"};
     transition: box-shadow 0.1s, transform 0.1s;
     &:active {
-        ${({ disabled, $gray }) => !disabled && ($gray ? "box-shadow: 2px 2px 0 #111; transform: translate(2px, 2px);" : "box-shadow: 2px 2px 0 #0A0603; transform: translate(2px, 2px);")}
+        ${({ disabled, $gold, $gray, $blue }) => !disabled && (
+            $gold ? "box-shadow: 2px 2px 0 #B56B12; transform: translate(2px, 2px);" :
+            $blue ? "box-shadow: 2px 2px 0 #1e40af; transform: translate(2px, 2px);" :
+            $gray ? "box-shadow: 2px 2px 0 #111; transform: translate(2px, 2px);" :
+                    "box-shadow: 2px 2px 0 #0A0603; transform: translate(2px, 2px);"
+        )}
     }
 `;
+
