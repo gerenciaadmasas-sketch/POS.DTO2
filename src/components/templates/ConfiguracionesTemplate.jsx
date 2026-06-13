@@ -27,7 +27,8 @@ export function ConfiguracionesTemplate() {
         <Container>
             <Grid id="cards" ref={gridRef}>
                 {dataModulos.map((item, index) => {
-                    const activo = item.check ?? item.state;
+                    // Si tiene link definido, es navegable — ignora campo activo/check/state del DB
+                    const activo = !!(item.link);
                     const isUrl = item.icono?.startsWith("http");
                     return (
                         <CardWrap key={index} className="card" $activo={activo}>
