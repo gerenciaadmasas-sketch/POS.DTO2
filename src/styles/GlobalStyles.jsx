@@ -1,31 +1,52 @@
-import {createGlobalStyle} from "styled-components"
+import { createGlobalStyle } from "styled-components";
+
 export const GlobalStyles = createGlobalStyle`
-    body{
-        margin:0;
-        padding:0;
-        box-sizing:border-box;
-        background-color:${({theme})=>theme.bgtotal};
-        font-family:"Poppins",sans-serif;
-        color:#fff;
+    *, *::before, *::after {
+        box-sizing: border-box;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
 
-    /* Toasts POS */
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: ${({ theme }) => theme.bgtotal};
+        font-family: "Poppins", sans-serif;
+        color: ${({ theme }) => theme.text};
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    /* ── Scrollbar global ─────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+        background: ${({ theme }) => theme.color2};
+        border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: ${({ theme }) => theme.colorScroll};
+    }
+
+    /* ── Toasts ───────────────────────────────── */
     .toast-pos {
-        border-radius: 12px !important;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.35) !important;
         padding: 12px 16px !important;
         min-width: 280px !important;
         max-width: 380px !important;
-        border: 1px solid rgba(255,255,255,0.08) !important;
+        border: 1px solid rgba(255,255,255,0.06) !important;
+        font-family: "Poppins", sans-serif !important;
+        backdrop-filter: blur(12px) !important;
     }
     .swal-pos {
-        border-radius: 16px !important;
-        border: 1px solid rgba(255,255,255,0.08) !important;
+        border-radius: 18px !important;
+        border: 1px solid rgba(255,255,255,0.06) !important;
+        font-family: "Poppins", sans-serif !important;
     }
     .swal2-timer-progress-bar {
-        opacity: 0.5 !important;
+        opacity: 0.45 !important;
+        background: #f88533 !important;
     }
-    /* Ícono sin círculo */
     .toast-pos .swal2-icon {
         border: none !important;
         margin: 0 !important;
@@ -37,4 +58,4 @@ export const GlobalStyles = createGlobalStyle`
         font-size: 22px !important;
         line-height: 1 !important;
     }
-`
+`;

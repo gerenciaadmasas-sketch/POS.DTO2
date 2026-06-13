@@ -423,10 +423,15 @@ const StatsRow = styled.div`
 const StatCard = styled.div`
     background: ${({ theme }) => theme.bgcards};
     border: 1px solid ${({ theme }) => theme.color2};
-    border-radius: 14px;
+    border-radius: 16px;
     padding: 18px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
     opacity: ${({ $loading }) => $loading ? 0.6 : 1};
-    transition: opacity 0.2s;
+    transition: opacity 0.2s, transform 0.15s, box-shadow 0.15s;
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    }
 `;
 
 const StatTop = styled.div`

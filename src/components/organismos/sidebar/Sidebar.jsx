@@ -2,11 +2,12 @@ import styled from "styled-components";
 import { ToggleTema } from "../ToggleTema";
 import { LinksArray, SecondarylinksArray } from "../../../utils/dataEstatica";
 import { v } from "../../../styles/variables";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useAuthStore } from "../../../store/AuthStore";
 import { useEmpresaStore } from "../../../store/EmpresaStore";
 import { useUsuariosStore } from "../../../store/UsuariosStore";
+import { ROLES_DARK } from "../../../store/ThemeStore";
 
 const LINKS_CAJERO     = ["/", "/pos", "/inventario"];
 const LINKS_ADMIN      = ["/", "/inventario", "/kardex", "/reportes", "/arqueo"];
@@ -88,10 +89,12 @@ export function Sidebar({ state, setState, onNavClick }) {
                 </BtnSalir>
             </Nav>
 
-            {/* Toggle tema */}
-            <Bottom>
-                <ToggleTema />
-            </Bottom>
+            {/* Toggle tema — solo visible para cajero */}
+            {esCajero && (
+                <Bottom>
+                    <ToggleTema />
+                </Bottom>
+            )}
         </Wrap>
     );
 }
@@ -103,14 +106,15 @@ const Wrap = styled.aside`
     top: 0; left: 0;
     height: 100%;
     width: ${({ $isopen }) => $isopen ? "240px" : "76px"};
-    background: ${({ theme }) => theme.bgtotal};
+    background: ${({ theme }) => theme.bgcards};
     border-right: 1px solid ${({ theme }) => theme.color2};
+    box-shadow: 2px 0 20px rgba(0,0,0,0.08);
     display: flex;
     flex-direction: column;
     align-items: ${({ $isopen }) => $isopen ? "stretch" : "center"};
     padding: 20px 10px 16px;
     gap: 6px;
-    transition: width 0.2s ease;
+    transition: width 0.22s cubic-bezier(0.4,0,0.2,1);
     overflow: hidden;
     z-index: 100;
     box-sizing: border-box;
@@ -129,8 +133,8 @@ const Wrap = styled.aside`
         align-items: stretch !important;
         padding: 20px 12px 20px;
         transform: ${({ $isopen }) => $isopen ? "translateX(0)" : "translateX(-100%)"};
-        transition: transform 0.25s ease;
-        box-shadow: ${({ $isopen }) => $isopen ? "4px 0 24px rgba(0,0,0,0.35)" : "none"};
+        transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+        box-shadow: ${({ $isopen }) => $isopen ? "6px 0 32px rgba(0,0,0,0.4)" : "none"};
     }
 `;
 
@@ -245,8 +249,8 @@ const Nav = styled.nav`
         }
 
         &.active {
-            background: rgba(37, 99, 235, 0.15);
-            color: #60a5fa;
+            background: rgba(248, 133, 51, 0.12);
+            color: #f88533;
             .icon { filter: none; }
         }
     }
