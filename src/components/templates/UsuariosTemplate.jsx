@@ -393,6 +393,10 @@ const Page = styled.div`
     background: ${({ theme }) => theme.bgtotal};
     padding: 28px 28px;
     animation: ${fadeUp} 0.3s ease;
+
+    @media (max-width: 767px) {
+        padding: 68px 12px 20px;
+    }
 `;
 
 const TopBar = styled.div`

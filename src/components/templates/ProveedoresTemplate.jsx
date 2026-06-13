@@ -60,6 +60,8 @@ const Container = styled.div`
         "area2" 60px
         "main" auto;
 
+    @media (max-width: 767px) { padding-top: 68px; }
+
     .area1 {
         grid-area: area1;
         border-radius: 12px;

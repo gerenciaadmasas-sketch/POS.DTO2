@@ -334,6 +334,10 @@ const Page = styled.div`
     background: ${({ theme }) => theme.bgtotal};
     padding: 28px 24px;
     animation: ${fadeUp} 0.35s ease;
+
+    @media (max-width: 767px) {
+        padding: 68px 12px 20px;
+    }
 `;
 
 const TopBar = styled.div`
@@ -379,6 +383,10 @@ const Grid = styled.div`
     display: flex;
     gap: 20px;
     align-items: flex-start;
+
+    @media (max-width: 767px) {
+        flex-direction: column;
+    }
 `;
 
 const ColLeft = styled.div`
@@ -395,6 +403,10 @@ const ColRight = styled.div`
     display: flex;
     flex-direction: column;
     gap: 16px;
+
+    @media (max-width: 767px) {
+        width: 100%;
+    }
 `;
 
 /* ── Stat cards ── */
@@ -402,6 +414,10 @@ const StatsRow = styled.div`
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 14px;
+
+    @media (max-width: 600px) {
+        grid-template-columns: 1fr 1fr;
+    }
 `;
 
 const StatCard = styled.div`

@@ -234,6 +234,10 @@ const fadeUp = keyframes`from{opacity:0;transform:translateY(14px)}to{opacity:1;
 const Page = styled.div`
     min-height: 100vh; background: ${({ theme }) => theme.bgtotal};
     padding: 28px; animation: ${fadeUp} 0.3s ease;
+
+    @media (max-width: 767px) {
+        padding: 68px 12px 20px;
+    }
 `;
 
 const TopBar = styled.div`

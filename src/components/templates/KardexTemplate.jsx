@@ -537,6 +537,11 @@ const Layout = styled.div`
     min-height: 100vh;
     background: ${({ theme }) => theme.bgtotal};
     animation: ${fadeUp} 0.3s ease;
+
+    @media (max-width: 767px) {
+        flex-direction: column;
+        padding-top: 58px;
+    }
 `;
 
 /* ── Panel izquierdo ── */
@@ -547,11 +552,31 @@ const PanelAlmacenes = styled.aside`
     display: flex; flex-direction: column; gap: 4px;
     background: ${({ theme }) => theme.bgcards};
     overflow-y: auto;
+
+    @media (max-width: 767px) {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-right: none;
+        border-bottom: 1px solid ${({ theme }) => theme.color2};
+        padding: 10px 12px;
+        gap: 8px;
+        max-height: 120px;
+        &::-webkit-scrollbar { height: 3px; }
+        &::-webkit-scrollbar-thumb {
+            background: ${({ theme }) => theme.colorScroll};
+            border-radius: 10px;
+        }
+    }
 `;
 const PanelTitulo = styled.div`
     font-size: 11px; font-weight: 800; letter-spacing: 1.2px;
     text-transform: uppercase; color: ${({ theme }) => theme.colorsubtitlecard};
     padding: 0 8px; margin-bottom: 12px;
+
+    @media (max-width: 767px) { display: none; }
 `;
 const SinAlmacenes = styled.div`
     font-size: 12px; color: ${({ theme }) => theme.colorsubtitlecard};
@@ -559,7 +584,10 @@ const SinAlmacenes = styled.div`
 `;
 
 /* ── Empresa level (superadmin) ── */
-const GrupoEmpresa = styled.div`margin-bottom: 4px;`;
+const GrupoEmpresa = styled.div`
+    margin-bottom: 4px;
+    @media (max-width: 767px) { margin-bottom: 0; display: contents; }
+`;
 const EmpresaItem = styled.button`
     width: 100%; display: flex; align-items: center; gap: 7px;
     padding: 9px 10px; border-radius: 10px;
@@ -574,19 +602,29 @@ const EmpresaItem = styled.button`
     }
     .chevron { font-size: 16px; color: ${({ theme }) => theme.colorsubtitlecard}; flex-shrink: 0; transition: transform 0.2s; }
     .chevron.abierto { transform: rotate(180deg); }
+
+    @media (max-width: 767px) {
+        width: auto; flex-shrink: 0; padding: 7px 12px; border-radius: 20px; white-space: nowrap;
+        .chevron { display: none; }
+    }
 `;
 const ContenidoEmpresa = styled.div`
     padding-left: 10px;
     animation: ${slideDown} 0.18s ease;
+    @media (max-width: 767px) { padding-left: 0; display: contents; }
 `;
 
 /* ── Sucursal level ── */
-const GrupoSucursal = styled.div`margin-bottom: 8px;`;
+const GrupoSucursal = styled.div`
+    margin-bottom: 8px;
+    @media (max-width: 767px) { margin-bottom: 0; display: contents; }
+`;
 const GrupoLabel = styled.div`
     display: flex; align-items: center; gap: 5px;
     font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
     text-transform: uppercase; color: ${({ theme }) => theme.colorsubtitlecard};
     padding: 4px 8px; margin-bottom: 3px; opacity: 0.7;
+    @media (max-width: 767px) { display: none; }
 `;
 
 /* ── Almacen level ── */
@@ -598,6 +636,13 @@ const AlmacenItem = styled.button`
     outline: ${({ $activo, $color }) => $activo ? `1.5px solid ${$color}50` : "none"};
     transition: background 0.15s;
     &:hover { background: ${({ $color }) => `${$color}12`}; }
+
+    @media (max-width: 767px) {
+        width: auto; flex-shrink: 0; padding: 7px 12px; border-radius: 20px;
+        border: 1.5px solid ${({ $activo, $color, theme }) => $activo ? $color : theme.color2};
+        background: ${({ $activo, $color }) => $activo ? `${$color}22` : "transparent"};
+        outline: none; white-space: nowrap;
+    }
 `;
 const AlmacenDot = styled.div`
     width: 9px; height: 9px; border-radius: 50%;
@@ -608,12 +653,17 @@ const AlmacenInfo = styled.div`
     .nombre { font-size: 12px; font-weight: 700; color: ${({ theme }) => theme.text}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sucursal { font-size: 10px; color: ${({ theme }) => theme.colorsubtitlecard}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 `;
-const Chevron = styled.span`font-size: 18px; font-weight: 700; color: ${({ theme }) => theme.colorsubtitlecard};`;
+const Chevron = styled.span`
+    font-size: 18px; font-weight: 700; color: ${({ theme }) => theme.colorsubtitlecard};
+    @media (max-width: 767px) { display: none; }
+`;
 
 /* ── Contenido ── */
 const Contenido = styled.div`
     flex: 1; padding: 24px;
     display: flex; flex-direction: column; gap: 16px; min-width: 0;
+
+    @media (max-width: 767px) { padding: 12px; }
 `;
 const AlmacenHeader = styled.div`
     background: ${({ theme }) => theme.bgcards};
@@ -621,6 +671,8 @@ const AlmacenHeader = styled.div`
     border-left: 4px solid ${({ $color }) => $color};
     border-radius: 12px; padding: 16px 20px;
     display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+
+    @media (max-width: 767px) { padding: 12px 14px; }
 `;
 const HeaderLeft = styled.div`display: flex; flex-direction: column; gap: 3px;`;
 const EmpresaTag = styled.div`
@@ -642,7 +694,10 @@ const BtnNuevo = styled.button`
 `;
 
 /* ── Filtros ── */
-const FiltrosRow = styled.div`display: flex; gap: 8px; flex-wrap: wrap;`;
+const FiltrosRow = styled.div`
+    display: flex; gap: 8px; flex-wrap: wrap;
+    @media (max-width: 767px) { overflow-x: auto; flex-wrap: nowrap; &::-webkit-scrollbar { height: 0; } }
+`;
 const FiltroChip = styled.button`
     padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
     cursor: pointer; font-family: "Poppins", sans-serif;
@@ -656,7 +711,7 @@ const FiltroChip = styled.button`
 const TablaCard = styled.div`
     background: ${({ theme }) => theme.bgcards};
     border: 1px solid ${({ theme }) => theme.color2};
-    border-radius: 14px; overflow: hidden; flex: 1;
+    border-radius: 14px; overflow: auto; flex: 1;
 `;
 const Tabla = styled.table`width: 100%; border-collapse: collapse;`;
 const Th = styled.th`

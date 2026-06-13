@@ -422,6 +422,11 @@ const Layout = styled.div`
     min-height: 100vh;
     background: ${({ theme }) => theme.bgtotal};
     animation: ${fadeUp} 0.3s ease;
+
+    @media (max-width: 767px) {
+        flex-direction: column;
+        padding-top: 58px;
+    }
 `;
 
 /* ── Panel izquierdo ── */
@@ -435,6 +440,26 @@ const PanelAlmacenes = styled.aside`
     gap: 4px;
     background: ${({ theme }) => theme.bgcards};
     overflow-y: auto;
+
+    @media (max-width: 767px) {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-right: none;
+        border-bottom: 1px solid ${({ theme }) => theme.color2};
+        padding: 10px 12px;
+        gap: 8px;
+        max-height: 120px;
+
+        /* Ocultar scrollbar pero mantener scroll */
+        &::-webkit-scrollbar { height: 3px; }
+        &::-webkit-scrollbar-thumb {
+            background: ${({ theme }) => theme.colorScroll};
+            border-radius: 10px;
+        }
+    }
 `;
 
 const PanelTitulo = styled.div`
@@ -445,6 +470,10 @@ const PanelTitulo = styled.div`
     color: ${({ theme }) => theme.colorsubtitlecard};
     padding: 0 8px;
     margin-bottom: 12px;
+
+    @media (max-width: 767px) {
+        display: none;
+    }
 `;
 
 const SinAlmacenes = styled.div`
@@ -457,6 +486,11 @@ const SinAlmacenes = styled.div`
 /* ── Empresa level (superadmin) ── */
 const GrupoEmpresa = styled.div`
     margin-bottom: 4px;
+
+    @media (max-width: 767px) {
+        margin-bottom: 0;
+        display: contents;
+    }
 `;
 
 const EmpresaItem = styled.button`
@@ -504,11 +538,21 @@ const EmpresaItem = styled.button`
 const ContenidoEmpresa = styled.div`
     padding-left: 10px;
     animation: ${slideDown} 0.18s ease;
+
+    @media (max-width: 767px) {
+        padding-left: 0;
+        display: contents;
+    }
 `;
 
 /* ── Sucursal level ── */
 const GrupoSucursal = styled.div`
     margin-bottom: 8px;
+
+    @media (max-width: 767px) {
+        margin-bottom: 0;
+        display: contents;
+    }
 `;
 
 const GrupoLabel = styled.div`
@@ -523,6 +567,10 @@ const GrupoLabel = styled.div`
     padding: 4px 8px;
     margin-bottom: 3px;
     opacity: 0.7;
+
+    @media (max-width: 767px) {
+        display: none;
+    }
 `;
 
 /* ── Almacen level ── */
@@ -540,6 +588,17 @@ const AlmacenItem = styled.button`
     text-align: left;
     &:hover { background: ${({ $color }) => `${$color}12`}; }
     outline: ${({ $activo, $color }) => $activo ? `1.5px solid ${$color}50` : "none"};
+
+    @media (max-width: 767px) {
+        width: auto;
+        flex-shrink: 0;
+        padding: 7px 12px;
+        border-radius: 20px;
+        border: 1.5px solid ${({ $activo, $color, theme }) => $activo ? $color : theme.color2};
+        background: ${({ $activo, $color }) => $activo ? `${$color}22` : "transparent"};
+        outline: none;
+        white-space: nowrap;
+    }
 `;
 
 const AlmacenDot = styled.div`
@@ -576,6 +635,10 @@ const ChevronActivo = styled.span`
     font-weight: 700;
     color: ${({ theme }) => theme.colorsubtitlecard};
     flex-shrink: 0;
+
+    @media (max-width: 767px) {
+        display: none;
+    }
 `;
 
 /* ── Contenido ── */
@@ -586,6 +649,10 @@ const Contenido = styled.div`
     flex-direction: column;
     gap: 16px;
     min-width: 0;
+
+    @media (max-width: 767px) {
+        padding: 12px;
+    }
 `;
 
 const AlmacenHeader = styled.div`
@@ -599,6 +666,10 @@ const AlmacenHeader = styled.div`
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 12px;
+
+    @media (max-width: 767px) {
+        padding: 12px 14px;
+    }
 `;
 
 const HeaderLeft = styled.div`display: flex; flex-direction: column; gap: 3px;`;
@@ -625,7 +696,14 @@ const AlmacenSucursalTag = styled.div`
     color: ${({ theme }) => theme.colorsubtitlecard};
 `;
 
-const ResumenBadges = styled.div`display: flex; gap: 10px;`;
+const ResumenBadges = styled.div`
+    display: flex;
+    gap: 10px;
+
+    @media (max-width: 767px) {
+        gap: 6px;
+    }
+`;
 
 const Badge = styled.div`
     display: flex;
@@ -646,6 +724,12 @@ const Badge = styled.div`
         color: ${({ theme }) => theme.colorsubtitlecard};
         white-space: nowrap;
     }
+
+    @media (max-width: 767px) {
+        padding: 6px 10px;
+        .num { font-size: 16px; }
+        .lbl { font-size: 9px; }
+    }
 `;
 
 /* ── Filtros ── */
@@ -654,12 +738,23 @@ const FiltrosRow = styled.div`
     gap: 10px;
     flex-wrap: wrap;
     align-items: center;
+
+    @media (max-width: 767px) {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
 `;
 
 const SearchInput = styled.input`
     flex: 1;
     min-width: 180px;
     max-width: 320px;
+
+    @media (max-width: 767px) {
+        max-width: 100%;
+        width: 100%;
+    }
     padding: 9px 14px;
     border: 1px solid ${({ theme }) => theme.color2};
     border-radius: 9px;
@@ -672,7 +767,15 @@ const SearchInput = styled.input`
     &:focus { border-color: #2563eb; }
 `;
 
-const FiltrosBtns = styled.div`display: flex; gap: 6px;`;
+const FiltrosBtns = styled.div`
+    display: flex;
+    gap: 6px;
+
+    @media (max-width: 767px) {
+        overflow-x: auto;
+        &::-webkit-scrollbar { height: 0; }
+    }
+`;
 
 const FiltroBtn = styled.button`
     padding: 7px 14px;

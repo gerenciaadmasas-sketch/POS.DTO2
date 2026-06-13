@@ -12,7 +12,7 @@ const LINKS_CAJERO     = ["/", "/pos", "/inventario"];
 const LINKS_ADMIN      = ["/", "/inventario", "/kardex", "/reportes", "/arqueo"];
 const LINKS_SUPERADMIN = ["/", "/inventario", "/kardex", "/reportes", "/arqueo"];
 
-export function Sidebar({ state, setState }) {
+export function Sidebar({ state, setState, onNavClick }) {
     const { cerrarSesion } = useAuthStore();
     const { dataempresa } = useEmpresaStore();
     const { datausuarios } = useUsuariosStore();
@@ -40,18 +40,20 @@ export function Sidebar({ state, setState }) {
                     <img src={v.logo} alt="logo" />
                 </LogoImg>
                 {state && <LogoNombre>{dataempresa?.razon_social ?? "POS DL"}</LogoNombre>}
+                <LogoNombreMobile>{dataempresa?.razon_social ?? "POS DL"}</LogoNombreMobile>
             </LogoArea>
 
             {/* Links primarios */}
-            <Nav>
+            <Nav $isopen={state}>
                 {linksVisibles.map(({ icon, label, to }) => (
                     <NavLink
                         key={label}
                         to={to}
+                        onClick={onNavClick}
                         className={({ isActive }) => isActive ? "link active" : "link"}
                     >
                         <Icon icon={icon} className="icon" />
-                        {state && <span>{label}</span>}
+                        <span className="link-label">{label}</span>
                     </NavLink>
                 ))}
 
@@ -61,26 +63,28 @@ export function Sidebar({ state, setState }) {
                     <NavLink
                         key={label}
                         to={to}
+                        onClick={onNavClick}
                         className={({ isActive }) => isActive ? "link active" : "link"}
                     >
                         <Icon icon={icon} className="icon" color={color} />
-                        {state && <span>{label}</span>}
+                        <span className="link-label">{label}</span>
                     </NavLink>
                 ))}
 
                 {/* Mi Perfil */}
                 <NavLink
                     to="/perfil"
+                    onClick={onNavClick}
                     className={({ isActive }) => isActive ? "link active" : "link"}
                 >
                     <Icon icon="heroicons:user-circle-solid" className="icon" color="#60a5fa" />
-                    {state && <span>Mi Perfil</span>}
+                    <span className="link-label">Mi Perfil</span>
                 </NavLink>
 
                 {/* Salir */}
                 <BtnSalir onClick={cerrarSesion} $open={state}>
                     <Icon icon="heroicons:arrow-right-on-rectangle-solid" className="icon" color="#f87171" />
-                    {state && <span>Salir</span>}
+                    <span className="link-label">Salir</span>
                 </BtnSalir>
             </Nav>
 
@@ -108,16 +112,26 @@ const Wrap = styled.aside`
     gap: 6px;
     transition: width 0.2s ease;
     overflow: hidden;
-    z-index: 10;
+    z-index: 100;
     box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
 
     &::-webkit-scrollbar { width: 4px; }
     &::-webkit-scrollbar-thumb {
         background: ${({ theme }) => theme.colorScroll};
         border-radius: 10px;
     }
-    overflow-y: auto;
-    overflow-x: hidden;
+
+    /* ── Móvil: drawer deslizante ── */
+    @media (max-width: 767px) {
+        width: 260px !important;
+        align-items: stretch !important;
+        padding: 20px 12px 20px;
+        transform: ${({ $isopen }) => $isopen ? "translateX(0)" : "translateX(-100%)"};
+        transition: transform 0.25s ease;
+        box-shadow: ${({ $isopen }) => $isopen ? "4px 0 24px rgba(0,0,0,0.35)" : "none"};
+    }
 `;
 
 const BtnToggle = styled.button`
@@ -140,6 +154,10 @@ const BtnToggle = styled.button`
     transform: ${({ $isopen }) => $isopen ? "rotate(180deg)" : "rotate(0deg)"};
     font-size: 14px;
     padding: 0;
+
+    @media (max-width: 767px) {
+        display: none;
+    }
 `;
 
 const LogoArea = styled.div`
@@ -171,6 +189,24 @@ const LogoNombre = styled.span`
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 160px;
+    /* Ya visible en desktop cuando state=true, ocultar en móvil (usa LogoNombreMobile) */
+    @media (max-width: 767px) {
+        display: none;
+    }
+`;
+
+const LogoNombreMobile = styled.span`
+    display: none;
+    font-weight: 800;
+    font-size: 14px;
+    color: #f88533;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+    @media (max-width: 767px) {
+        display: block;
+    }
 `;
 
 const Nav = styled.nav`
@@ -199,6 +235,11 @@ const Nav = styled.nav`
             flex-shrink: 0;
         }
 
+        /* En desktop: mostrar label solo si sidebar abierto */
+        .link-label {
+            display: ${({ $isopen }) => $isopen ? "inline" : "none"};
+        }
+
         &:hover {
             background: ${({ theme }) => theme.bgAlpha};
         }
@@ -207,6 +248,13 @@ const Nav = styled.nav`
             background: rgba(37, 99, 235, 0.15);
             color: #60a5fa;
             .icon { filter: none; }
+        }
+    }
+
+    /* En móvil: siempre mostrar labels */
+    @media (max-width: 767px) {
+        .link .link-label {
+            display: inline !important;
         }
     }
 `;
@@ -236,6 +284,14 @@ const BtnSalir = styled.button`
     transition: background 0.15s;
 
     .icon { font-size: 24px; flex-shrink: 0; }
+
+    .link-label {
+        display: ${({ $open }) => $open ? "inline" : "none"};
+    }
+
+    @media (max-width: 767px) {
+        .link-label { display: inline !important; }
+    }
 
     &:hover { background: rgba(248, 113, 113, 0.12); color: #f87171; }
 `;

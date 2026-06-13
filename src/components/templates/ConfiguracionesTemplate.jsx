@@ -63,6 +63,10 @@ const Container = styled.div`
     padding: 24px 20px;
     box-sizing: border-box;
     overflow-y: auto;
+
+    @media (max-width: 767px) {
+        padding: 68px 12px 20px;
+    }
 `;
 
 const Grid = styled.div`

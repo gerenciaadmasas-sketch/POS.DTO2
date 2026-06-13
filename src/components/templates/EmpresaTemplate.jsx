@@ -269,6 +269,11 @@ const Layout = styled.div`
     box-sizing: border-box;
     align-items: flex-start;
     justify-content: center;
+
+    @media (max-width: 767px) {
+        padding: 68px 12px 20px;
+        flex-direction: column;
+    }
 `;
 
 const Main = styled.div`

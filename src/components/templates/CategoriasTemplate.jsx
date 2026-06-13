@@ -52,10 +52,12 @@ const Container = styled.div`
     height:calc(100vh - 30px);
     padding: 15px;
     display: grid;
-    grid-template: 
+    grid-template:
     "area1" 60px
     "area2" 60px
     "main" auto;
+
+    @media (max-width: 767px) { padding-top: 68px; }
     .area1{
     grid-area: area1;
     //background-color: rgba(103,93,241,0.14);

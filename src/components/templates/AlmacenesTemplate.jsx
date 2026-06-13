@@ -126,6 +126,11 @@ const Page = styled.div`
     flex-direction: column;
     align-items: center;
     padding: 40px 20px;
+
+    @media (max-width: 767px) {
+        padding: 72px 12px 20px;
+        align-items: stretch;
+    }
 `;
 
 const Cabecera = styled.div`
