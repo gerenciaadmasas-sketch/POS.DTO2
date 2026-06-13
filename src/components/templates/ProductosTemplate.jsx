@@ -32,7 +32,7 @@ export function ProductoTemplate() {
                 <Title>Productos</Title>
                 <Btn1
                     funcion={nuevoRegistro}
-                    bgcolor={v.colorPrincipal}
+                    bgcolor="#f88533"
                     titulo="nuevo"
                     icono={<v.iconoagregar />}
                 />
