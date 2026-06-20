@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { Almacenes, Categorias, Clientes, Configuraciones, Empresa, Home, Inventario, Kardex, Login, POS, Productos, Proveedores, Reportes, ProtectedRoute, UserAuth, useEmpresaStore, useUsuariosStore } from "../index"
+import { Almacenes, Categorias, Clientes, Configuraciones, Empresa, Home, Inventario, Kardex, Login, POS, Productos, Proveedores, Reportes, ProtectedRoute, UserAuth, useEmpresaStore, useUsuariosStore, Serializacion, TicketConfig } from "../index"
 import { UsuariosConfig } from "../pages/UsuariosConfig";
 import { MiPerfil } from "../pages/MiPerfil";
 import { Arqueo } from "../pages/Arqueo";
@@ -66,6 +66,8 @@ export function Myroutes() {
         <Route path="/configuracion/proveedores" element={<Proveedores />} />
         <Route path="/configuracion/empresa" element={<Empresa />} />
         <Route path="/configuracion/almacenes" element={<Almacenes />} />
+        <Route path="/configuracion/serializacion" element={<Serializacion />} />
+        <Route path="/configuracion/ticket" element={<TicketConfig />} />
         <Route path="/reportes" element={<Reportes />} />
         <Route path="/inventario" element={<Inventario />} />
         <Route path="/kardex" element={<Kardex />} />

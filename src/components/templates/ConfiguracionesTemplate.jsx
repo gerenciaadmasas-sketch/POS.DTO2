@@ -4,6 +4,26 @@ import { Icon } from "@iconify/react";
 import { useEffect, useRef } from "react";
 import { useModulosStore } from "../../store/ModulosStore";
 
+// Íconos locales por módulo — edita aquí para cambiar cualquier ícono
+// Íconos por módulo — clave = item.link (sin tildes, siempre consistente)
+const ICONOS_MODULOS = {
+    "/configuracion/categorias": "https://i.ibb.co/wZVwgsGj/categorias.png",
+    "/configuracion/productos":  "https://i.ibb.co/vCCVQVjC/agregar-producto.png",
+    "/configuracion/clientes":   "https://i.ibb.co/4cRJYPh/usuario.png",
+    "/configuracion/proveedores":"https://i.ibb.co/xSKZ9xjj/proveedor.png",
+    "/configuracion/impresoras": "https://i.ibb.co/ycRn8kQ3/impresora.png",
+    "/configuracion/sucursales": "https://i.ibb.co/Z18YpddL/ubicacion.png",
+    "/configuracion/usuarios":   "https://i.ibb.co/wZc5bbnM/empleado.png",
+    "/configuracion/empresa":    "https://i.ibb.co/q33SWtSp/lider.png",
+    "/configuracion/almacenes":  "https://i.ibb.co/kVDcdHBC/tienda.png",
+    "/configuracion/tickets":        "https://i.ibb.co/jPFnGLdQ/factura.png",
+    "/configuracion/ticket":         "https://i.ibb.co/jPFnGLdQ/factura.png",
+    "/configuracion/serializacion":  "https://i.ibb.co/WNZ8wt6g/codigo-binario.png",
+    "/configuracion/comprobantes":   "https://i.ibb.co/WNZ8wt6g/codigo-binario.png",
+};
+
+const getIcono = (link) => ICONOS_MODULOS[link];
+
 export function ConfiguracionesTemplate() {
     const { dataModulos = [] } = useModulosStore();
     const gridRef = useRef(null);
@@ -27,9 +47,12 @@ export function ConfiguracionesTemplate() {
         <Container>
             <Grid id="cards" ref={gridRef}>
                 {dataModulos.map((item, index) => {
-                    // Si tiene link definido, es navegable — ignora campo activo/check/state del DB
                     const activo = !!(item.link);
-                    const isUrl = item.icono?.startsWith("http");
+                    const iconoOverride = getIcono(item.link);
+                    const overrideEsUrl = iconoOverride?.startsWith("http");
+                    const dbEsUrl = !iconoOverride && item.icono?.startsWith("http");
+                    const srcImg = overrideEsUrl ? iconoOverride : item.icono;
+                    const iconoFinal = (!overrideEsUrl && iconoOverride) ? iconoOverride : (item.icono ?? "mdi:cog-outline");
                     return (
                         <CardWrap key={index} className="card" $activo={activo}>
                             <CardInner
@@ -38,10 +61,10 @@ export function ConfiguracionesTemplate() {
                                 $activo={activo}
                             >
                                 <IconArea>
-                                    {isUrl ? (
-                                        <img src={item.icono} alt={item.nombre} />
+                                    {(overrideEsUrl || dbEsUrl) ? (
+                                        <img src={srcImg} alt={item.nombre} />
                                     ) : (
-                                        <Icon icon={item.icono ?? "mdi:cog-outline"} />
+                                        <Icon icon={iconoFinal} />
                                     )}
                                 </IconArea>
                                 <Info>
@@ -160,15 +183,17 @@ const IconArea = styled.div`
     }
 
     svg, .iconify {
-        font-size: 58px;
-        color: ${({ theme }) => theme.text};
-        opacity: 0.7;
-        transition: opacity 0.3s;
+        font-size: 64px;
+        opacity: 0.75;
+        transition: opacity 0.3s, transform 0.25s;
     }
 
     ${CardWrap}:hover & {
         img { filter: grayscale(0); }
-        svg, .iconify { opacity: 1; }
+        svg, .iconify {
+            opacity: 1;
+            transform: scale(1.08);
+        }
     }
 `;
 
