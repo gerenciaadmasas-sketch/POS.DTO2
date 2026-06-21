@@ -1,8 +1,15 @@
 import styled from "styled-components";
 import { Link } from "react-router-dom";
 import { Icon } from "@iconify/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
 import { useModulosStore } from "../../store/ModulosStore";
+import { useUsuariosStore } from "../../store/UsuariosStore";
+
+const OCULTOS_SUPERVISOR = [
+    "/configuracion/empresa",
+    "/configuracion/ticket",
+    "/configuracion/serializacion",
+];
 
 // Íconos locales por módulo — edita aquí para cambiar cualquier ícono
 // Íconos por módulo — clave = item.link (sin tildes, siempre consistente)
@@ -26,7 +33,14 @@ const getIcono = (link) => ICONOS_MODULOS[link];
 
 export function ConfiguracionesTemplate() {
     const { dataModulos = [] } = useModulosStore();
+    const { datausuarios } = useUsuariosStore();
     const gridRef = useRef(null);
+    const esSupervisor = datausuarios?.tipo === "supervisor";
+
+    const modulosFiltrados = useMemo(() => {
+        if (!esSupervisor) return dataModulos;
+        return dataModulos.filter((m) => !OCULTOS_SUPERVISOR.includes(m.link));
+    }, [dataModulos, esSupervisor]);
 
     useEffect(() => {
         const handleMouseMove = (e) => {
@@ -46,7 +60,7 @@ export function ConfiguracionesTemplate() {
     return (
         <Container>
             <Grid id="cards" ref={gridRef}>
-                {dataModulos.map((item, index) => {
+                {modulosFiltrados.map((item, index) => {
                     const activo = !!(item.link);
                     const iconoOverride = getIcono(item.link);
                     const overrideEsUrl = iconoOverride?.startsWith("http");

@@ -34,7 +34,9 @@ const PERMISOS = [
     { key: "serializacion",           label: "Serialización de comprobantes" },
 ];
 
-const TIPOS = ["cajero", "supervisor", "administrador"];
+const TIPOS_TODOS = ["cajero", "supervisor", "administrador"];
+const TIPOS_SUPERVISOR = ["cajero"];
+const ROLES_OCULTOS_SUPERVISOR = ["administrador", "superadmin"];
 
 const TIPO_COLORS = {
     cajero:        { bg: "rgba(96,165,250,0.12)",  color: "#60a5fa" },
@@ -63,6 +65,8 @@ export function UsuariosTemplate() {
     const queryClient = useQueryClient();
     const id_empresa  = dataempresa?.id;
     const sucursalCreador = datausuarios?.id_sucursal ?? null;
+    const esSupervisor = datausuarios?.tipo === "supervisor";
+    const TIPOS = esSupervisor ? TIPOS_SUPERVISOR : TIPOS_TODOS;
 
     const [modalAbierto, setModalAbierto] = useState(false);
     const [editando,     setEditando]     = useState(null); // usuario a editar
@@ -80,11 +84,19 @@ export function UsuariosTemplate() {
         enabled:  !!id_empresa, refetchOnWindowFocus: false,
     });
 
-    const { data: usuarios = [], isFetching } = useQuery({
+    const { data: usuariosTodos = [], isFetching } = useQuery({
         queryKey: ["usuarios-empresa", id_empresa],
         queryFn:  () => ListarUsuariosEmpresa({ id_empresa }),
         enabled:  !!id_empresa, refetchOnWindowFocus: false,
     });
+
+    const usuarios = esSupervisor
+        ? usuariosTodos.filter(u => !ROLES_OCULTOS_SUPERVISOR.includes(u.tipo))
+        : usuariosTodos;
+
+    const almacenesVisibles = esSupervisor
+        ? (dataAlmacenes ?? []).filter(a => String(a.id_sucursal) === String(sucursalCreador))
+        : (dataAlmacenes ?? []);
 
     const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm({
         defaultValues: { usuario: "", password: "", nombres: "", apellidos: "", nro_doc: "", telefono: "", id_sucursal: "", id_almacen: "", tipo: "cajero" },
@@ -93,8 +105,14 @@ export function UsuariosTemplate() {
     const tipoWatched = watch("tipo");
 
     function abrirNuevo() {
-        reset({ usuario: "", password: "", nombres: "", apellidos: "", nro_doc: "", telefono: "", id_sucursal: "", id_almacen: "", tipo: "cajero" });
-        setPermisos(permisosFromTipo("cajero"));
+        const tipo = esSupervisor ? "cajero" : "cajero";
+        reset({
+            usuario: "", password: "", nombres: "", apellidos: "",
+            nro_doc: "", telefono: "", id_almacen: "",
+            id_sucursal: esSupervisor ? sucursalCreador : "",
+            tipo,
+        });
+        setPermisos(permisosFromTipo(tipo));
         setEditando(null);
         setModalAbierto(true);
     }
@@ -209,6 +227,7 @@ export function UsuariosTemplate() {
                         : "Toda la empresa";
                     const nombreCompleto = [u.nombres, u.apellidos].filter(Boolean).join(" ") || "Sin nombre";
                     const inicial = (u.nombres ?? "?")[0]?.toUpperCase();
+                    const puedeEditar = !esSupervisor || u.tipo === "cajero";
                     return (
                         <UserCard key={u.id}>
                             <UserAvatar>{inicial}</UserAvatar>
@@ -220,10 +239,12 @@ export function UsuariosTemplate() {
                                     <span>{asignacion}</span>
                                 </UserMeta>
                             </UserInfo>
-                            <UserAcciones>
-                                <BtnIco onClick={() => abrirEditar(u)}><RiEditLine /></BtnIco>
-                                <BtnIco $rojo onClick={() => mutEliminar.mutate(u)}><RiDeleteBin2Line /></BtnIco>
-                            </UserAcciones>
+                            {puedeEditar && (
+                                <UserAcciones>
+                                    <BtnIco onClick={() => abrirEditar(u)}><RiEditLine /></BtnIco>
+                                    <BtnIco $rojo onClick={() => mutEliminar.mutate(u)}><RiDeleteBin2Line /></BtnIco>
+                                </UserAcciones>
+                            )}
                         </UserCard>
                     );
                 })}
@@ -306,11 +327,11 @@ export function UsuariosTemplate() {
                                         <label>Asignación de almacén</label>
                                         <Select {...register("id_almacen")}>
                                             <option value="">— Sin almacén —</option>
-                                            {(dataAlmacenes ?? []).map(a => {
+                                            {almacenesVisibles.map(a => {
                                                 const suc = dataSucursales?.find(s => s.id === a.id_sucursal);
                                                 return (
                                                     <option key={a.id} value={a.id}>
-                                                        {suc ? `${suc.nombre} › ` : ""}{a.nombre}
+                                                        {esSupervisor ? a.nombre : `${suc ? `${suc.nombre} › ` : ""}${a.nombre}`}
                                                     </option>
                                                 );
                                             })}
