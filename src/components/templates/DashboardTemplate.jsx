@@ -76,7 +76,7 @@ export function DashboardTemplate() {
     const queryClient = useQueryClient();
 
     // Helpers para resolver nombres por id
-    const nombreSucursal = (id) => dataSucursales?.find(s => s.id === id)?.nombre ?? "—";
+    const nombreSucursal = (id) => dataSucursales?.find(s => s.id === id)?.razon_social ?? "—";
     const nombreAlmacen  = (id) => dataAlmacenes?.find(a => a.id === id)?.nombre  ?? "—";
     // Para usuario: solo tenemos el usuario logueado; para historial solo mostramos el id por ahora
     const nombreUsuario  = (id) => id ? `#${id}` : "—";

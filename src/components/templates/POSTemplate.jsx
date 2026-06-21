@@ -107,7 +107,7 @@ export function POSTemplate() {
     const wrapperRef = useRef(null);
     const inputRef = useRef(null);
 
-    const sucursal = dataSucursales?.[0]?.nombre ?? "Principal";
+    const sucursal = dataSucursales?.[0]?.razon_social ?? "Principal";
 
     // Reloj
     useEffect(() => {
@@ -353,7 +353,7 @@ export function POSTemplate() {
 
     /* ── Modal apertura de caja ── */
     if (!cajaAbierta) {
-        const sucursalNombre = dataSucursales?.[0]?.nombre ?? "Principal";
+        const sucursalNombre = dataSucursales?.[0]?.razon_social ?? "Principal";
         const cajaNombre     = almacenActivo?.nombre ?? "Caja principal";
 
         return (

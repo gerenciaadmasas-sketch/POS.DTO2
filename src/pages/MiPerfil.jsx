@@ -54,7 +54,7 @@ export function MiPerfil() {
     const asignacion = u?.tipo === "cajero"
         ? (dataAlmacenes?.find(a => a.id === u?.id_almacen)?.nombre ?? "Sin almacén")
         : u?.tipo === "supervisor"
-        ? (dataSucursales?.find(s => s.id === u?.id_sucursal)?.nombre ?? "Sin sucursal")
+        ? (dataSucursales?.find(s => s.id === u?.id_sucursal)?.razon_social ?? "Sin sucursal")
         : "Toda la empresa";
 
     const permisosActivos = Object.entries(u?.permisos ?? {})

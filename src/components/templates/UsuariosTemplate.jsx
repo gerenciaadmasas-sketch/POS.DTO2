@@ -223,7 +223,7 @@ export function UsuariosTemplate() {
                     const asignacion = u.tipo === "cajero"
                         ? (dataAlmacenes?.find(a => a.id === u.id_almacen)?.nombre ?? "Sin almacén")
                         : u.tipo === "supervisor"
-                        ? (dataSucursales?.find(s => s.id === u.id_sucursal)?.nombre ?? "Sin sucursal")
+                        ? (dataSucursales?.find(s => s.id === u.id_sucursal)?.razon_social ?? "Sin sucursal")
                         : "Toda la empresa";
                     const nombreCompleto = [u.nombres, u.apellidos].filter(Boolean).join(" ") || "Sin nombre";
                     const inicial = (u.nombres ?? "?")[0]?.toUpperCase();
@@ -345,7 +345,7 @@ export function UsuariosTemplate() {
                                         <Select {...register("id_sucursal")}>
                                             <option value="">— Sin sucursal —</option>
                                             {(dataSucursales ?? []).map(s => (
-                                                <option key={s.id} value={s.id}>{s.nombre}</option>
+                                                <option key={s.id} value={s.id}>{s.razon_social}</option>
                                             ))}
                                         </Select>
                                     </Campo>

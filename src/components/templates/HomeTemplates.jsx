@@ -54,7 +54,7 @@ export function HomeTemplates() {
     const contexto = tipo === "cajero"
         ? almacen?.nombre ?? "Sin almacén"
         : tipo === "supervisor"
-        ? sucursal?.nombre ?? "Sin sucursal"
+        ? sucursal?.razon_social ?? "Sin sucursal"
         : dataempresa?.razon_social ?? "Empresa";
 
     const accesos = tipo === "cajero" ? ACCESOS_CAJERO

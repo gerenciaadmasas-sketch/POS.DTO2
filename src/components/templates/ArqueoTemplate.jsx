@@ -31,7 +31,7 @@ export function ArqueoTemplate() {
     const totalPags = Math.ceil((res.count ?? 0) / pageSize);
 
     const nombreAlmacen  = (id) => dataAlmacenes?.find(a => a.id === id)?.nombre ?? "—";
-    const nombreSucursal = (id) => dataSucursales?.find(s => s.id === id)?.nombre ?? "—";
+    const nombreSucursal = (id) => dataSucursales?.find(s => s.id === id)?.razon_social ?? "—";
 
     return (
         <Page>
