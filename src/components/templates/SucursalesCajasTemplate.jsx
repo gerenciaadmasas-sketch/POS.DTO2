@@ -3,10 +3,9 @@ import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaStore } from "../../store/EmpresaStore";
 import { MostrarSucursales, InsertarSucursal, EditarSucursal, EliminarSucursal } from "../../supabase/crudSucursales";
-import { MostrarCajas, InsertarCaja, EditarCaja, EliminarCaja } from "../../supabase/crudCajas";
+import { MostrarAlmacenesPorEmpresa, InsertarAlmacen, EditarAlmacen, EliminarAlmacen } from "../../supabase/crudAlmacenesConfig";
 import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine } from "react-icons/ri";
-import { toastExito } from "../../utils/toast";
-import { confirmar } from "../../utils/toast";
+import { toastExito, confirmar } from "../../utils/toast";
 
 export function SucursalesCajasTemplate() {
     const { dataempresa } = useEmpresaStore();
@@ -18,10 +17,10 @@ export function SucursalesCajasTemplate() {
     const [nombreSuc, setNombreSuc] = useState("");
     const [dirSuc, setDirSuc]       = useState("");
 
-    const [modalCaja, setModalCaja] = useState(false);
-    const [editCaja, setEditCaja]   = useState(null);
-    const [nombreCaja, setNombreCaja] = useState("");
-    const [cajaParaSuc, setCajaParaSuc] = useState(null);
+    const [modalAlm, setModalAlm]     = useState(false);
+    const [editAlm, setEditAlm]       = useState(null);
+    const [nombreAlm, setNombreAlm]   = useState("");
+    const [almParaSuc, setAlmParaSuc] = useState(null);
 
     const { data: sucursales = [] } = useQuery({
         queryKey: ["sucursales-config", id_empresa],
@@ -29,15 +28,16 @@ export function SucursalesCajasTemplate() {
         enabled: !!id_empresa, refetchOnWindowFocus: false,
     });
 
-    const { data: cajas = [] } = useQuery({
-        queryKey: ["cajas-config", id_empresa],
-        queryFn: () => MostrarCajas({ id_empresa }),
+    const { data: almacenes = [] } = useQuery({
+        queryKey: ["almacenes-config", id_empresa],
+        queryFn: () => MostrarAlmacenesPorEmpresa({ id_empresa }),
         enabled: !!id_empresa, refetchOnWindowFocus: false,
     });
 
     const invalidar = () => {
         queryClient.invalidateQueries({ queryKey: ["sucursales-config"] });
-        queryClient.invalidateQueries({ queryKey: ["cajas-config"] });
+        queryClient.invalidateQueries({ queryKey: ["almacenes-config"] });
+        queryClient.invalidateQueries({ queryKey: ["almacenes-usr"] });
     };
 
     // ── Sucursales mutations ──
@@ -54,18 +54,18 @@ export function SucursalesCajasTemplate() {
         onSuccess: () => { toastExito("Sucursal eliminada"); invalidar(); },
     });
 
-    // ── Cajas mutations ──
-    const mutCrearCaja = useMutation({
-        mutationFn: () => InsertarCaja({ id_sucursal: cajaParaSuc, id_empresa, nombre: nombreCaja }),
-        onSuccess: () => { toastExito("Caja creada"); invalidar(); cerrarModalCaja(); },
+    // ── Almacenes mutations ──
+    const mutCrearAlm = useMutation({
+        mutationFn: () => InsertarAlmacen({ id_sucursal: almParaSuc, id_empresa, nombre: nombreAlm }),
+        onSuccess: () => { toastExito("Almacén creado"); invalidar(); cerrarModalAlm(); },
     });
-    const mutEditarCaja = useMutation({
-        mutationFn: () => EditarCaja({ id: editCaja.id, nombre: nombreCaja }),
-        onSuccess: () => { toastExito("Caja actualizada"); invalidar(); cerrarModalCaja(); },
+    const mutEditarAlm = useMutation({
+        mutationFn: () => EditarAlmacen({ id: editAlm.id, nombre: nombreAlm }),
+        onSuccess: () => { toastExito("Almacén actualizado"); invalidar(); cerrarModalAlm(); },
     });
-    const mutEliminarCaja = useMutation({
-        mutationFn: (id) => EliminarCaja({ id }),
-        onSuccess: () => { toastExito("Caja eliminada"); invalidar(); },
+    const mutEliminarAlm = useMutation({
+        mutationFn: (id) => EliminarAlmacen({ id }),
+        onSuccess: () => { toastExito("Almacén eliminado"); invalidar(); },
     });
 
     // ── Modal helpers ──
@@ -73,37 +73,35 @@ export function SucursalesCajasTemplate() {
     function abrirEditarSuc(s) { setNombreSuc(s.razon_social ?? ""); setDirSuc(s.direccion ?? ""); setEditSuc(s); setModalSuc(true); }
     function cerrarModalSuc() { setModalSuc(false); setEditSuc(null); }
 
-    function abrirNuevaCaja(idSuc) { setNombreCaja(""); setEditCaja(null); setCajaParaSuc(idSuc); setModalCaja(true); }
-    function abrirEditarCaja(c) { setNombreCaja(c.nombre ?? ""); setEditCaja(c); setModalCaja(true); }
-    function cerrarModalCaja() { setModalCaja(false); setEditCaja(null); }
+    function abrirNuevoAlm(idSuc) { setNombreAlm(""); setEditAlm(null); setAlmParaSuc(idSuc); setModalAlm(true); }
+    function abrirEditarAlm(a) { setNombreAlm(a.nombre ?? ""); setEditAlm(a); setModalAlm(true); }
+    function cerrarModalAlm() { setModalAlm(false); setEditAlm(null); }
 
     function handleGuardarSuc(e) {
         e.preventDefault();
         editSuc ? mutEditarSuc.mutate() : mutCrearSuc.mutate();
     }
-    function handleGuardarCaja(e) {
+    function handleGuardarAlm(e) {
         e.preventDefault();
-        editCaja ? mutEditarCaja.mutate() : mutCrearCaja.mutate();
+        editAlm ? mutEditarAlm.mutate() : mutCrearAlm.mutate();
     }
 
     return (
         <Page>
             <TopBar>
                 <div>
-                    <h1>Cajas por sucursal</h1>
-                    <p>gestiona tus sucursales y cajas</p>
+                    <h1>Sucursales y almacenes</h1>
+                    <p>gestiona tus puntos de venta y sus almacenes de inventario</p>
                 </div>
             </TopBar>
 
-            {/* Botón agregar sucursal */}
             <BtnAgregar onClick={abrirNuevaSuc}>
                 <RiAddLine /> agregar sucursal
             </BtnAgregar>
 
-            {/* Cards de sucursales */}
             <Grid>
                 {sucursales.map((suc, i) => {
-                    const cajasDeEsta = cajas.filter(c => c.id_sucursal === suc.id);
+                    const almsDeEsta = almacenes.filter(a => a.id_sucursal === suc.id);
                     return (
                         <SucursalCard key={suc.id} $i={i}>
                             <SucHeader>
@@ -112,7 +110,7 @@ export function SucursalesCajasTemplate() {
                                     <BtnIco onClick={() => abrirEditarSuc(suc)}><RiEditLine /></BtnIco>
                                     <BtnIco $rojo onClick={() => confirmar({
                                         titulo: "¿Eliminar sucursal?",
-                                        texto: `Se eliminará "${suc.razon_social}" y todas sus cajas.`,
+                                        texto: `Se eliminará "${suc.razon_social}" y todos sus almacenes.`,
                                         onConfirmar: () => mutEliminarSuc.mutate(suc.id),
                                     })}><RiDeleteBin2Line /></BtnIco>
                                 </SucActions>
@@ -120,29 +118,28 @@ export function SucursalesCajasTemplate() {
 
                             {suc.direccion && <SucDireccion>{suc.direccion}</SucDireccion>}
 
-                            {/* Cajas dentro de la sucursal */}
-                            <CajasLista>
-                                {cajasDeEsta.map(caja => (
-                                    <CajaItem key={caja.id}>
-                                        <CajaInfo>
-                                            <CajaFecha>{new Date(caja.created_at).toLocaleDateString("es-CO")}</CajaFecha>
-                                            <CajaNombre>{caja.nombre}</CajaNombre>
-                                        </CajaInfo>
-                                        <CajaActions>
-                                            <BtnIco onClick={() => abrirEditarCaja(caja)}><RiEditLine /></BtnIco>
+                            <AlmacenesLista>
+                                {almsDeEsta.map(alm => (
+                                    <AlmItem key={alm.id}>
+                                        <AlmInfo>
+                                            <AlmFecha>{new Date(alm.created_at).toLocaleDateString("es-CO")}</AlmFecha>
+                                            <AlmNombre>{alm.nombre}</AlmNombre>
+                                        </AlmInfo>
+                                        <AlmActions>
+                                            <BtnIco onClick={() => abrirEditarAlm(alm)}><RiEditLine /></BtnIco>
                                             <BtnIco $rojo onClick={() => confirmar({
-                                                titulo: "¿Eliminar caja?",
-                                                texto: `Se eliminará "${caja.nombre}".`,
-                                                onConfirmar: () => mutEliminarCaja.mutate(caja.id),
+                                                titulo: "¿Eliminar almacén?",
+                                                texto: `Se eliminará "${alm.nombre}" y todo su inventario.`,
+                                                onConfirmar: () => mutEliminarAlm.mutate(alm.id),
                                             })}><RiDeleteBin2Line /></BtnIco>
-                                        </CajaActions>
-                                    </CajaItem>
+                                        </AlmActions>
+                                    </AlmItem>
                                 ))}
 
-                                <BtnAgregarCaja onClick={() => abrirNuevaCaja(suc.id)}>
-                                    <RiAddLine /> agregar caja
-                                </BtnAgregarCaja>
-                            </CajasLista>
+                                <BtnAgregarAlm onClick={() => abrirNuevoAlm(suc.id)}>
+                                    <RiAddLine /> agregar almacén
+                                </BtnAgregarAlm>
+                            </AlmacenesLista>
                         </SucursalCard>
                     );
                 })}
@@ -173,21 +170,21 @@ export function SucursalesCajasTemplate() {
                 </Overlay>
             )}
 
-            {/* ── Modal Caja ── */}
-            {modalCaja && (
-                <Overlay onClick={cerrarModalCaja}>
+            {/* ── Modal Almacén ── */}
+            {modalAlm && (
+                <Overlay onClick={cerrarModalAlm}>
                     <Modal onClick={e => e.stopPropagation()}>
                         <ModalHeader>
-                            <span>{editCaja ? "Editar caja" : "Nueva caja"}</span>
-                            <BtnCerrar onClick={cerrarModalCaja}><RiCloseLine /></BtnCerrar>
+                            <span>{editAlm ? "Editar almacén" : "Nuevo almacén"}</span>
+                            <BtnCerrar onClick={cerrarModalAlm}><RiCloseLine /></BtnCerrar>
                         </ModalHeader>
-                        <ModalForm onSubmit={handleGuardarCaja}>
+                        <ModalForm onSubmit={handleGuardarAlm}>
                             <Campo>
-                                <label>Nombre de la caja</label>
-                                <Input value={nombreCaja} onChange={e => setNombreCaja(e.target.value)} placeholder="Ej: Caja principal" required />
+                                <label>Nombre del almacén</label>
+                                <Input value={nombreAlm} onChange={e => setNombreAlm(e.target.value)} placeholder="Ej: Bodega principal" required />
                             </Campo>
-                            <BtnGuardar type="submit" disabled={mutCrearCaja.isPending || mutEditarCaja.isPending}>
-                                {editCaja ? "Guardar cambios" : "Crear caja"}
+                            <BtnGuardar type="submit" disabled={mutCrearAlm.isPending || mutEditarAlm.isPending}>
+                                {editAlm ? "Guardar cambios" : "Crear almacén"}
                             </BtnGuardar>
                         </ModalForm>
                     </Modal>
@@ -200,7 +197,6 @@ export function SucursalesCajasTemplate() {
 /* ── Animations ── */
 const fadeUp = keyframes`from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}`;
 
-/* ── Page ── */
 const Page = styled.div`
     min-height: 100vh;
     background: ${({ theme }) => theme.bgtotal};
@@ -234,7 +230,6 @@ const BtnAgregar = styled.button`
     }
 `;
 
-/* ── Grid ── */
 const Grid = styled.div`
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
@@ -280,14 +275,13 @@ const BtnIco = styled.button`
     &:hover { background: rgba(255,255,255,0.08); }
 `;
 
-/* ── Cajas ── */
-const CajasLista = styled.div`
+const AlmacenesLista = styled.div`
     display: flex; flex-direction: column; gap: 8px;
     border-top: 1px solid ${({ theme }) => theme.color2};
     padding-top: 14px;
 `;
 
-const CajaItem = styled.div`
+const AlmItem = styled.div`
     display: flex; align-items: center; justify-content: space-between;
     padding: 10px 14px;
     background: ${({ theme }) => theme.bgtotal};
@@ -295,19 +289,12 @@ const CajaItem = styled.div`
     border-radius: 12px;
 `;
 
-const CajaInfo = styled.div`display: flex; flex-direction: column; gap: 2px;`;
+const AlmInfo = styled.div`display: flex; flex-direction: column; gap: 2px;`;
+const AlmFecha = styled.span`font-size: 10px; color: ${({ theme }) => theme.colorsubtitlecard};`;
+const AlmNombre = styled.span`font-size: 13px; font-weight: 700; color: ${({ theme }) => theme.text};`;
+const AlmActions = styled.div`display: flex; gap: 4px;`;
 
-const CajaFecha = styled.span`
-    font-size: 10px; color: ${({ theme }) => theme.colorsubtitlecard};
-`;
-
-const CajaNombre = styled.span`
-    font-size: 13px; font-weight: 700; color: ${({ theme }) => theme.text};
-`;
-
-const CajaActions = styled.div`display: flex; gap: 4px;`;
-
-const BtnAgregarCaja = styled.button`
+const BtnAgregarAlm = styled.button`
     display: flex; align-items: center; justify-content: center; gap: 6px;
     padding: 10px;
     border-radius: 12px;
@@ -317,13 +304,9 @@ const BtnAgregarCaja = styled.button`
     font-size: 12px; font-weight: 700; cursor: pointer;
     font-family: "Poppins", sans-serif;
     transition: all 0.15s;
-    &:hover {
-        border-color: #f88533;
-        color: #f88533;
-    }
+    &:hover { border-color: #f88533; color: #f88533; }
 `;
 
-/* ── Modal ── */
 const Overlay = styled.div`
     position: fixed; inset: 0;
     background: rgba(0,0,0,0.55);

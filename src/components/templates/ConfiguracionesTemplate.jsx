@@ -22,7 +22,6 @@ const ICONOS_MODULOS = {
     "/configuracion/sucursales": "https://i.ibb.co/Z18YpddL/ubicacion.png",
     "/configuracion/usuarios":   "https://i.ibb.co/wZc5bbnM/empleado.png",
     "/configuracion/empresa":    "https://i.ibb.co/q33SWtSp/lider.png",
-    "/configuracion/almacenes":  "https://i.ibb.co/kVDcdHBC/tienda.png",
     "/configuracion/tickets":        "https://i.ibb.co/jPFnGLdQ/factura.png",
     "/configuracion/ticket":         "https://i.ibb.co/jPFnGLdQ/factura.png",
     "/configuracion/serializacion":  "https://i.ibb.co/WNZ8wt6g/codigo-binario.png",

@@ -108,6 +108,5 @@ export * from './supabase/crudTicketConfig';
 export * from './store/TicketConfigStore';
 export * from './components/templates/TicketConfigTemplate';
 export * from './pages/TicketConfig';
-export * from './supabase/crudCajas';
 export * from './components/templates/SucursalesCajasTemplate';
 export * from './pages/SucursalesCajas';
