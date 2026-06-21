@@ -47,7 +47,6 @@ export function ArqueoTemplate() {
                     <tr>
                         <Th>Fecha</Th>
                         <Th>Almacén</Th>
-                        <Th>Sucursal</Th>
                         <Th>Apertura</Th>
                         <Th>Cierre</Th>
                         <Th align="right">Base inicial</Th>
@@ -55,6 +54,7 @@ export function ArqueoTemplate() {
                         <Th align="right">Efectivo esperado</Th>
                         <Th align="right">Conteo físico</Th>
                         <Th align="right">Diferencia</Th>
+                        <Th>Comentarios</Th>
                         <Th>Estado</Th>
                     </tr>
                 </thead>
@@ -69,7 +69,6 @@ export function ArqueoTemplate() {
                             <Tr key={s.id}>
                                 <Td>{fmtFecha(s.fecha)}</Td>
                                 <Td>{nombreAlmacen(s.id_almacen)}</Td>
-                                <Td>{nombreSucursal(s.id_sucursal)}</Td>
                                 <Td>{fmtHora(s.hora_apertura)}</Td>
                                 <Td>{fmtHora(s.hora_cierre)}</Td>
                                 <Td align="right">{fmt(s.saldo_inicial)}</Td>
@@ -80,6 +79,9 @@ export function ArqueoTemplate() {
                                     <DifBadge $positivo={dif >= 0}>
                                         {dif >= 0 ? "+" : ""}{fmt(dif)}
                                     </DifBadge>
+                                </Td>
+                                <Td>
+                                    <Notas>{s.notas ?? "—"}</Notas>
                                 </Td>
                                 <Td>
                                     <EstadoBadge $abierta={s.estado === "abierta"}>
@@ -170,4 +172,12 @@ const BtnPag = styled.button`
     border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 16px;
     color: ${({ theme }) => theme.text};
     &:disabled { opacity: 0.3; cursor: not-allowed; }
+`;
+
+const Notas = styled.span`
+    font-size: 12px;
+    color: ${({ theme }) => theme.colorsubtitlecard};
+    white-space: pre-wrap;
+    max-width: 200px;
+    display: inline-block;
 `;

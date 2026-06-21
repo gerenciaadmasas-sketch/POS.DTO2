@@ -78,13 +78,13 @@ export function Sidebar({ state, setState, onNavClick }) {
                     onClick={onNavClick}
                     className={({ isActive }) => isActive ? "link active" : "link"}
                 >
-                    <Icon icon="heroicons:user-circle-solid" className="icon" color="#60a5fa" />
+                    <Icon icon="solar:user-bold-duotone" className="icon" color="#60a5fa" />
                     <span className="link-label">Mi Perfil</span>
                 </NavLink>
 
                 {/* Salir */}
                 <BtnSalir onClick={cerrarSesion} $open={state}>
-                    <Icon icon="heroicons:arrow-right-on-rectangle-solid" className="icon" color="#f87171" />
+                    <Icon icon="solar:logout-2-bold-duotone" className="icon" color="#f87171" />
                     <span className="link-label">Salir</span>
                 </BtnSalir>
             </Nav>

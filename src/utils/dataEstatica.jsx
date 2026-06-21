@@ -28,46 +28,42 @@ export const DesplegableUser = [
 export const LinksArray = [
   {
     label: "Home",
-    icon: "noto-v1:house",
+    icon: "solar:home-smile-bold-duotone",
     to: "/",
   },
   {
-    label: "VENDER",
-    icon: "flat-color-icons:shop",
+    label: "Vender",
+    icon: "solar:cart-large-2-bold-duotone",
     to: "/pos",
   },
   {
     label: "Inventario",
-    icon: "flat-ui:box",
+    icon: "solar:box-bold-duotone",
     to: "/inventario",
   },
   {
     label: "Kardex",
-    icon: "flat-color-icons:overtime",
+    icon: "solar:clipboard-list-bold-duotone",
     to: "/kardex",
   },
   {
     label: "Reportes",
-    icon: "flat-ui:graph",
+    icon: "solar:chart-square-bold-duotone",
     to: "/reportes",
   },
   {
     label: "Arqueo",
-    icon: "flat-color-icons:currency-exchange",
+    icon: "solar:wallet-money-bold-duotone",
     to: "/arqueo",
   },
 ];
 export const SecondarylinksArray = [
- 
   {
     label: "Configuración",
-    icon:"icon-park:setting-two",
+    icon: "solar:settings-bold-duotone",
     to: "/configuracion",
-    color:"#CE82FF"
+    color: "#a78bfa",
   },
-  
-  
-
 ];
 //temas
 export const TemasData = [
