@@ -143,7 +143,7 @@ export function DashboardTemplate() {
     }, [detalleData]);
 
     const top5  = topProductos.slice(0, 5);
-    const top10 = topProductos.slice(0, 10);
+    const bottom5 = [...topProductos].sort((a, b) => a.cantidad - b.cantidad).slice(0, 5);
 
     const loading = loadV || loadD;
 
@@ -300,19 +300,19 @@ export function DashboardTemplate() {
                         )}
                     </TopCard>
 
-                    {/* TOP 10 monto */}
+                    {/* TOP 5 menos vendidos */}
                     <TopCard>
-                        <TopTitle>TOP 10</TopTitle>
-                        <TopSubtitle>productos por monto</TopSubtitle>
-                        {top10.length === 0 ? (
+                        <TopTitle>TOP 5</TopTitle>
+                        <TopSubtitle $warn>productos menos vendidos</TopSubtitle>
+                        {bottom5.length === 0 ? (
                             <EmptyTop><span style={{ color: "#64748b", fontSize: 13 }}>sin data...</span></EmptyTop>
                         ) : (
                             <TopList>
-                                {top10.map((p, i) => (
+                                {bottom5.map((p, i) => (
                                     <TopItem key={p.nombre}>
-                                        <TopRank $pos={i}>{i + 1}</TopRank>
+                                        <TopRank $pos={-1}>{i + 1}</TopRank>
                                         <TopNombre>{p.nombre}</TopNombre>
-                                        <TopCant style={{ color: "#4ade80" }}>{formatCOP(p.total)}</TopCant>
+                                        <TopCant style={{ color: "#f87171" }}>{p.cantidad.toLocaleString("es-CO")} uds</TopCant>
                                     </TopItem>
                                 ))}
                             </TopList>
@@ -612,7 +612,7 @@ const TopTitle = styled.div`
 const TopSubtitle = styled.div`
     font-size: 11px;
     font-weight: 600;
-    color: #6366f1;
+    color: ${({ $warn }) => $warn ? "#f87171" : "#6366f1"};
     text-align: center;
     margin-bottom: 14px;
 `;
@@ -646,11 +646,12 @@ const TopRank = styled.div`
     font-weight: 800;
     flex-shrink: 0;
     background: ${({ $pos }) =>
+        $pos === -1 ? "rgba(248,113,113,0.15)" :
         $pos === 0 ? "#fbbf24" :
         $pos === 1 ? "#94a3b8" :
         $pos === 2 ? "#f97316" :
         "rgba(99,102,241,0.2)"};
-    color: ${({ $pos }) => $pos < 3 ? "#111" : "#6366f1"};
+    color: ${({ $pos }) => $pos === -1 ? "#f87171" : $pos < 3 ? "#111" : "#6366f1"};
 `;
 
 const TopNombre = styled.span`

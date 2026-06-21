@@ -140,7 +140,7 @@ export function TicketConfigTemplate() {
 
                 <Divider />
 
-                <LiteralText>SON VEINTISEIS CON 00/100</LiteralText>
+                <LiteralText>SON VEINTISEIS</LiteralText>
 
                 <EditableInput
                     value=""
