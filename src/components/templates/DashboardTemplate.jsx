@@ -5,7 +5,8 @@ import { useEmpresaStore } from "../../store/EmpresaStore";
 import { useSucursalesStore } from "../../store/SucursalesStore";
 import { useAlmacenesConfigStore } from "../../store/AlmacenesConfigStore";
 import { useUsuariosStore } from "../../store/UsuariosStore";
-import { GetVentasStats, GetDetalleStats, GetMovimientosCaja, GetInversionInventario } from "../../supabase/crudReportes";
+import { GetVentasStats, GetDetalleStats, GetMovimientosCaja, GetInversionInventario, GetVentasDiarias } from "../../supabase/crudReportes";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid } from "recharts";
 import { supabase } from "../../supabase/supabase.config";
 import { Icon } from "@iconify/react";
 
@@ -145,6 +146,16 @@ export function DashboardTemplate() {
         queryFn: () => GetInversionInventario({ id_empresa, id_almacen: almacenEfectivo }),
         enabled: !!id_empresa && !esCajero, refetchOnWindowFocus: false,
     });
+
+    // Ventas diarias para gráfica
+    const { data: ventasDiarias = [] } = useQuery({
+        queryKey: ["dash-diarias", id_empresa, filtro, almacenEfectivo],
+        queryFn: () => GetVentasDiarias({ id_empresa, desde, hasta, id_almacen: almacenEfectivo }),
+        enabled: !!id_empresa, refetchOnWindowFocus: false,
+    });
+
+    const almacenSeleccionado = almacenesDisponibles.find(a => a.id === almacenEfectivo);
+    const metaVentas = almacenSeleccionado?.meta_ventas ?? 0;
 
     // Calcular stats
     const totalVentas    = sumTotal(ventasData);
@@ -286,6 +297,36 @@ export function DashboardTemplate() {
                                 </InvInfo>
                             </InvCard>
                         </InversionRow>
+                    )}
+
+                    {/* Gráfica de ventas */}
+                    {ventasDiarias.length > 0 && (
+                        <ChartCard>
+                            <ChartHeader>
+                                <TableTitle>Ventas por día</TableTitle>
+                                {metaVentas > 0 && (
+                                    <MetaBadge>Meta: {formatCOP(metaVentas)}</MetaBadge>
+                                )}
+                            </ChartHeader>
+                            <ChartWrap>
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <LineChart data={ventasDiarias}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                                        <XAxis dataKey="dia" tick={{ fontSize: 10, fill: "#94a3b8" }} />
+                                        <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+                                        <Tooltip
+                                            formatter={(v) => [formatCOP(v), "Ventas"]}
+                                            contentStyle={{ background: "#1C2E42", border: "1px solid #2d4a66", borderRadius: 10, fontSize: 12 }}
+                                            labelStyle={{ color: "#94a3b8" }}
+                                        />
+                                        <Line type="monotone" dataKey="total" stroke="#f88533" strokeWidth={3} dot={{ r: 4, fill: "#f88533" }} activeDot={{ r: 6 }} />
+                                        {metaVentas > 0 && (
+                                            <ReferenceLine y={metaVentas} stroke="#4ade80" strokeDasharray="6 4" strokeWidth={2} label={{ value: "META", position: "right", fill: "#4ade80", fontSize: 10 }} />
+                                        )}
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </ChartWrap>
+                        </ChartCard>
                     )}
 
                     {/* Movimientos de caja */}
@@ -489,6 +530,34 @@ const ColRight = styled.div`
     @media (max-width: 767px) {
         width: 100%;
     }
+`;
+
+/* ── Chart ── */
+const ChartCard = styled.div`
+    background: ${({ theme }) => theme.bgcards};
+    border: 1px solid ${({ theme }) => theme.color2};
+    border-radius: 14px;
+    overflow: hidden;
+`;
+
+const ChartHeader = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 8px;
+`;
+
+const MetaBadge = styled.span`
+    font-size: 11px;
+    font-weight: 700;
+    color: #4ade80;
+    background: rgba(74,222,128,0.12);
+    padding: 4px 10px;
+    border-radius: 20px;
+`;
+
+const ChartWrap = styled.div`
+    padding: 0 10px 10px;
 `;
 
 /* ── Stat cards ── */

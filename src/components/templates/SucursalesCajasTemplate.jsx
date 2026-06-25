@@ -20,6 +20,7 @@ export function SucursalesCajasTemplate() {
     const [modalAlm, setModalAlm]     = useState(false);
     const [editAlm, setEditAlm]       = useState(null);
     const [nombreAlm, setNombreAlm]   = useState("");
+    const [metaAlm, setMetaAlm]       = useState("");
     const [almParaSuc, setAlmParaSuc] = useState(null);
 
     const { data: sucursales = [] } = useQuery({
@@ -56,11 +57,11 @@ export function SucursalesCajasTemplate() {
 
     // ── Almacenes mutations ──
     const mutCrearAlm = useMutation({
-        mutationFn: () => InsertarAlmacen({ id_sucursal: almParaSuc, id_empresa, nombre: nombreAlm }),
+        mutationFn: () => InsertarAlmacen({ id_sucursal: almParaSuc, id_empresa, nombre: nombreAlm, meta_ventas: Number(metaAlm) || 0 }),
         onSuccess: () => { toastExito("Almacén creado"); invalidar(); cerrarModalAlm(); },
     });
     const mutEditarAlm = useMutation({
-        mutationFn: () => EditarAlmacen({ id: editAlm.id, nombre: nombreAlm }),
+        mutationFn: () => EditarAlmacen({ id: editAlm.id, nombre: nombreAlm, meta_ventas: Number(metaAlm) || 0 }),
         onSuccess: () => { toastExito("Almacén actualizado"); invalidar(); cerrarModalAlm(); },
     });
     const mutEliminarAlm = useMutation({
@@ -73,8 +74,8 @@ export function SucursalesCajasTemplate() {
     function abrirEditarSuc(s) { setNombreSuc(s.razon_social ?? ""); setDirSuc(s.direccion ?? ""); setEditSuc(s); setModalSuc(true); }
     function cerrarModalSuc() { setModalSuc(false); setEditSuc(null); }
 
-    function abrirNuevoAlm(idSuc) { setNombreAlm(""); setEditAlm(null); setAlmParaSuc(idSuc); setModalAlm(true); }
-    function abrirEditarAlm(a) { setNombreAlm(a.nombre ?? ""); setEditAlm(a); setModalAlm(true); }
+    function abrirNuevoAlm(idSuc) { setNombreAlm(""); setMetaAlm(""); setEditAlm(null); setAlmParaSuc(idSuc); setModalAlm(true); }
+    function abrirEditarAlm(a) { setNombreAlm(a.nombre ?? ""); setMetaAlm(String(a.meta_ventas ?? "")); setEditAlm(a); setModalAlm(true); }
     function cerrarModalAlm() { setModalAlm(false); setEditAlm(null); }
 
     function handleGuardarSuc(e) {
@@ -122,8 +123,12 @@ export function SucursalesCajasTemplate() {
                                 {almsDeEsta.map(alm => (
                                     <AlmItem key={alm.id}>
                                         <AlmInfo>
-                                            <AlmFecha>{new Date(alm.created_at).toLocaleDateString("es-CO")}</AlmFecha>
                                             <AlmNombre>{alm.nombre}</AlmNombre>
+                                            <AlmFecha>
+                                                {alm.meta_ventas > 0
+                                                    ? `Meta: $${Number(alm.meta_ventas).toLocaleString("es-CO")}/mes`
+                                                    : "Sin meta asignada"}
+                                            </AlmFecha>
                                         </AlmInfo>
                                         <AlmActions>
                                             <BtnIco onClick={() => abrirEditarAlm(alm)}><RiEditLine /></BtnIco>
@@ -182,6 +187,10 @@ export function SucursalesCajasTemplate() {
                             <Campo>
                                 <label>Nombre del almacén</label>
                                 <Input value={nombreAlm} onChange={e => setNombreAlm(e.target.value)} placeholder="Ej: Bodega principal" required />
+                            </Campo>
+                            <Campo>
+                                <label>Meta de ventas mensual ($)</label>
+                                <Input type="number" min="0" value={metaAlm} onChange={e => setMetaAlm(e.target.value)} placeholder="Ej: 5000000" />
                             </Campo>
                             <BtnGuardar type="submit" disabled={mutCrearAlm.isPending || mutEditarAlm.isPending}>
                                 {editAlm ? "Guardar cambios" : "Crear almacén"}

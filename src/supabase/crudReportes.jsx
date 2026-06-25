@@ -61,6 +61,25 @@ export async function GetInversionInventario({ id_empresa, id_almacen }) {
     return { costo, valor, productos: rows.length, unidades };
 }
 
+export async function GetVentasDiarias({ id_empresa, desde, hasta, id_almacen }) {
+    let query = supabase
+        .from("ventas")
+        .select("total, created_at")
+        .eq("id_empresa", id_empresa)
+        .order("created_at", { ascending: true });
+    if (id_almacen) query = query.eq("id_almacen", id_almacen);
+    if (desde) query = query.gte("created_at", desde);
+    if (hasta) query = query.lte("created_at", hasta);
+    const { data, error } = await query;
+    if (error) { toastError(error.message, "Reportes › Diarias"); return []; }
+    const mapa = {};
+    (data ?? []).forEach(v => {
+        const dia = new Date(v.created_at).toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
+        mapa[dia] = (mapa[dia] ?? 0) + (Number(v.total) || 0);
+    });
+    return Object.entries(mapa).map(([dia, total]) => ({ dia, total }));
+}
+
 export async function GetMovimientosCaja({ id_empresa, desde, hasta, id_almacen, page = 0, pageSize = 10 }) {
     let query = supabase
         .from("ventas")
