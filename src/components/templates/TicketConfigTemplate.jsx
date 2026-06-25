@@ -6,7 +6,6 @@ import { useSucursalesStore } from "../../store/SucursalesStore";
 import { useAlmacenesConfigStore } from "../../store/AlmacenesConfigStore";
 import { toastExito, toastError } from "../../utils/toast";
 import { RiEditLine } from "react-icons/ri";
-import { BsQrCode } from "react-icons/bs";
 
 const HOY = new Date().toLocaleDateString("es-CO");
 
@@ -156,7 +155,6 @@ export function TicketConfigTemplate() {
                 <AutoFooter>{pieAuto}</AutoFooter>
 
                 <DotLine>· · · · · · · · · · · · · · · · · · · ·</DotLine>
-                <QRWrap><BsQrCode size={72} /></QRWrap>
             </Ticket>
         </Container>
     );
@@ -297,4 +295,3 @@ const ItemsHeader = styled.div`display: grid; grid-template-columns: 36px 1fr au
 const ItemRow = styled.div`display: grid; grid-template-columns: 36px 1fr auto; gap: 4px; font-size: 11px;`;
 const TotalRow = styled.div`display: flex; justify-content: space-between; font-size: 11px; font-weight: ${({ $bold }) => $bold ? "800" : "400"};`;
 const DotLine = styled.div`text-align: center; color: #aaa; letter-spacing: 2px; font-size: 11px;`;
-const QRWrap = styled.div`display: flex; justify-content: center; margin-top: 4px; color: #333;`;
