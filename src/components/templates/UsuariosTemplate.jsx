@@ -35,7 +35,9 @@ const PERMISOS = [
 ];
 
 const TIPOS_TODOS = ["cajero", "supervisor", "administrador"];
+const TIPOS_ADMIN = ["cajero", "supervisor"];
 const TIPOS_SUPERVISOR = ["cajero"];
+const ROLES_OCULTOS_ADMIN = ["superadmin", "administrador"];
 const ROLES_OCULTOS_SUPERVISOR = ["administrador", "superadmin"];
 
 const TIPO_COLORS = {
@@ -65,8 +67,10 @@ export function UsuariosTemplate() {
     const queryClient = useQueryClient();
     const id_empresa  = dataempresa?.id;
     const sucursalCreador = datausuarios?.id_sucursal ?? null;
-    const esSupervisor = datausuarios?.tipo === "supervisor";
-    const TIPOS = esSupervisor ? TIPOS_SUPERVISOR : TIPOS_TODOS;
+    const tipoActual = datausuarios?.tipo;
+    const esSupervisor = tipoActual === "supervisor";
+    const esAdmin = tipoActual === "administrador";
+    const TIPOS = esSupervisor ? TIPOS_SUPERVISOR : esAdmin ? TIPOS_ADMIN : TIPOS_TODOS;
 
     const [modalAbierto, setModalAbierto] = useState(false);
     const [editando,     setEditando]     = useState(null); // usuario a editar
@@ -90,8 +94,11 @@ export function UsuariosTemplate() {
         enabled:  !!id_empresa, refetchOnWindowFocus: false,
     });
 
-    const usuarios = esSupervisor
-        ? usuariosTodos.filter(u => !ROLES_OCULTOS_SUPERVISOR.includes(u.tipo))
+    const rolesOcultos = esSupervisor ? ROLES_OCULTOS_SUPERVISOR
+                       : esAdmin ? ROLES_OCULTOS_ADMIN
+                       : [];
+    const usuarios = rolesOcultos.length
+        ? usuariosTodos.filter(u => !rolesOcultos.includes(u.tipo))
         : usuariosTodos;
 
     const almacenesVisibles = esSupervisor
@@ -227,7 +234,9 @@ export function UsuariosTemplate() {
                         : "Toda la empresa";
                     const nombreCompleto = [u.nombres, u.apellidos].filter(Boolean).join(" ") || "Sin nombre";
                     const inicial = (u.nombres ?? "?")[0]?.toUpperCase();
-                    const puedeEditar = !esSupervisor || u.tipo === "cajero";
+                    const puedeEditar = esSupervisor ? u.tipo === "cajero"
+                                     : esAdmin ? (u.tipo === "cajero" || u.tipo === "supervisor")
+                                     : true;
                     return (
                         <UserCard key={u.id}>
                             <UserAvatar>{inicial}</UserAvatar>
