@@ -15,7 +15,6 @@ const OCULTOS_SUPERVISOR = [
 ];
 
 const OCULTOS_ADMIN = [
-    "/configuracion/empresa",
     "/configuracion/planes",
     "/configuracion/version",
 ];
