@@ -5,6 +5,8 @@ import { useUsuariosStore } from "../../store/UsuariosStore";
 import { useSucursalesStore } from "../../store/SucursalesStore";
 import { useAlmacenesConfigStore } from "../../store/AlmacenesConfigStore";
 import { Icon } from "@iconify/react";
+import { useQuery } from "@tanstack/react-query";
+import { MostrarVersion } from "../../supabase/crudVersion";
 
 const ROL_STYLE = {
     superadmin:    { color: "#f88533", bg: "rgba(248,133,51,0.10)", glow: "rgba(248,133,51,0.35)" },
@@ -57,9 +59,17 @@ export function HomeTemplates() {
     const saludo = hora < 12 ? "Buenos días" : hora < 18 ? "Buenas tardes" : "Buenas noches";
     const iconoSaludo = hora < 6 ? "🌙" : hora < 12 ? "☀️" : hora < 18 ? "🌤️" : "🌙";
 
+    const { data: versiones = [] } = useQuery({
+        queryKey: ["version-home"],
+        queryFn: MostrarVersion,
+        enabled: tipo === "superadmin",
+    });
+
     const sucursal = dataSucursales?.find(s => s.id === datausuarios?.id_sucursal);
     const almacen  = dataAlmacenes?.find(a => a.id === datausuarios?.id_almacen);
-    const contexto = tipo === "cajero"
+    const contexto = tipo === "superadmin"
+        ? versiones[0]?.version ?? "POS"
+        : tipo === "cajero"
         ? almacen?.nombre ?? "Sin almacén"
         : tipo === "supervisor"
         ? sucursal?.razon_social ?? "Sin sucursal"
