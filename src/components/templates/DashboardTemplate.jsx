@@ -344,7 +344,7 @@ export function DashboardTemplate() {
                                 <thead>
                                     <tr>
                                         <th>Fecha ↕</th>
-                                        <th>Sucursal ↕</th>
+                                        {esAdmin && <th>Sucursal ↕</th>}
                                         <th>Almacén ↕</th>
                                         <th>Tipo ↕</th>
                                         <th>Usuario ↕</th>
@@ -353,13 +353,13 @@ export function DashboardTemplate() {
                                 </thead>
                                 <tbody>
                                     {loadM ? (
-                                        <tr><td colSpan={6} style={{ textAlign: "center", padding: 24, color: "#64748b" }}>cargando...</td></tr>
+                                        <tr><td colSpan={esAdmin ? 6 : 5} style={{ textAlign: "center", padding: 24, color: "#64748b" }}>cargando...</td></tr>
                                     ) : movimientos.length === 0 ? (
-                                        <tr><td colSpan={6} style={{ textAlign: "center", padding: 24, color: "#64748b" }}>sin datos...</td></tr>
+                                        <tr><td colSpan={esAdmin ? 6 : 5} style={{ textAlign: "center", padding: 24, color: "#64748b" }}>sin datos...</td></tr>
                                     ) : movimientos.map(m => (
                                         <tr key={m.id}>
                                             <td>{fmtFecha(m.created_at)}</td>
-                                            <td>{nombreSucursal(m.id_sucursal)}</td>
+                                            {esAdmin && <td>{nombreSucursal(m.id_sucursal)}</td>}
                                             <td>{m.id_almacen ? nombreAlmacen(m.id_almacen) : "—"}</td>
                                             <td><TipoBadge $tipo={m.metodo_pago}>{m.metodo_pago ?? "—"}</TipoBadge></td>
                                             <td>{nombreUsuario(m.id_usuario)}</td>
