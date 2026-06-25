@@ -135,12 +135,12 @@ function DashboardSaaS() {
         <Page>
             <TopBar>
                 <TopLeft>
-                    {empresaSeleccionada ? (
-                        <BtnVolver onClick={() => { setClienteId("todos"); setPage(0); }}>
-                            ← Volver a clientes
-                        </BtnVolver>
-                    ) : (
-                        <TituloPage>Visor de clientes</TituloPage>
+                    <TituloPage>{empresaSeleccionada ? clienteActivo?.nombre_cliente ?? "Cliente" : "Visor de clientes"}</TituloPage>
+                    {empresaSeleccionada && clienteActivo && (
+                        <ActividadBadge>{clienteActivo.actividad_economica?.replace(/_/g, " ")}</ActividadBadge>
+                    )}
+                    {empresaSeleccionada && (
+                        <BtnVolver onClick={() => { setClienteId("todos"); setPage(0); }}>✕</BtnVolver>
                     )}
                 </TopLeft>
                 {empresaSeleccionada && (
@@ -209,14 +209,6 @@ function DashboardSaaS() {
                 </>
             ) : (
                 <>
-                    {/* Dashboard del cliente seleccionado */}
-                    {clienteActivo && (
-                        <ClienteBanner>
-                            <span className="nombre">{clienteActivo.nombre_cliente}</span>
-                            <span className="actividad">{clienteActivo.actividad_economica?.replace(/_/g, " ")}</span>
-                        </ClienteBanner>
-                    )}
-
                     <StatsRow $cols={4}>
                         <StatCard $loading={loadV}>
                             <StatTop>
@@ -305,24 +297,20 @@ function DashboardSaaS() {
 }
 
 const BtnVolver = styled.button`
-    display: flex; align-items: center; gap: 6px;
-    background: none; border: none; cursor: pointer;
-    font-size: 14px; font-weight: 700; color: #f88533;
-    font-family: "Poppins", sans-serif;
-    padding: 8px 16px; border-radius: 10px;
-    transition: background 0.15s;
-    &:hover { background: rgba(248,133,51,0.1); }
+    width: 32px; height: 32px; border-radius: 50%;
+    background: ${({ theme }) => theme.bgtotal};
+    border: 1px solid ${({ theme }) => theme.color2};
+    color: ${({ theme }) => theme.colorsubtitlecard};
+    font-size: 14px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    &:hover { background: rgba(248,113,113,0.12); color: #f87171; border-color: #f87171; }
 `;
 
-const ClienteBanner = styled.div`
-    display: flex; align-items: center; gap: 14px;
-    padding: 18px 24px; border-radius: 16px;
-    background: ${({ theme }) => theme.bgcards};
-    border: 1px solid ${({ theme }) => theme.color2};
-    margin-bottom: 20px;
-    .nombre { font-size: 20px; font-weight: 900; color: ${({ theme }) => theme.text}; }
-    .actividad { font-size: 12px; color: ${({ theme }) => theme.colorsubtitlecard}; text-transform: capitalize;
-        background: rgba(248,133,51,0.1); padding: 3px 10px; border-radius: 20px; color: #f88533; font-weight: 700; }
+const ActividadBadge = styled.span`
+    font-size: 11px; font-weight: 700; text-transform: capitalize;
+    padding: 4px 12px; border-radius: 20px;
+    background: rgba(248,133,51,0.1); color: #f88533;
 `;
 
 /* ── Dashboard POS (admin/supervisor/cajero) ───── */
