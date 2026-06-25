@@ -7,7 +7,6 @@ import { Device } from "./styles/breakpoints";
 import { Sidebar } from "./components/organismos/sidebar/Sidebar";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { blurin } from "./styles/keyframes";
 import { RiMenuLine, RiCloseLine } from "react-icons/ri";
 
@@ -47,7 +46,6 @@ function App() {
         ) : (
           <Myroutes />
         )}
-        <ReactQueryDevtools initialIsOpen={false} />
       </AuthContextProvider>
     </ThemeProvider>
   );
