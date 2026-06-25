@@ -35,7 +35,7 @@ export function TicketConfigTemplate() {
     const todosAlmacenes = (dataAlmacenes ?? []).map(a => a.nombre).join(", ");
     const nombreMarca = sucursal?.razon_social ?? "Tu marca";
     const direccion = sucursal?.direccion ?? "Dirección del almacén";
-    const pieAuto = `Gracias por elegir ${nombreMarca}, te esperamos con ansias de nuevo en nuestros almacenes: ${todosAlmacenes}`;
+    const pieAuto = `¡Gracias por confiar en ${nombreMarca}! Será un placer atenderte de nuevo. Visítanos también en: ${todosAlmacenes}`;
 
     async function handleLogo(e) {
         const file = e.target.files?.[0];

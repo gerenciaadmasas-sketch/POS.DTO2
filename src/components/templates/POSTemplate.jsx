@@ -839,7 +839,7 @@ export function POSTemplate() {
                                 <TicketFirma>{ticketConfig.pie_pagina}</TicketFirma>
                             )}
                             <TicketGracias>
-                                Gracias por elegir {dataSucursales?.[0]?.razon_social ?? "nuestra marca"}, te esperamos en nuestros almacenes: {(dataAlmacenes ?? []).map(a => a.nombre).join(", ")}
+                                ¡Gracias por confiar en {dataSucursales?.[0]?.razon_social ?? "nosotros"}! Será un placer atenderte de nuevo. Visítanos también en: {(dataAlmacenes ?? []).map(a => a.nombre).join(" · ")}
                             </TicketGracias>
                         </TicketBody>
                         <TicketPerforacion />
