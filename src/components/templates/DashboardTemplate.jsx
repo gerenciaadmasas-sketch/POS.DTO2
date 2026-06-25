@@ -135,16 +135,13 @@ function DashboardSaaS() {
         <Page>
             <TopBar>
                 <TopLeft>
-                    <TituloPage>Visor de clientes</TituloPage>
-                    <SelectAlmacenDash
-                        value={clienteId}
-                        onChange={e => { setClienteId(e.target.value); setPage(0); }}
-                    >
-                        <option value="todos">— Selecciona un cliente —</option>
-                        {suscripciones.map(s => (
-                            <option key={s.id} value={s.id_empresa}>{s.nombre_cliente}</option>
-                        ))}
-                    </SelectAlmacenDash>
+                    {empresaSeleccionada ? (
+                        <BtnVolver onClick={() => { setClienteId("todos"); setPage(0); }}>
+                            ← Volver a clientes
+                        </BtnVolver>
+                    ) : (
+                        <TituloPage>Visor de clientes</TituloPage>
+                    )}
                 </TopLeft>
                 {empresaSeleccionada && (
                     <Filtros>
@@ -307,14 +304,25 @@ function DashboardSaaS() {
     );
 }
 
+const BtnVolver = styled.button`
+    display: flex; align-items: center; gap: 6px;
+    background: none; border: none; cursor: pointer;
+    font-size: 14px; font-weight: 700; color: #f88533;
+    font-family: "Poppins", sans-serif;
+    padding: 8px 16px; border-radius: 10px;
+    transition: background 0.15s;
+    &:hover { background: rgba(248,133,51,0.1); }
+`;
+
 const ClienteBanner = styled.div`
-    display: flex; align-items: center; gap: 12px;
-    padding: 14px 20px; border-radius: 14px;
+    display: flex; align-items: center; gap: 14px;
+    padding: 18px 24px; border-radius: 16px;
     background: ${({ theme }) => theme.bgcards};
     border: 1px solid ${({ theme }) => theme.color2};
-    margin-bottom: 16px;
-    .nombre { font-size: 18px; font-weight: 900; color: ${({ theme }) => theme.text}; }
-    .actividad { font-size: 12px; color: ${({ theme }) => theme.colorsubtitlecard}; text-transform: capitalize; }
+    margin-bottom: 20px;
+    .nombre { font-size: 20px; font-weight: 900; color: ${({ theme }) => theme.text}; }
+    .actividad { font-size: 12px; color: ${({ theme }) => theme.colorsubtitlecard}; text-transform: capitalize;
+        background: rgba(248,133,51,0.1); padding: 3px 10px; border-radius: 20px; color: #f88533; font-weight: 700; }
 `;
 
 /* ── Dashboard POS (admin/supervisor/cajero) ───── */
@@ -692,11 +700,15 @@ const fadeUp = keyframes`from { opacity:0; transform:translateY(14px); } to { op
 const Page = styled.div`
     min-height: 100vh;
     background: ${({ theme }) => theme.bgtotal};
-    padding: 28px 24px;
+    padding: 36px 32px;
     animation: ${fadeUp} 0.35s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 
     @media (max-width: 767px) {
-        padding: 68px 12px 20px;
+        padding: 68px 14px 24px;
+        gap: 18px;
     }
 `;
 
@@ -704,8 +716,7 @@ const TopBar = styled.div`
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 24px;
+    gap: 14px;
 `;
 
 const TopLeft = styled.div`
@@ -724,13 +735,13 @@ const TituloPage = styled.h1`
 `;
 
 const SelectAlmacenDash = styled.select`
-    padding: 6px 12px;
-    border-radius: 8px;
-    border: 1px solid ${({ theme }) => theme.color2};
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1.5px solid ${({ theme }) => theme.color2};
     background: ${({ theme }) => theme.bgcards};
     color: ${({ theme }) => theme.text};
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 700;
     font-family: "Poppins", sans-serif;
     outline: none;
     cursor: pointer;
@@ -774,16 +785,16 @@ const ColLeft = styled.div`
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
     min-width: 0;
 `;
 
 const ColRight = styled.div`
-    width: 260px;
+    width: 280px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 18px;
 
     @media (max-width: 767px) {
         width: 100%;
@@ -832,7 +843,7 @@ const ChartVacio = styled.div`
 const StatsRow = styled.div`
     display: grid;
     grid-template-columns: repeat(${({ $cols }) => $cols || 3}, 1fr);
-    gap: 14px;
+    gap: 18px;
 
     @media (max-width: 600px) {
         grid-template-columns: 1fr 1fr;
@@ -842,14 +853,14 @@ const StatsRow = styled.div`
 const StatCard = styled.div`
     background: ${({ theme }) => theme.bgcards};
     border: 1px solid ${({ theme }) => theme.color2};
-    border-radius: 16px;
-    padding: 18px 20px;
+    border-radius: 18px;
+    padding: 22px 24px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.08);
     opacity: ${({ $loading }) => $loading ? 0.6 : 1};
     transition: opacity 0.2s, transform 0.15s, box-shadow 0.15s;
     &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 28px rgba(0,0,0,0.14);
     }
 `;
 
@@ -946,7 +957,7 @@ const TotalVal = styled.div`
 const TableCard = styled.div`
     background: ${({ theme }) => theme.bgcards};
     border: 1px solid ${({ theme }) => theme.color2};
-    border-radius: 14px;
+    border-radius: 18px;
     overflow: hidden;
 `;
 
@@ -954,13 +965,13 @@ const TableHeader = styled.div`
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 16px 20px;
+    padding: 18px 24px;
     border-bottom: 1px solid ${({ theme }) => theme.color2};
 `;
 
 const TableTitle = styled.span`
-    font-size: 14px;
-    font-weight: 800;
+    font-size: 15px;
+    font-weight: 900;
     color: ${({ theme }) => theme.text};
 `;
 
@@ -989,15 +1000,18 @@ const TableWrap = styled.div`
     table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 12px;
+        font-size: 13px;
     }
     thead tr {
         background: ${({ theme }) => theme.bgtotal};
     }
     th {
-        padding: 10px 14px;
+        padding: 14px 20px;
         text-align: left;
-        font-weight: 700;
+        font-weight: 800;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
         color: ${({ theme }) => theme.colorsubtitlecard};
         white-space: nowrap;
         border-bottom: 1px solid ${({ theme }) => theme.color2};
