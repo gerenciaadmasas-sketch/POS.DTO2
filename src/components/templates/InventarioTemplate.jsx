@@ -140,8 +140,6 @@ export function InventarioTemplate() {
         queryKey: ["inventario", id_empresa_query, almacenId],
         queryFn:  () => MostrarInventarioPorAlmacen({ id_empresa: id_empresa_query, id_almacen: almacenId, soloConInventario: false }),
         enabled:  !!id_empresa_query && !!almacenId,
-        refetchOnWindowFocus: true,
-        staleTime: 0,
     });
 
     const mutAjustar = useMutation({
