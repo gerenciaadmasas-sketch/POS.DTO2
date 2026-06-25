@@ -15,7 +15,18 @@ export async function MostrarSuscripciones() {
 export async function InsertarSuscripcion(p) {
     const nombre = (p.nombre_cliente?.split(" ")[0] ?? "").trim();
     const apellido = (p.apellido_cliente ?? "").trim();
-    const usuario = nombre.charAt(0).toUpperCase() + nombre.slice(1).toLowerCase() + apellido.charAt(0).toUpperCase() + apellido.slice(1).toLowerCase();
+    let usuarioBase = nombre.charAt(0).toUpperCase() + nombre.slice(1).toLowerCase() + apellido.charAt(0).toUpperCase() + apellido.slice(1).toLowerCase();
+
+    // Verificar si ya existe y agregar número
+    let usuario = usuarioBase;
+    let intento = 1;
+    while (true) {
+        const { data: existe } = await supabase.from("usuarios").select("id").eq("usuario", usuario).maybeSingle();
+        if (!existe) break;
+        intento++;
+        usuario = `${usuarioBase}${intento}`;
+    }
+
     const password = p.cedula_cliente ?? "123456";
     const nombreEmpresa = `${nombre} ${apellido}`.trim();
 
