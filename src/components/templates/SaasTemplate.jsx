@@ -15,7 +15,22 @@ const ESTADOS = {
     cancelado:  { label: "Cancelado",  color: "#94a3b8", bg: "rgba(148,163,184,0.12)" },
 };
 
-const PLANES = ["basico", "profesional", "empresarial"];
+const PLANES = [
+    { key: "mensual",    label: "Mensual",    meses: 1 },
+    { key: "bimestral",  label: "Bimestral",  meses: 2 },
+    { key: "trimestral", label: "Trimestral", meses: 3 },
+];
+
+const ACTIVIDADES = [
+    { key: "retail_ropa",    label: "Retail — Ropa y accesorios" },
+    { key: "restaurante",    label: "Restaurante" },
+    { key: "cafeteria",      label: "Cafetería" },
+    { key: "tienda",         label: "Tienda / Minimarket" },
+    { key: "farmacia",       label: "Farmacia / Droguería" },
+    { key: "ferreteria",     label: "Ferretería" },
+    { key: "salon_belleza",  label: "Salón de belleza" },
+    { key: "otro",           label: "Otro" },
+];
 
 export function SaasTemplate() {
     const queryClient = useQueryClient();
@@ -25,6 +40,7 @@ export function SaasTemplate() {
     const [form, setForm] = useState({
         nombre_cliente: "", plan: "basico", valor_mensual: "",
         costo_implementacion: "", estado: "al_dia", fecha_proximo_pago: "", notas: "",
+        actividad_economica: "retail_ropa",
     });
 
     const { data: suscripciones = [], isFetching } = useQuery({
@@ -35,11 +51,21 @@ export function SaasTemplate() {
     const invalidar = () => queryClient.invalidateQueries({ queryKey: ["suscripciones"] });
 
     const mutCrear = useMutation({
-        mutationFn: () => InsertarSuscripcion({
-            ...form,
-            valor_mensual: Number(form.valor_mensual) || 0,
-            costo_implementacion: Number(form.costo_implementacion) || 0,
-        }),
+        mutationFn: () => {
+            const planObj = PLANES.find(p => p.key === form.plan) ?? PLANES[0];
+            const hoy = new Date();
+            const proximoPago = new Date(hoy.getFullYear(), hoy.getMonth() + planObj.meses, hoy.getDate());
+            return InsertarSuscripcion({
+                nombre_cliente: form.nombre_cliente,
+                plan: form.plan,
+                valor_mensual: Number(form.valor_mensual) || 0,
+                costo_implementacion: Number(form.costo_implementacion) || 0,
+                estado: "al_dia",
+                fecha_proximo_pago: proximoPago.toISOString().split("T")[0],
+                notas: form.notas,
+                actividad_economica: form.actividad_economica,
+            });
+        },
         onSuccess: () => { toastExito("Cliente agregado"); invalidar(); cerrar(); },
     });
 
@@ -53,6 +79,7 @@ export function SaasTemplate() {
             estado: form.estado,
             fecha_proximo_pago: form.fecha_proximo_pago || null,
             notas: form.notas,
+            actividad_economica: form.actividad_economica,
         }),
         onSuccess: () => { toastExito("Cliente actualizado"); invalidar(); cerrar(); },
     });
@@ -63,7 +90,7 @@ export function SaasTemplate() {
     });
 
     function abrirNuevo() {
-        setForm({ nombre_cliente: "", plan: "basico", valor_mensual: "", costo_implementacion: "", estado: "al_dia", fecha_proximo_pago: "", notas: "" });
+        setForm({ nombre_cliente: "", plan: "basico", valor_mensual: "", costo_implementacion: "", estado: "al_dia", fecha_proximo_pago: "", notas: "", actividad_economica: "retail_ropa" });
         setEditando(null);
         setModal(true);
     }
@@ -77,6 +104,7 @@ export function SaasTemplate() {
             estado: s.estado ?? "al_dia",
             fecha_proximo_pago: s.fecha_proximo_pago ?? "",
             notas: s.notas ?? "",
+            actividad_economica: s.actividad_economica ?? "retail_ropa",
         });
         setEditando(s);
         setModal(true);
@@ -159,8 +187,12 @@ export function SaasTemplate() {
 
                             <CardBody>
                                 <InfoFila>
+                                    <InfoLabel>Actividad</InfoLabel>
+                                    <InfoVal>{ACTIVIDADES.find(a => a.key === s.actividad_economica)?.label ?? s.actividad_economica}</InfoVal>
+                                </InfoFila>
+                                <InfoFila>
                                     <InfoLabel>Plan</InfoLabel>
-                                    <InfoVal>{s.plan}</InfoVal>
+                                    <InfoVal>{PLANES.find(p => p.key === s.plan)?.label ?? s.plan}</InfoVal>
                                 </InfoFila>
                                 <InfoFila>
                                     <InfoLabel>Mensualidad</InfoLabel>
@@ -214,18 +246,26 @@ export function SaasTemplate() {
                             </Campo>
                             <FilaDos>
                                 <Campo>
-                                    <label>Plan</label>
-                                    <Select value={form.plan} onChange={e => setForm({ ...form, plan: e.target.value })}>
-                                        {PLANES.map(p => <option key={p} value={p}>{p}</option>)}
+                                    <label>Actividad económica</label>
+                                    <Select value={form.actividad_economica} onChange={e => setForm({ ...form, actividad_economica: e.target.value })}>
+                                        {ACTIVIDADES.map(a => <option key={a.key} value={a.key}>{a.label}</option>)}
                                     </Select>
                                 </Campo>
+                                <Campo>
+                                    <label>Plan de pago</label>
+                                    <Select value={form.plan} onChange={e => setForm({ ...form, plan: e.target.value })}>
+                                        {PLANES.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
+                                    </Select>
+                                </Campo>
+                            </FilaDos>
+                            {editando && (
                                 <Campo>
                                     <label>Estado</label>
                                     <Select value={form.estado} onChange={e => setForm({ ...form, estado: e.target.value })}>
                                         {Object.entries(ESTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                                     </Select>
                                 </Campo>
-                            </FilaDos>
+                            )}
                             <FilaDos>
                                 <Campo>
                                     <label>Valor mensual ($)</label>
@@ -236,10 +276,12 @@ export function SaasTemplate() {
                                     <Input type="number" min="0" value={form.costo_implementacion} onChange={e => setForm({ ...form, costo_implementacion: e.target.value })} placeholder="500000" />
                                 </Campo>
                             </FilaDos>
-                            <Campo>
-                                <label>Fecha próximo pago</label>
-                                <Input type="date" value={form.fecha_proximo_pago} onChange={e => setForm({ ...form, fecha_proximo_pago: e.target.value })} />
-                            </Campo>
+                            {editando && (
+                                <Campo>
+                                    <label>Fecha próximo pago</label>
+                                    <Input type="date" value={form.fecha_proximo_pago} onChange={e => setForm({ ...form, fecha_proximo_pago: e.target.value })} />
+                                </Campo>
+                            )}
                             <Campo>
                                 <label>Notas</label>
                                 <Textarea value={form.notas} onChange={e => setForm({ ...form, notas: e.target.value })} placeholder="Observaciones del cliente..." rows={3} />
