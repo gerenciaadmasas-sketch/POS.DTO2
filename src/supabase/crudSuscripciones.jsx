@@ -13,8 +13,22 @@ export async function MostrarSuscripciones() {
 }
 
 export async function InsertarSuscripcion(p) {
-    const { error } = await supabase.from(tabla).insert(p);
+    // 1. Crear empresa aislada (tenant) para el nuevo cliente
+    const { data: empresa, error: errEmp } = await supabase
+        .from("empresa")
+        .insert({ razon_social: p.nombre_cliente })
+        .select()
+        .maybeSingle();
+    if (errEmp) { toastError(errEmp.message, "Suscripciones › Crear empresa"); throw errEmp; }
+
+    // 2. Crear suscripción vinculada a la nueva empresa
+    const { error } = await supabase.from(tabla).insert({
+        ...p,
+        id_empresa: empresa.id,
+    });
     if (error) { toastError(error.message, "Suscripciones › Insertar"); throw error; }
+
+    return empresa;
 }
 
 export async function EditarSuscripcion({ id, ...campos }) {
