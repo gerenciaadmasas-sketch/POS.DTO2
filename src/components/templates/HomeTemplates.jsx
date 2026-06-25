@@ -33,6 +33,7 @@ const ACCESOS_SUPERVISOR = [
 const ACCESOS_CAJERO = [
     { key: "pos",     icon: "solar:cart-large-2-bold-duotone",   label: "Punto de venta", to: "/pos",           accent: "#f88533", big: true  },
     { key: "inv",     icon: "solar:box-bold-duotone",            label: "Inventario",     to: "/inventario",    accent: "#4ade80", big: false },
+    { key: "report",  icon: "solar:chart-square-bold-duotone",   label: "Reportes",       to: "/reportes",      accent: "#60a5fa", big: false },
 ];
 
 export function HomeTemplates() {

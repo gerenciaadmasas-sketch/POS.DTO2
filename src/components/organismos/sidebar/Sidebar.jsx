@@ -12,7 +12,7 @@ import { ObtenerSesionAbierta } from "../../../supabase/crudSesionesCaja";
 import { useAlmacenesConfigStore } from "../../../store/AlmacenesConfigStore";
 import Swal from "sweetalert2";
 
-const LINKS_CAJERO     = ["/", "/pos", "/inventario"];
+const LINKS_CAJERO     = ["/", "/pos", "/inventario", "/reportes"];
 const LINKS_ADMIN      = ["/", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo"];
 const LINKS_SUPERADMIN = ["/", "/inventario", "/kardex", "/reportes", "/arqueo"];
 

@@ -236,67 +236,68 @@ export function DashboardTemplate() {
             <Grid>
                 {/* Columna izquierda (3/4) */}
                 <ColLeft>
-                    {/* Métricas principales */}
-                    <StatsRow $cols={puedeVerGanancias ? 3 : esCajero ? 2 : 4}>
-                        <StatCard $loading={loading}>
-                            <StatTop>
-                                <StatLabel>Ventas</StatLabel>
-                                <Icon icon="solar:cart-large-2-bold-duotone" style={{ fontSize: 20, color: "#f88533" }} />
-                            </StatTop>
-                            <StatVal>{loading ? "—" : formatCOP(totalVentas)}</StatVal>
-                            <PctBadge pct={filtro === "todo" ? null : calcPct(totalVentas, totalVentasPrev)} />
-                        </StatCard>
+                    {/* Métricas principales — no cajero */}
+                    {!esCajero && (
+                        <>
+                            <StatsRow $cols={puedeVerGanancias ? 3 : 4}>
+                                <StatCard $loading={loading}>
+                                    <StatTop>
+                                        <StatLabel>Ventas</StatLabel>
+                                        <Icon icon="solar:cart-large-2-bold-duotone" style={{ fontSize: 20, color: "#f88533" }} />
+                                    </StatTop>
+                                    <StatVal>{loading ? "—" : formatCOP(totalVentas)}</StatVal>
+                                    <PctBadge pct={filtro === "todo" ? null : calcPct(totalVentas, totalVentasPrev)} />
+                                </StatCard>
 
-                        <StatCard $loading={loading}>
-                            <StatTop>
-                                <StatLabel>Productos vendidos</StatLabel>
-                                <Icon icon="solar:bag-check-bold-duotone" style={{ fontSize: 20, color: "#60a5fa" }} />
-                            </StatTop>
-                            <StatVal>{loading ? "—" : cantProductos.toLocaleString("es-CO")}</StatVal>
-                            <PctBadge pct={filtro === "todo" ? null : calcPct(cantProductos, cantPrev)} />
-                        </StatCard>
+                                <StatCard $loading={loading}>
+                                    <StatTop>
+                                        <StatLabel>Productos vendidos</StatLabel>
+                                        <Icon icon="solar:bag-check-bold-duotone" style={{ fontSize: 20, color: "#60a5fa" }} />
+                                    </StatTop>
+                                    <StatVal>{loading ? "—" : cantProductos.toLocaleString("es-CO")}</StatVal>
+                                    <PctBadge pct={filtro === "todo" ? null : calcPct(cantProductos, cantPrev)} />
+                                </StatCard>
 
-                        {!esCajero && (
-                            <StatCard>
-                                <StatTop>
-                                    <StatLabel>Valor del inventario</StatLabel>
-                                    <Icon icon="solar:tag-price-bold-duotone" style={{ fontSize: 20, color: "#4ade80" }} />
-                                </StatTop>
-                                <StatVal $green>{formatCOP(inversion.valor)}</StatVal>
-                                <PctNeutro>{inversion.productos} productos · {inversion.unidades.toLocaleString("es-CO")} uds</PctNeutro>
-                            </StatCard>
-                        )}
+                                <StatCard>
+                                    <StatTop>
+                                        <StatLabel>Valor del inventario</StatLabel>
+                                        <Icon icon="solar:tag-price-bold-duotone" style={{ fontSize: 20, color: "#4ade80" }} />
+                                    </StatTop>
+                                    <StatVal $green>{formatCOP(inversion.valor)}</StatVal>
+                                    <PctNeutro>{inversion.productos} productos · {inversion.unidades.toLocaleString("es-CO")} uds</PctNeutro>
+                                </StatCard>
 
-                        {puedeVerGanancias && (
-                            <StatCard $loading={loading}>
-                                <StatTop>
-                                    <StatLabel>Ganancias</StatLabel>
-                                    <Icon icon="solar:chart-square-bold-duotone" style={{ fontSize: 20, color: "#a78bfa" }} />
-                                </StatTop>
-                                <StatVal>{loading ? "—" : formatCOP(totalVentas)}</StatVal>
-                                <PctBadge pct={filtro === "todo" ? null : calcPct(totalVentas, totalVentasPrev)} />
-                            </StatCard>
-                        )}
-                    </StatsRow>
+                                {puedeVerGanancias && (
+                                    <StatCard $loading={loading}>
+                                        <StatTop>
+                                            <StatLabel>Ganancias</StatLabel>
+                                            <Icon icon="solar:chart-square-bold-duotone" style={{ fontSize: 20, color: "#a78bfa" }} />
+                                        </StatTop>
+                                        <StatVal>{loading ? "—" : formatCOP(totalVentas)}</StatVal>
+                                        <PctBadge pct={filtro === "todo" ? null : calcPct(totalVentas, totalVentasPrev)} />
+                                    </StatCard>
+                                )}
+                            </StatsRow>
 
-                    {/* Cards de inversión — solo admin */}
-                    {puedeVerGanancias && (
-                        <InversionRow>
-                            <InvCard>
-                                <InvIcon $color="#f59e0b"><Icon icon="solar:box-bold-duotone" /></InvIcon>
-                                <InvInfo>
-                                    <InvLabel>Invertido en inventario</InvLabel>
-                                    <InvVal>{formatCOP(inversion.costo)}</InvVal>
-                                </InvInfo>
-                            </InvCard>
-                            <InvCard>
-                                <InvIcon $color="#4ade80"><Icon icon="solar:chart-square-bold-duotone" /></InvIcon>
-                                <InvInfo>
-                                    <InvLabel>Ganancia potencial</InvLabel>
-                                    <InvVal $green>{formatCOP(inversion.valor - inversion.costo)}</InvVal>
-                                </InvInfo>
-                            </InvCard>
-                        </InversionRow>
+                            {puedeVerGanancias && (
+                                <InversionRow>
+                                    <InvCard>
+                                        <InvIcon $color="#f59e0b"><Icon icon="solar:box-bold-duotone" /></InvIcon>
+                                        <InvInfo>
+                                            <InvLabel>Invertido en inventario</InvLabel>
+                                            <InvVal>{formatCOP(inversion.costo)}</InvVal>
+                                        </InvInfo>
+                                    </InvCard>
+                                    <InvCard>
+                                        <InvIcon $color="#4ade80"><Icon icon="solar:chart-square-bold-duotone" /></InvIcon>
+                                        <InvInfo>
+                                            <InvLabel>Ganancia potencial</InvLabel>
+                                            <InvVal $green>{formatCOP(inversion.valor - inversion.costo)}</InvVal>
+                                        </InvInfo>
+                                    </InvCard>
+                                </InversionRow>
+                            )}
+                        </>
                     )}
 
                     {/* Gráfica de ventas */}
@@ -331,8 +332,8 @@ export function DashboardTemplate() {
                         </ChartWrap>
                     </ChartCard>
 
-                    {/* Movimientos de caja */}
-                    <TableCard>
+                    {/* Movimientos de caja — no cajero */}
+                    {!esCajero && <TableCard>
                         <TableHeader>
                             <TableTitle>Movimientos de caja</TableTitle>
                             <RealtimeBadge $pulse={rtPulse}>
@@ -377,7 +378,7 @@ export function DashboardTemplate() {
                             <BtnPag disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>›</BtnPag>
                             <BtnPag disabled={page >= totalPages - 1} onClick={() => setPage(totalPages - 1)}>»</BtnPag>
                         </Paginacion>
-                    </TableCard>
+                    </TableCard>}
                 </ColLeft>
 
                 {/* Columna derecha (TOP productos) */}
