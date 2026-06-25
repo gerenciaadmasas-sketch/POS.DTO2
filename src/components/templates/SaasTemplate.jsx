@@ -11,10 +11,11 @@ import ConfettiExplosion from "react-confetti-explosion";
 const formatCOP = (n) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n ?? 0);
 
 const ESTADOS = {
-    al_dia:     { label: "Al día",     color: "#4ade80", bg: "rgba(74,222,128,0.12)" },
-    mora:       { label: "En mora",    color: "#f87171", bg: "rgba(248,113,113,0.12)" },
-    suspendido: { label: "Suspendido", color: "#f59e0b", bg: "rgba(245,158,11,0.12)" },
-    cancelado:  { label: "Cancelado",  color: "#94a3b8", bg: "rgba(148,163,184,0.12)" },
+    al_dia:     { label: "Al día",            color: "#4ade80", bg: "rgba(74,222,128,0.12)" },
+    proximo:    { label: "Próximo a vencer",   color: "#f59e0b", bg: "rgba(245,158,11,0.12)" },
+    mora:       { label: "En mora",            color: "#f87171", bg: "rgba(248,113,113,0.12)" },
+    suspendido: { label: "Suspendido",         color: "#94a3b8", bg: "rgba(148,163,184,0.12)" },
+    cancelado:  { label: "Cancelado",          color: "#94a3b8", bg: "rgba(148,163,184,0.12)" },
 };
 
 const PLANES = [
@@ -74,7 +75,10 @@ export function SaasTemplate() {
     function estadoAuto(s) {
         if (s.estado === "suspendido" || s.estado === "cancelado") return s.estado;
         if (!s.fecha_proximo_pago) return "al_dia";
-        return new Date(s.fecha_proximo_pago) < new Date() ? "mora" : "al_dia";
+        const dias = Math.ceil((new Date(s.fecha_proximo_pago) - new Date()) / 86400000);
+        if (dias <= 0) return "mora";
+        if (dias <= 5) return "proximo";
+        return "al_dia";
     }
 
     const mutPago = useMutation({
@@ -173,6 +177,7 @@ export function SaasTemplate() {
     const totalMensual = suscripciones.reduce((s, c) => s + (Number(c.valor_mensual) || 0), 0);
     const totalImplementacion = suscripciones.reduce((s, c) => s + (Number(c.costo_implementacion) || 0), 0);
     const alDia = suscripciones.filter(c => estadoAuto(c) === "al_dia").length;
+    const proximos = suscripciones.filter(c => estadoAuto(c) === "proximo").length;
     const enMora = suscripciones.filter(c => estadoAuto(c) === "mora").length;
 
     return (
@@ -215,10 +220,55 @@ export function SaasTemplate() {
                     <Icon icon="solar:shield-check-bold-duotone" style={{ fontSize: 28, color: enMora > 0 ? "#f87171" : "#4ade80" }} />
                     <StatInfo>
                         <StatLabel>Estado general</StatLabel>
-                        <StatVal>{alDia} al día · {enMora > 0 ? <span style={{ color: "#f87171" }}>{enMora} en mora</span> : "0 en mora"}</StatVal>
+                        <StatVal>
+                            {alDia} al día
+                            {proximos > 0 && <> · <span style={{ color: "#f59e0b" }}>{proximos} por vencer</span></>}
+                            {enMora > 0 && <> · <span style={{ color: "#f87171" }}>{enMora} en mora</span></>}
+                        </StatVal>
                     </StatInfo>
                 </StatCard>
             </StatsRow>
+
+            {/* Alertas de vencimiento */}
+            {(() => {
+                const alertas = suscripciones
+                    .filter(s => s.fecha_proximo_pago)
+                    .map(s => {
+                        const dias = Math.ceil((new Date(s.fecha_proximo_pago) - new Date()) / 86400000);
+                        return { ...s, dias };
+                    })
+                    .filter(s => s.dias <= 10)
+                    .sort((a, b) => a.dias - b.dias);
+
+                if (alertas.length === 0) return null;
+                return (
+                    <AlertasSection>
+                        <AlertasTitulo>
+                            <Icon icon="solar:bell-bold-duotone" style={{ fontSize: 20, color: "#f59e0b" }} />
+                            Próximos vencimientos
+                        </AlertasTitulo>
+                        {alertas.map(s => (
+                            <AlertaItem key={s.id} $vencido={s.dias <= 0}>
+                                <AlertaIcono $vencido={s.dias <= 0}>
+                                    {s.dias <= 0 ? "🔴" : s.dias <= 3 ? "🟠" : "🟡"}
+                                </AlertaIcono>
+                                <AlertaInfo>
+                                    <AlertaNombre>{s.nombre_cliente} {s.apellido_cliente}</AlertaNombre>
+                                    <AlertaDetalle>
+                                        {s.dias <= 0
+                                            ? `Venció hace ${Math.abs(s.dias)} día${Math.abs(s.dias) !== 1 ? "s" : ""}`
+                                            : s.dias === 0
+                                            ? "Vence hoy"
+                                            : `Vence en ${s.dias} día${s.dias !== 1 ? "s" : ""}`
+                                        } · {new Date(s.fecha_proximo_pago).toLocaleDateString("es-CO")}
+                                    </AlertaDetalle>
+                                </AlertaInfo>
+                                <AlertaMonto>{formatCOP(s.valor_mensual)}</AlertaMonto>
+                            </AlertaItem>
+                        ))}
+                    </AlertasSection>
+                );
+            })()}
 
             {/* Lista de clientes */}
             <Grid>
@@ -310,7 +360,7 @@ export function SaasTemplate() {
                             </CardBody>
 
                             <CardActions>
-                                {estadoCalc === "mora" && (
+                                {(estadoCalc === "mora" || estadoCalc === "proximo") && (
                                     <BtnPago onClick={async () => {
                                         const { default: Swal } = await import("sweetalert2");
                                         const { value: metodo } = await Swal.fire({
@@ -597,6 +647,43 @@ const HistorialMetodo = styled.span`
 
 const HistorialMonto = styled.span`
     font-weight: 800; color: #4ade80; font-size: 13px;
+`;
+
+const AlertasSection = styled.div`
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 18px; border-radius: 16px;
+    background: ${({ theme }) => theme.bgcards};
+    border: 1px solid rgba(245,158,11,0.25);
+    margin-bottom: 8px;
+`;
+
+const AlertasTitulo = styled.div`
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 900; color: #f59e0b;
+    margin-bottom: 6px;
+`;
+
+const AlertaItem = styled.div`
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: 10px;
+    background: ${({ $vencido }) => $vencido ? "rgba(248,113,113,0.08)" : "rgba(245,158,11,0.06)"};
+    border-left: 3px solid ${({ $vencido }) => $vencido ? "#f87171" : "#f59e0b"};
+`;
+
+const AlertaIcono = styled.span`font-size: 16px;`;
+
+const AlertaInfo = styled.div`flex: 1; display: flex; flex-direction: column; gap: 1px;`;
+
+const AlertaNombre = styled.span`
+    font-size: 13px; font-weight: 800; color: ${({ theme }) => theme.text};
+`;
+
+const AlertaDetalle = styled.span`
+    font-size: 11px; color: ${({ theme }) => theme.colorsubtitlecard};
+`;
+
+const AlertaMonto = styled.span`
+    font-size: 14px; font-weight: 800; color: #f59e0b;
 `;
 
 const CredencialesBox = styled.div`
