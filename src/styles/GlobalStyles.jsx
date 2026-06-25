@@ -58,4 +58,25 @@ export const GlobalStyles = createGlobalStyle`
         font-size: 22px !important;
         line-height: 1 !important;
     }
+
+    /* ── Impresión de ticket (80mm térmica) ──── */
+    @media print {
+        body * { visibility: hidden !important; }
+        #ticket-print, #ticket-print * { visibility: visible !important; }
+        #ticket-print {
+            position: fixed;
+            top: 0; left: 0;
+            width: 80mm;
+            padding: 4mm;
+            margin: 0;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #000;
+            background: #fff;
+        }
+        @page {
+            size: 80mm auto;
+            margin: 0;
+        }
+    }
 `;

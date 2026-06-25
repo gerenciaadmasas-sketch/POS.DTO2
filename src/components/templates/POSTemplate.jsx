@@ -5,6 +5,7 @@ import styled, { keyframes } from "styled-components";
 import { useUsuariosStore, useEmpresaStore, useSucursalesStore, BuscarProductos, BuscarProductoPorCodigo, UserAuth, RegistrarVenta, Lottieanimacion, useCartVentasStore, useAlmacenesConfigStore } from "../../index";
 import { toastExito } from "../../utils/toast";
 import { AbrirSesionCaja, CerrarSesionCaja, ObtenerTotalesVentasTurno, ObtenerSesionAbierta } from "../../supabase/crudSesionesCaja";
+import { useTicketConfigStore } from "../../store/TicketConfigStore";
 import vacioanimacion from "../../assets/vacioanimacion.json";
 import { RiDeleteBin2Line, RiCloseLine } from "react-icons/ri";
 import { Switch1 } from "../../index";
@@ -14,7 +15,14 @@ export function POSTemplate() {
     const { dataempresa } = useEmpresaStore();
     const { dataSucursales, mostrarSucursales } = useSucursalesStore();
     const { dataAlmacenes, mostrarAlmacenes } = useAlmacenesConfigStore();
+    const { ticketConfig, mostrarTicketConfig } = useTicketConfigStore();
     const { user } = UserAuth();
+
+    useQuery({
+        queryKey: ["ticket-config-pos", dataempresa?.id],
+        queryFn: () => mostrarTicketConfig({ id_empresa: dataempresa?.id }),
+        enabled: !!dataempresa?.id,
+    });
 
     const [almacenActivo,  setAlmacenActivo]  = useState(null);
     const [cajaAbierta,    setCajaAbierta]    = useState(false);
@@ -456,11 +464,9 @@ export function POSTemplate() {
                                 </MensajeLectora>
                             )}
                             <ModoControl>
-                                <span className={!lectora ? "label inactivo" : "label"}>Lectora</span>
+                                <span className={!lectora ? "label activo" : "label"}>Teclado</span>
                                 <Switch1 state={lectora} setState={() => setLectora(!lectora)} />
-                                <BtnTeclado $activo={!lectora} onClick={() => setLectora(false)}>
-                                    Teclado
-                                </BtnTeclado>
+                                <span className={lectora ? "label activo" : "label"}>Lectora</span>
                             </ModoControl>
                         </FilaBusqueda>
 
@@ -733,10 +739,15 @@ export function POSTemplate() {
                 <OverlayTicket onClick={cerrarTicket}>
                     <TicketCard onClick={e => e.stopPropagation()}>
                         <TicketPerforacion $top />
-                        <TicketBody>
+                        <TicketBody id="ticket-print">
+                            {ticketConfig?.logo_url && (
+                                <TicketLogo><img src={ticketConfig.logo_url} alt="logo" /></TicketLogo>
+                            )}
                             <TicketEmpresa>
-                                <div className="nombre">{ticketData.empresa}</div>
-                                <div className="sucursal">{ticketData.sucursal}</div>
+                                <div className="nombre">{ticketConfig?.linea1 || ticketData.empresa}</div>
+                                {ticketConfig?.linea2 && <div className="sucursal">{ticketConfig.linea2}</div>}
+                                {ticketConfig?.linea3 && <div className="sucursal">{ticketConfig.linea3}</div>}
+                                {!ticketConfig?.linea2 && <div className="sucursal">{ticketData.sucursal}</div>}
                             </TicketEmpresa>
                             <TicketMeta>
                                 <span>Venta #{ticketData.idVenta}</span>
@@ -786,7 +797,7 @@ export function POSTemplate() {
                                 )}
                             </TicketPago>
 
-                            <TicketGracias>¡Gracias por tu compra!</TicketGracias>
+                            <TicketGracias>{ticketConfig?.pie_pagina || "¡Gracias por tu compra!"}</TicketGracias>
                         </TicketBody>
                         <TicketPerforacion />
                         <BotonesTicket>
@@ -1159,22 +1170,8 @@ const ItemDropdown = styled.li`
 
 const ModoControl = styled.div`
     display: flex; align-items: center; gap: 8px;
-    .label { font-size: 13px; font-weight: 600; opacity: 1; }
-    .label.inactivo { opacity: 0.4; }
-`;
-
-const BtnTeclado = styled.button`
-    padding: 8px 18px;
-    border-radius: 8px;
-    border: 2px solid ${({ $activo }) => $activo ? "#3730a3" : "#555"};
-    background: ${({ $activo }) => ($activo ? "#4f46e5" : "#fff")};
-    color: ${({ $activo }) => ($activo ? "#fff" : "#323232")};
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: ${({ $activo }) => $activo ? "4px 4px #3730a3" : "4px 4px #555"};
-    transition: box-shadow 0.1s, transform 0.1s;
-    &:active { box-shadow: 2px 2px ${({ $activo }) => $activo ? "#3730a3" : "#555"}; transform: translate(2px, 2px); }
+    .label { font-size: 12px; font-weight: 600; color: ${({ theme }) => theme.colorsubtitlecard}; transition: all 0.2s; }
+    .label.activo { color: #f88533; font-weight: 800; }
 `;
 
 const Carrito = styled.div`
@@ -1773,6 +1770,12 @@ const TicketCard = styled.div`
 `;
 
 const TicketPerforacion = styled.div`display: none;`;
+
+const TicketLogo = styled.div`
+    text-align: center;
+    margin-bottom: 8px;
+    img { width: 60px; height: 60px; object-fit: contain; border-radius: 50%; }
+`;
 
 const TicketBody = styled.div`
     background: #fff;
