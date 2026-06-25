@@ -6,6 +6,7 @@ import { MostrarConfigPlanes } from "../../supabase/crudConfigPlanes";
 import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine } from "react-icons/ri";
 import { Icon } from "@iconify/react";
 import { toastExito, confirmar } from "../../utils/toast";
+import ConfettiExplosion from "react-confetti-explosion";
 
 const formatCOP = (n) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n ?? 0);
 
@@ -38,6 +39,7 @@ export function SaasTemplate() {
     const [modal, setModal] = useState(false);
     const [editando, setEditando] = useState(null);
     const [historialId, setHistorialId] = useState(null);
+    const [confeti, setConfeti] = useState(false);
 
     const { data: pagosHistorial = [] } = useQuery({
         queryKey: ["pagos-historial", historialId],
@@ -87,6 +89,8 @@ export function SaasTemplate() {
             toastExito("Pago registrado — fecha actualizada");
             invalidar();
             queryClient.invalidateQueries({ queryKey: ["pagos-historial"] });
+            setConfeti(true);
+            setTimeout(() => setConfeti(false), 3000);
         },
     });
 
@@ -173,6 +177,7 @@ export function SaasTemplate() {
 
     return (
         <Page>
+            {confeti && <ConfettiExplosion force={0.6} duration={3000} particleCount={100} />}
             <TopBar>
                 <div>
                     <h1>Panel SaaS</h1>
@@ -313,17 +318,18 @@ export function SaasTemplate() {
                                             html: `
                                                 <div style="margin-bottom:18px;font-size:14px;color:#94a3b8;">Monto: <strong style="color:#4ade80;font-size:18px;">${formatCOP(s.valor_mensual)}</strong></div>
                                                 <div style="display:flex;gap:10px;justify-content:center;">
-                                                    <button class="swal-metodo" data-metodo="efectivo" style="flex:1;padding:16px 10px;border-radius:14px;border:2px solid #1e3347;background:#162436;color:#fff;cursor:pointer;font-family:Poppins,sans-serif;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s;">
+                                                    <button type="button" class="swal-metodo" data-metodo="efectivo" style="flex:1;padding:16px 10px;border-radius:14px;border:2px solid #1e3347;background:#162436;color:#fff;cursor:pointer;font-family:Poppins,sans-serif;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s;">
                                                         <span style="font-size:28px;">💵</span>Efectivo
                                                     </button>
-                                                    <button class="swal-metodo" data-metodo="transferencia" style="flex:1;padding:16px 10px;border-radius:14px;border:2px solid #1e3347;background:#162436;color:#fff;cursor:pointer;font-family:Poppins,sans-serif;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s;">
+                                                    <button type="button" class="swal-metodo" data-metodo="transferencia" style="flex:1;padding:16px 10px;border-radius:14px;border:2px solid #1e3347;background:#162436;color:#fff;cursor:pointer;font-family:Poppins,sans-serif;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s;">
                                                         <span style="font-size:28px;">🏦</span>Transferencia
                                                     </button>
-                                                    <button class="swal-metodo" data-metodo="qr" style="flex:1;padding:16px 10px;border-radius:14px;border:2px solid #1e3347;background:#162436;color:#fff;cursor:pointer;font-family:Poppins,sans-serif;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s;">
+                                                    <button type="button" class="swal-metodo" data-metodo="qr" style="flex:1;padding:16px 10px;border-radius:14px;border:2px solid #1e3347;background:#162436;color:#fff;cursor:pointer;font-family:Poppins,sans-serif;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s;">
                                                         <span style="font-size:28px;">📱</span>QR
                                                     </button>
                                                 </div>
                                             `,
+                                            input: "hidden",
                                             showConfirmButton: false,
                                             showCancelButton: true,
                                             cancelButtonText: "Cancelar",
@@ -334,7 +340,10 @@ export function SaasTemplate() {
                                                 document.querySelectorAll(".swal-metodo").forEach(btn => {
                                                     btn.addEventListener("mouseenter", () => { btn.style.borderColor = "#f88533"; btn.style.background = "rgba(248,133,51,0.1)"; });
                                                     btn.addEventListener("mouseleave", () => { btn.style.borderColor = "#1e3347"; btn.style.background = "#162436"; });
-                                                    btn.addEventListener("click", () => Swal.close(btn.dataset.metodo));
+                                                    btn.addEventListener("click", () => {
+                                                        Swal.getInput().value = btn.dataset.metodo;
+                                                        Swal.clickConfirm();
+                                                    });
                                                 });
                                             },
                                         });
