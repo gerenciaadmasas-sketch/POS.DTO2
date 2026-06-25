@@ -72,7 +72,7 @@ export function SaasTemplate() {
         mutationFn: (s) => RegistrarPago({
             id_suscripcion: s.id,
             monto: Number(s.valor_mensual) || 0,
-            metodo: "transferencia",
+            metodo: s.metodo_pago ?? "efectivo",
             notas: "",
             plan: s.plan,
         }),
@@ -270,11 +270,23 @@ export function SaasTemplate() {
 
                             <CardActions>
                                 {estadoCalc === "mora" && (
-                                    <BtnPago onClick={() => confirmar({
-                                        titulo: "¿Registrar pago?",
-                                        texto: `Se registrará pago de ${formatCOP(s.valor_mensual)} y se actualizará la fecha del próximo corte.`,
-                                        onConfirmar: () => mutPago.mutate(s),
-                                    })}>
+                                    <BtnPago onClick={async () => {
+                                        const { default: Swal } = await import("sweetalert2");
+                                        const { value: metodo } = await Swal.fire({
+                                            title: "Registrar pago",
+                                            text: `Monto: ${formatCOP(s.valor_mensual)}`,
+                                            input: "select",
+                                            inputOptions: { efectivo: "Efectivo", transferencia: "Transferencia", qr: "QR" },
+                                            inputPlaceholder: "Medio de pago",
+                                            showCancelButton: true,
+                                            confirmButtonText: "Registrar",
+                                            cancelButtonText: "Cancelar",
+                                            confirmButtonColor: "#f88533",
+                                            customClass: { popup: "swal-pos" },
+                                            inputValidator: (v) => !v && "Selecciona un medio de pago",
+                                        });
+                                        if (metodo) mutPago.mutate({ ...s, metodo_pago: metodo });
+                                    }}>
                                         <Icon icon="solar:hand-money-bold-duotone" style={{ fontSize: 16 }} /> Registrar pago
                                     </BtnPago>
                                 )}
