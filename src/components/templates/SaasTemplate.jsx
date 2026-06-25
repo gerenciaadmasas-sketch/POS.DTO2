@@ -2,6 +2,7 @@ import { useState } from "react";
 import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MostrarSuscripciones, InsertarSuscripcion, EditarSuscripcion, EliminarSuscripcion } from "../../supabase/crudSuscripciones";
+import { MostrarConfigPlanes } from "../../supabase/crudConfigPlanes";
 import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine } from "react-icons/ri";
 import { Icon } from "@iconify/react";
 import { toastExito, confirmar } from "../../utils/toast";
@@ -48,6 +49,16 @@ export function SaasTemplate() {
         queryFn: MostrarSuscripciones,
     });
 
+    const { data: preciosPlanes = [] } = useQuery({
+        queryKey: ["config-planes"],
+        queryFn: MostrarConfigPlanes,
+    });
+
+    function onCambioPlan(plan) {
+        const precio = preciosPlanes.find(p => p.plan === plan)?.precio ?? 0;
+        setForm(f => ({ ...f, plan, valor_mensual: String(precio) }));
+    }
+
     const invalidar = () => queryClient.invalidateQueries({ queryKey: ["suscripciones"] });
 
     const mutCrear = useMutation({
@@ -90,7 +101,8 @@ export function SaasTemplate() {
     });
 
     function abrirNuevo() {
-        setForm({ nombre_cliente: "", plan: "basico", valor_mensual: "", costo_implementacion: "", estado: "al_dia", fecha_proximo_pago: "", notas: "", actividad_economica: "retail_ropa" });
+        const precioDefault = preciosPlanes.find(p => p.plan === "mensual")?.precio ?? 0;
+        setForm({ nombre_cliente: "", plan: "mensual", valor_mensual: String(precioDefault), costo_implementacion: "", estado: "al_dia", fecha_proximo_pago: "", notas: "", actividad_economica: "retail_ropa" });
         setEditando(null);
         setModal(true);
     }
@@ -253,7 +265,7 @@ export function SaasTemplate() {
                                 </Campo>
                                 <Campo>
                                     <label>Plan de pago</label>
-                                    <Select value={form.plan} onChange={e => setForm({ ...form, plan: e.target.value })}>
+                                    <Select value={form.plan} onChange={e => onCambioPlan(e.target.value)}>
                                         {PLANES.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
                                     </Select>
                                 </Campo>

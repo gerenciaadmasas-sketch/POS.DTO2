@@ -113,3 +113,6 @@ export * from './pages/SucursalesCajas';
 export * from './supabase/crudSuscripciones';
 export * from './components/templates/SaasTemplate';
 export * from './pages/Saas';
+export * from './supabase/crudConfigPlanes';
+export * from './components/templates/PlanesConfigTemplate';
+export * from './pages/PlanesConfig';
