@@ -9,6 +9,7 @@ const OCULTOS_SUPERVISOR = [
     "/configuracion/empresa",
     "/configuracion/ticket",
     "/configuracion/serializacion",
+    "/configuracion/proveedores",
 ];
 
 const OCULTOS_ADMIN = [
@@ -68,6 +69,10 @@ export function ConfiguracionesTemplate() {
             <Grid id="cards" ref={gridRef}>
                 {modulosFiltrados.map((item, index) => {
                     const activo = !!(item.link);
+                    const nombreModulo = (esSupervisor && item.link === "/configuracion/sucursales")
+                        ? "Almacenes" : item.nombre;
+                    const descModulo = (esSupervisor && item.link === "/configuracion/sucursales")
+                        ? "Gestiona los almacenes de tu sucursal" : item.descripcion;
                     const iconoOverride = getIcono(item.link);
                     const overrideEsUrl = iconoOverride?.startsWith("http");
                     const dbEsUrl = !iconoOverride && item.icono?.startsWith("http");
@@ -88,8 +93,8 @@ export function ConfiguracionesTemplate() {
                                     )}
                                 </IconArea>
                                 <Info>
-                                    <h3>{item.nombre}</h3>
-                                    <p>{item.descripcion}</p>
+                                    <h3>{nombreModulo}</h3>
+                                    <p>{descModulo}</p>
                                 </Info>
                             </CardInner>
                         </CardWrap>

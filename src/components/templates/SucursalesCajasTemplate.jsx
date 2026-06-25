@@ -2,6 +2,7 @@ import { useState } from "react";
 import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaStore } from "../../store/EmpresaStore";
+import { useUsuariosStore } from "../../store/UsuariosStore";
 import { MostrarSucursales, InsertarSucursal, EditarSucursal, EliminarSucursal } from "../../supabase/crudSucursales";
 import { MostrarAlmacenesPorEmpresa, InsertarAlmacen, EditarAlmacen, EliminarAlmacen } from "../../supabase/crudAlmacenesConfig";
 import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine } from "react-icons/ri";
@@ -9,8 +10,10 @@ import { toastExito, confirmar } from "../../utils/toast";
 
 export function SucursalesCajasTemplate() {
     const { dataempresa } = useEmpresaStore();
+    const { datausuarios } = useUsuariosStore();
     const queryClient = useQueryClient();
     const id_empresa = dataempresa?.id;
+    const esSupervisor = datausuarios?.tipo === "supervisor";
 
     const [modalSuc, setModalSuc] = useState(false);
     const [editSuc, setEditSuc]   = useState(null);
@@ -87,37 +90,46 @@ export function SucursalesCajasTemplate() {
         editAlm ? mutEditarAlm.mutate() : mutCrearAlm.mutate();
     }
 
+    const sucursalesFiltradas = esSupervisor
+        ? sucursales.filter(s => String(s.id) === String(datausuarios?.id_sucursal))
+        : sucursales;
+
     return (
         <Page>
             <TopBar>
                 <div>
-                    <h1>Sucursales y almacenes</h1>
-                    <p>gestiona tus puntos de venta y sus almacenes de inventario</p>
+                    <h1>{esSupervisor ? "Almacenes" : "Sucursales y almacenes"}</h1>
+                    <p>{esSupervisor ? "gestiona los almacenes de tu sucursal" : "gestiona tus puntos de venta y sus almacenes de inventario"}</p>
                 </div>
             </TopBar>
 
-            <BtnAgregar onClick={abrirNuevaSuc}>
-                <RiAddLine /> agregar sucursal
-            </BtnAgregar>
+            {!esSupervisor && (
+                <BtnAgregar onClick={abrirNuevaSuc}>
+                    <RiAddLine /> agregar sucursal
+                </BtnAgregar>
+            )}
 
             <Grid>
-                {sucursales.map((suc, i) => {
+                {sucursalesFiltradas.map((suc, i) => {
                     const almsDeEsta = almacenes.filter(a => a.id_sucursal === suc.id);
                     return (
                         <SucursalCard key={suc.id} $i={i}>
-                            <SucHeader>
-                                <SucTitulo>SUCURSAL: {(suc.razon_social ?? "Sin nombre").toUpperCase()}</SucTitulo>
-                                <SucActions>
-                                    <BtnIco onClick={() => abrirEditarSuc(suc)}><RiEditLine /></BtnIco>
-                                    <BtnIco $rojo onClick={() => confirmar({
-                                        titulo: "¿Eliminar sucursal?",
-                                        texto: `Se eliminará "${suc.razon_social}" y todos sus almacenes.`,
-                                        onConfirmar: () => mutEliminarSuc.mutate(suc.id),
-                                    })}><RiDeleteBin2Line /></BtnIco>
-                                </SucActions>
-                            </SucHeader>
-
-                            {suc.direccion && <SucDireccion>{suc.direccion}</SucDireccion>}
+                            {!esSupervisor && (
+                                <>
+                                    <SucHeader>
+                                        <SucTitulo>SUCURSAL: {(suc.razon_social ?? "Sin nombre").toUpperCase()}</SucTitulo>
+                                        <SucActions>
+                                            <BtnIco onClick={() => abrirEditarSuc(suc)}><RiEditLine /></BtnIco>
+                                            <BtnIco $rojo onClick={() => confirmar({
+                                                titulo: "¿Eliminar sucursal?",
+                                                texto: `Se eliminará "${suc.razon_social}" y todos sus almacenes.`,
+                                                onConfirmar: () => mutEliminarSuc.mutate(suc.id),
+                                            })}><RiDeleteBin2Line /></BtnIco>
+                                        </SucActions>
+                                    </SucHeader>
+                                    {suc.direccion && <SucDireccion>{suc.direccion}</SucDireccion>}
+                                </>
+                            )}
 
                             <AlmacenesLista>
                                 {almsDeEsta.map(alm => (
