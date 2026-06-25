@@ -47,7 +47,7 @@ export function ConfiguracionesTemplate() {
     const esAdmin = tipo === "administrador";
     const esSuperAdmin = tipo === "superadmin";
 
-    const VISIBLES_SUPERADMIN = ["/configuracion/empresa", "/configuracion/planes", "/configuracion/version"];
+    const VISIBLES_SUPERADMIN = ["/configuracion/planes", "/configuracion/version"];
 
     const modulosFiltrados = useMemo(() => {
         if (esSuperAdmin) return dataModulos.filter((m) => VISIBLES_SUPERADMIN.includes(m.link));
