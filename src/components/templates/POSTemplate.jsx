@@ -105,9 +105,8 @@ export function POSTemplate() {
         })();
     }, [almacenActivo?.id, dataempresa?.id, datausuarios?.id]);
 
-    const nombreMostrar = (datausuarios?.nombres && datausuarios.nombres !== "-")
-        ? datausuarios.nombres
-        : (user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? "Usuario");
+    const nombreMostrar = [datausuarios?.nombres, datausuarios?.apellidos]
+        .filter(n => n && n !== "-").join(" ") || user?.user_metadata?.full_name || "Usuario";
 
     const [hora, setHora] = useState("");
     const [fecha, setFecha] = useState("");
@@ -437,10 +436,10 @@ export function POSTemplate() {
                         </Avatar>
                         <div className="info">
                             <span className="nombre">{nombreMostrar}</span>
-                            <span className="rol">💰 cajero</span>
+                            <span className="rol">{tipoUsuario}</span>
                         </div>
                     </div>
-                    <div className="empresa">🍬 {dataempresa?.razon_social ?? "Mi empresa"}</div>
+                    <div className="empresa">{dataempresa?.razon_social ?? "Mi empresa"}</div>
                     <div className="reloj">
                         <span className="hora"><DotVerde /> {hora}</span>
                         <span className="fecha">{fecha}</span>
