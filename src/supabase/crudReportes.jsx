@@ -1,11 +1,12 @@
 import { supabase } from "../index";
 import { toastError } from "../utils/toast";
 
-export async function GetVentasStats({ id_empresa, desde, hasta }) {
+export async function GetVentasStats({ id_empresa, desde, hasta, id_almacen }) {
     let query = supabase
         .from("ventas")
         .select("total, subtotal, iva")
         .eq("id_empresa", id_empresa);
+    if (id_almacen) query = query.eq("id_almacen", id_almacen);
     if (desde) query = query.gte("created_at", desde);
     if (hasta) query = query.lte("created_at", hasta);
     const { data, error } = await query;
@@ -13,11 +14,12 @@ export async function GetVentasStats({ id_empresa, desde, hasta }) {
     return data ?? [];
 }
 
-export async function GetDetalleStats({ id_empresa, desde, hasta }) {
+export async function GetDetalleStats({ id_empresa, desde, hasta, id_almacen }) {
     let query = supabase
         .from("detalle_ventas")
         .select("cantidad, total_item, nombre, id_producto")
         .eq("id_empresa", id_empresa);
+    if (id_almacen) query = query.eq("id_almacen", id_almacen);
     if (desde) query = query.gte("created_at", desde);
     if (hasta) query = query.lte("created_at", hasta);
     const { data, error } = await query;
@@ -25,11 +27,13 @@ export async function GetDetalleStats({ id_empresa, desde, hasta }) {
     return data ?? [];
 }
 
-export async function GetInversionInventario({ id_empresa }) {
-    const { data, error } = await supabase
+export async function GetInversionInventario({ id_empresa, id_almacen }) {
+    let query = supabase
         .from("almacen")
         .select("stock, id_producto, productos!almacen_id_producto_fkey(precio_compra, precio_venta)")
         .gt("stock", 0);
+    if (id_almacen) query = query.eq("id_almacen", id_almacen);
+    const { data, error } = await query;
     if (error) { toastError(error.message, "Reportes › Inversión"); return { costo: 0, valor: 0, productos: 0, unidades: 0 }; }
     const rows = data ?? [];
     let costo = 0, valor = 0, unidades = 0;
@@ -44,13 +48,14 @@ export async function GetInversionInventario({ id_empresa }) {
     return { costo, valor, productos: rows.length, unidades };
 }
 
-export async function GetMovimientosCaja({ id_empresa, desde, hasta, page = 0, pageSize = 10 }) {
+export async function GetMovimientosCaja({ id_empresa, desde, hasta, id_almacen, page = 0, pageSize = 10 }) {
     let query = supabase
         .from("ventas")
         .select("id, created_at, total, metodo_pago, id_sucursal, id_almacen, id_usuario", { count: "exact" })
         .eq("id_empresa", id_empresa)
         .order("created_at", { ascending: false })
         .range(page * pageSize, (page + 1) * pageSize - 1);
+    if (id_almacen) query = query.eq("id_almacen", id_almacen);
     if (desde) query = query.gte("created_at", desde);
     if (hasta) query = query.lte("created_at", hasta);
     const { data, count, error } = await query;

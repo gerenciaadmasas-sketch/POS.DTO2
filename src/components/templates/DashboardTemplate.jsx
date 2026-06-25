@@ -75,47 +75,62 @@ export function DashboardTemplate() {
     const id_empresa = dataempresa?.id;
     const queryClient = useQueryClient();
 
-    // Helpers para resolver nombres por id
+    const tipo = datausuarios?.tipo;
+    const esAdmin = tipo === "administrador" || tipo === "superadmin";
+    const esSupervisor = tipo === "supervisor";
+    const esCajero = tipo === "cajero";
+    const puedeVerGanancias = esAdmin;
+
+    const almacenesDisponibles = esCajero
+        ? (dataAlmacenes ?? []).filter(a => a.id === datausuarios?.id_almacen)
+        : esSupervisor
+        ? (dataAlmacenes ?? []).filter(a => String(a.id_sucursal) === String(datausuarios?.id_sucursal))
+        : (dataAlmacenes ?? []);
+
     const nombreSucursal = (id) => dataSucursales?.find(s => s.id === id)?.razon_social ?? "—";
     const nombreAlmacen  = (id) => dataAlmacenes?.find(a => a.id === id)?.nombre  ?? "—";
-    // Para usuario: solo tenemos el usuario logueado; para historial solo mostramos el id por ahora
     const nombreUsuario  = (id) => id ? `#${id}` : "—";
 
     const [filtro, setFiltro]     = useState("todo");
+    const [filtroAlmacen, setFiltroAlmacen] = useState("todos");
     const [page, setPage]         = useState(0);
-    const [rtPulse, setRtPulse]   = useState(false); // indica nueva venta recibida
+    const [rtPulse, setRtPulse]   = useState(false);
+
+    const almacenQuery = filtroAlmacen === "todos" ? null : Number(filtroAlmacen);
+
+    // Cajero: forzar su almacén
+    const almacenEfectivo = esCajero
+        ? datausuarios?.id_almacen
+        : almacenQuery;
 
     const { desde, hasta }         = getRango(filtro);
     const { desde: dprev, hasta: hprev } = getPrevRango(filtro);
 
-    // Stats actuales
     const { data: ventasData = [], isFetching: loadV } = useQuery({
-        queryKey: ["dash-ventas", id_empresa, filtro],
-        queryFn: () => GetVentasStats({ id_empresa, desde, hasta }),
+        queryKey: ["dash-ventas", id_empresa, filtro, almacenEfectivo],
+        queryFn: () => GetVentasStats({ id_empresa, desde, hasta, id_almacen: almacenEfectivo }),
         enabled: !!id_empresa, refetchOnWindowFocus: false,
     });
     const { data: detalleData = [], isFetching: loadD } = useQuery({
-        queryKey: ["dash-detalle", id_empresa, filtro],
-        queryFn: () => GetDetalleStats({ id_empresa, desde, hasta }),
+        queryKey: ["dash-detalle", id_empresa, filtro, almacenEfectivo],
+        queryFn: () => GetDetalleStats({ id_empresa, desde, hasta, id_almacen: almacenEfectivo }),
         enabled: !!id_empresa, refetchOnWindowFocus: false,
     });
 
-    // Stats periodo anterior
     const { data: ventasPrev = [] } = useQuery({
-        queryKey: ["dash-ventas-prev", id_empresa, filtro],
-        queryFn: () => GetVentasStats({ id_empresa, desde: dprev, hasta: hprev }),
+        queryKey: ["dash-ventas-prev", id_empresa, filtro, almacenEfectivo],
+        queryFn: () => GetVentasStats({ id_empresa, desde: dprev, hasta: hprev, id_almacen: almacenEfectivo }),
         enabled: !!id_empresa && filtro !== "todo", refetchOnWindowFocus: false,
     });
     const { data: detallePrev = [] } = useQuery({
-        queryKey: ["dash-detalle-prev", id_empresa, filtro],
-        queryFn: () => GetDetalleStats({ id_empresa, desde: dprev, hasta: hprev }),
+        queryKey: ["dash-detalle-prev", id_empresa, filtro, almacenEfectivo],
+        queryFn: () => GetDetalleStats({ id_empresa, desde: dprev, hasta: hprev, id_almacen: almacenEfectivo }),
         enabled: !!id_empresa && filtro !== "todo", refetchOnWindowFocus: false,
     });
 
-    // Movimientos de caja
     const { data: movData, isFetching: loadM } = useQuery({
-        queryKey: ["dash-movimientos", id_empresa, filtro, page],
-        queryFn: () => GetMovimientosCaja({ id_empresa, desde, hasta, page, pageSize: PAGE_SIZE }),
+        queryKey: ["dash-movimientos", id_empresa, filtro, page, almacenEfectivo],
+        queryFn: () => GetMovimientosCaja({ id_empresa, desde, hasta, id_almacen: almacenEfectivo, page, pageSize: PAGE_SIZE }),
         enabled: !!id_empresa, refetchOnWindowFocus: false,
         placeholderData: (prev) => prev,
     });
@@ -124,11 +139,11 @@ export function DashboardTemplate() {
     const totalMovRows = movData?.count ?? 0;
     const totalPages = Math.max(1, Math.ceil(totalMovRows / PAGE_SIZE));
 
-    // Inversión en inventario
+    // Inversión en inventario (admin + supervisor, no cajero)
     const { data: inversion = { costo: 0, valor: 0, productos: 0, unidades: 0 } } = useQuery({
-        queryKey: ["dash-inversion", id_empresa],
-        queryFn: () => GetInversionInventario({ id_empresa }),
-        enabled: !!id_empresa, refetchOnWindowFocus: false,
+        queryKey: ["dash-inversion", id_empresa, almacenEfectivo],
+        queryFn: () => GetInversionInventario({ id_empresa, id_almacen: almacenEfectivo }),
+        enabled: !!id_empresa && !esCajero, refetchOnWindowFocus: false,
     });
 
     // Calcular stats
@@ -180,14 +195,27 @@ export function DashboardTemplate() {
         <Page>
             {/* Encabezado */}
             <TopBar>
-                <TituloPage>Dashboard</TituloPage>
+                <TopLeft>
+                    <TituloPage>Dashboard</TituloPage>
+                    {!esCajero && almacenesDisponibles.length > 1 && (
+                        <SelectAlmacenDash
+                            value={filtroAlmacen}
+                            onChange={e => { setFiltroAlmacen(e.target.value); setPage(0); }}
+                        >
+                            <option value="todos">Todos los almacenes</option>
+                            {almacenesDisponibles.map(a => (
+                                <option key={a.id} value={a.id}>{a.nombre}</option>
+                            ))}
+                        </SelectAlmacenDash>
+                    )}
+                </TopLeft>
                 <Filtros>
                     {FILTROS.map(f => (
                         <BtnFiltro key={f.key} $active={filtro === f.key} onClick={() => { setFiltro(f.key); setPage(0); }}>
                             {f.label}
                         </BtnFiltro>
                     ))}
-                    <BtnFiltro $limpiar onClick={() => { setFiltro("todo"); setPage(0); }}>
+                    <BtnFiltro $limpiar onClick={() => { setFiltro("todo"); setFiltroAlmacen("todos"); setPage(0); }}>
                         Limpiar filtro
                     </BtnFiltro>
                 </Filtros>
@@ -217,47 +245,53 @@ export function DashboardTemplate() {
                             <PctBadge pct={filtro === "todo" ? null : calcPct(cantProductos, cantPrev)} />
                         </StatCard>
 
-                        <StatCard $loading={loading}>
+                        {puedeVerGanancias && <StatCard $loading={loading}>
                             <StatTop>
                                 <StatLabel>Ganancias</StatLabel>
                                 <Icon icon="fluent-emoji-flat:chart-increasing" style={{ fontSize: 20 }} />
                             </StatTop>
                             <StatVal>{loading ? "—" : formatCOP(totalVentas)}</StatVal>
                             <PctBadge pct={filtro === "todo" ? null : calcPct(totalVentas, totalVentasPrev)} />
-                        </StatCard>
+                        </StatCard>}
                     </StatsRow>
 
-                    {/* Inversión en inventario */}
-                    <InversionRow>
-                        <InvCard>
-                            <InvIcon $color="#f59e0b"><Icon icon="solar:box-bold-duotone" /></InvIcon>
-                            <InvInfo>
-                                <InvLabel>Invertido en inventario</InvLabel>
-                                <InvVal>{formatCOP(inversion.costo)}</InvVal>
-                            </InvInfo>
-                        </InvCard>
-                        <InvCard>
-                            <InvIcon $color="#4ade80"><Icon icon="solar:tag-price-bold-duotone" /></InvIcon>
-                            <InvInfo>
-                                <InvLabel>Valor de venta del inventario</InvLabel>
-                                <InvVal $green>{formatCOP(inversion.valor)}</InvVal>
-                            </InvInfo>
-                        </InvCard>
-                        <InvCard>
-                            <InvIcon $color="#60a5fa"><Icon icon="solar:chart-square-bold-duotone" /></InvIcon>
-                            <InvInfo>
-                                <InvLabel>Ganancia potencial</InvLabel>
-                                <InvVal $green>{formatCOP(inversion.valor - inversion.costo)}</InvVal>
-                            </InvInfo>
-                        </InvCard>
-                        <InvCard>
-                            <InvIcon $color="#a78bfa"><Icon icon="solar:clipboard-list-bold-duotone" /></InvIcon>
-                            <InvInfo>
-                                <InvLabel>Productos / Unidades</InvLabel>
-                                <InvVal>{inversion.productos} / {inversion.unidades.toLocaleString("es-CO")}</InvVal>
-                            </InvInfo>
-                        </InvCard>
-                    </InversionRow>
+                    {/* Inversión en inventario — por rol */}
+                    {!esCajero && (
+                        <InversionRow>
+                            {puedeVerGanancias && (
+                                <InvCard>
+                                    <InvIcon $color="#f59e0b"><Icon icon="solar:box-bold-duotone" /></InvIcon>
+                                    <InvInfo>
+                                        <InvLabel>Invertido en inventario</InvLabel>
+                                        <InvVal>{formatCOP(inversion.costo)}</InvVal>
+                                    </InvInfo>
+                                </InvCard>
+                            )}
+                            <InvCard>
+                                <InvIcon $color="#4ade80"><Icon icon="solar:tag-price-bold-duotone" /></InvIcon>
+                                <InvInfo>
+                                    <InvLabel>Valor del inventario</InvLabel>
+                                    <InvVal $green>{formatCOP(inversion.valor)}</InvVal>
+                                </InvInfo>
+                            </InvCard>
+                            {puedeVerGanancias && (
+                                <InvCard>
+                                    <InvIcon $color="#60a5fa"><Icon icon="solar:chart-square-bold-duotone" /></InvIcon>
+                                    <InvInfo>
+                                        <InvLabel>Ganancia potencial</InvLabel>
+                                        <InvVal $green>{formatCOP(inversion.valor - inversion.costo)}</InvVal>
+                                    </InvInfo>
+                                </InvCard>
+                            )}
+                            <InvCard>
+                                <InvIcon $color="#a78bfa"><Icon icon="solar:clipboard-list-bold-duotone" /></InvIcon>
+                                <InvInfo>
+                                    <InvLabel>Productos / Unidades</InvLabel>
+                                    <InvVal>{inversion.productos} / {inversion.unidades.toLocaleString("es-CO")}</InvVal>
+                                </InvInfo>
+                            </InvCard>
+                        </InversionRow>
+                    )}
 
                     {/* Total ventas */}
                     <TotalCard $loading={loading}>
@@ -387,12 +421,33 @@ const TopBar = styled.div`
     margin-bottom: 24px;
 `;
 
+const TopLeft = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-right: auto;
+    flex-wrap: wrap;
+`;
+
 const TituloPage = styled.h1`
     font-size: 26px;
     font-weight: 900;
     color: ${({ theme }) => theme.text};
     margin: 0;
-    margin-right: auto;
+`;
+
+const SelectAlmacenDash = styled.select`
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid ${({ theme }) => theme.color2};
+    background: ${({ theme }) => theme.bgcards};
+    color: ${({ theme }) => theme.text};
+    font-size: 12px;
+    font-weight: 600;
+    font-family: "Poppins", sans-serif;
+    outline: none;
+    cursor: pointer;
+    &:focus { border-color: #f88533; }
 `;
 
 const Filtros = styled.div`
