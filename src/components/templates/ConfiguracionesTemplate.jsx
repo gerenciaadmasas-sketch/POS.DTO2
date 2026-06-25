@@ -46,12 +46,16 @@ export function ConfiguracionesTemplate() {
     const tipo = datausuarios?.tipo;
     const esSupervisor = tipo === "supervisor";
     const esAdmin = tipo === "administrador";
+    const esSuperAdmin = tipo === "superadmin";
+
+    const VISIBLES_SUPERADMIN = ["/configuracion/empresa", "/configuracion/planes", "/configuracion/version"];
 
     const modulosFiltrados = useMemo(() => {
+        if (esSuperAdmin) return dataModulos.filter((m) => VISIBLES_SUPERADMIN.includes(m.link));
         if (esSupervisor) return dataModulos.filter((m) => !OCULTOS_SUPERVISOR.includes(m.link));
         if (esAdmin) return dataModulos.filter((m) => !OCULTOS_ADMIN.includes(m.link));
         return dataModulos;
-    }, [dataModulos, esSupervisor, esAdmin]);
+    }, [dataModulos, esSupervisor, esAdmin, esSuperAdmin]);
 
     useEffect(() => {
         const handleMouseMove = (e) => {

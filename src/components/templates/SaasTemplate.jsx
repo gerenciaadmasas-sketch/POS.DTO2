@@ -1,7 +1,7 @@
 import { useState } from "react";
 import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MostrarSuscripciones, InsertarSuscripcion, EditarSuscripcion, EliminarSuscripcion } from "../../supabase/crudSuscripciones";
+import { MostrarSuscripciones, InsertarSuscripcion, EditarSuscripcion, EliminarSuscripcion, RegistrarPago } from "../../supabase/crudSuscripciones";
 import { MostrarConfigPlanes } from "../../supabase/crudConfigPlanes";
 import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine } from "react-icons/ri";
 import { Icon } from "@iconify/react";
@@ -60,6 +60,23 @@ export function SaasTemplate() {
     }
 
     const invalidar = () => queryClient.invalidateQueries({ queryKey: ["suscripciones"] });
+
+    function estadoAuto(s) {
+        if (s.estado === "suspendido" || s.estado === "cancelado") return s.estado;
+        if (!s.fecha_proximo_pago) return "al_dia";
+        return new Date(s.fecha_proximo_pago) < new Date() ? "mora" : "al_dia";
+    }
+
+    const mutPago = useMutation({
+        mutationFn: (s) => RegistrarPago({
+            id_suscripcion: s.id,
+            monto: Number(s.valor_mensual) || 0,
+            metodo: "transferencia",
+            notas: "",
+            plan: s.plan,
+        }),
+        onSuccess: () => { toastExito("Pago registrado — fecha actualizada"); invalidar(); },
+    });
 
     const mutCrear = useMutation({
         mutationFn: () => {
@@ -132,8 +149,8 @@ export function SaasTemplate() {
     // Stats
     const totalMensual = suscripciones.reduce((s, c) => s + (Number(c.valor_mensual) || 0), 0);
     const totalImplementacion = suscripciones.reduce((s, c) => s + (Number(c.costo_implementacion) || 0), 0);
-    const alDia = suscripciones.filter(c => c.estado === "al_dia").length;
-    const enMora = suscripciones.filter(c => c.estado === "mora").length;
+    const alDia = suscripciones.filter(c => estadoAuto(c) === "al_dia").length;
+    const enMora = suscripciones.filter(c => estadoAuto(c) === "mora").length;
 
     return (
         <Page>
@@ -186,7 +203,8 @@ export function SaasTemplate() {
                 ) : suscripciones.length === 0 ? (
                     <Vacio>No hay clientes registrados. Agrega el primero.</Vacio>
                 ) : suscripciones.map((s, i) => {
-                    const est = ESTADOS[s.estado] ?? ESTADOS.al_dia;
+                    const estadoCalc = estadoAuto(s);
+                    const est = ESTADOS[estadoCalc] ?? ESTADOS.al_dia;
                     const diasRestantes = s.fecha_proximo_pago
                         ? Math.ceil((new Date(s.fecha_proximo_pago) - new Date()) / 86400000)
                         : null;
@@ -231,6 +249,15 @@ export function SaasTemplate() {
                             </CardBody>
 
                             <CardActions>
+                                {estadoCalc === "mora" && (
+                                    <BtnPago onClick={() => confirmar({
+                                        titulo: "¿Registrar pago?",
+                                        texto: `Se registrará pago de ${formatCOP(s.valor_mensual)} y se actualizará la fecha del próximo corte.`,
+                                        onConfirmar: () => mutPago.mutate(s),
+                                    })}>
+                                        <Icon icon="solar:hand-money-bold-duotone" style={{ fontSize: 16 }} /> Registrar pago
+                                    </BtnPago>
+                                )}
                                 <BtnIco onClick={() => abrirEditar(s)}><RiEditLine /></BtnIco>
                                 <BtnIco $rojo onClick={() => confirmar({
                                     titulo: "¿Eliminar cliente?",
@@ -270,14 +297,6 @@ export function SaasTemplate() {
                                     </Select>
                                 </Campo>
                             </FilaDos>
-                            {editando && (
-                                <Campo>
-                                    <label>Estado</label>
-                                    <Select value={form.estado} onChange={e => setForm({ ...form, estado: e.target.value })}>
-                                        {Object.entries(ESTADOS).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
-                                    </Select>
-                                </Campo>
-                            )}
                             <FilaDos>
                                 <Campo>
                                     <label>Valor mensual</label>
@@ -425,6 +444,15 @@ const Notas = styled.div`
 const CardActions = styled.div`
     display: flex; gap: 6px; justify-content: flex-end;
     border-top: 1px solid ${({ theme }) => theme.color2}; padding-top: 10px;
+`;
+
+const BtnPago = styled.button`
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 8px; border: none;
+    background: rgba(74,222,128,0.15); color: #4ade80;
+    font-size: 11px; font-weight: 700; cursor: pointer;
+    font-family: "Poppins", sans-serif;
+    &:hover { background: rgba(74,222,128,0.25); }
 `;
 
 const BtnIco = styled.button`
