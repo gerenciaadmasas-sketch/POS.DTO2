@@ -34,7 +34,7 @@ export function Sidebar({ state, setState, onNavClick }) {
                 if (sesion) {
                     Swal.fire({
                         title: "Tienes una caja abierta",
-                        text: "Debes cerrar tu turno antes de salir. Ve al POS y cierra la caja.",
+                        text: "Debes cerrar tu turno antes de salir.",
                         icon: "warning",
                         confirmButtonText: "Entendido",
                         confirmButtonColor: "#f88533",
