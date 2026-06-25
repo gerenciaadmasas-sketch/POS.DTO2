@@ -5,7 +5,7 @@ import { useEmpresaStore } from "../../store/EmpresaStore";
 import { useSucursalesStore } from "../../store/SucursalesStore";
 import { useAlmacenesConfigStore } from "../../store/AlmacenesConfigStore";
 import { useUsuariosStore } from "../../store/UsuariosStore";
-import { GetVentasStats, GetDetalleStats, GetMovimientosCaja } from "../../supabase/crudReportes";
+import { GetVentasStats, GetDetalleStats, GetMovimientosCaja, GetInversionInventario } from "../../supabase/crudReportes";
 import { supabase } from "../../supabase/supabase.config";
 import { Icon } from "@iconify/react";
 
@@ -124,6 +124,13 @@ export function DashboardTemplate() {
     const totalMovRows = movData?.count ?? 0;
     const totalPages = Math.max(1, Math.ceil(totalMovRows / PAGE_SIZE));
 
+    // Inversión en inventario
+    const { data: inversion = { costo: 0, valor: 0, productos: 0, unidades: 0 } } = useQuery({
+        queryKey: ["dash-inversion", id_empresa],
+        queryFn: () => GetInversionInventario({ id_empresa }),
+        enabled: !!id_empresa, refetchOnWindowFocus: false,
+    });
+
     // Calcular stats
     const totalVentas    = sumTotal(ventasData);
     const totalVentasPrev = sumTotal(ventasPrev);
@@ -219,6 +226,38 @@ export function DashboardTemplate() {
                             <PctBadge pct={filtro === "todo" ? null : calcPct(totalVentas, totalVentasPrev)} />
                         </StatCard>
                     </StatsRow>
+
+                    {/* Inversión en inventario */}
+                    <InversionRow>
+                        <InvCard>
+                            <InvIcon $color="#f59e0b"><Icon icon="solar:box-bold-duotone" /></InvIcon>
+                            <InvInfo>
+                                <InvLabel>Invertido en inventario</InvLabel>
+                                <InvVal>{formatCOP(inversion.costo)}</InvVal>
+                            </InvInfo>
+                        </InvCard>
+                        <InvCard>
+                            <InvIcon $color="#4ade80"><Icon icon="solar:tag-price-bold-duotone" /></InvIcon>
+                            <InvInfo>
+                                <InvLabel>Valor de venta del inventario</InvLabel>
+                                <InvVal $green>{formatCOP(inversion.valor)}</InvVal>
+                            </InvInfo>
+                        </InvCard>
+                        <InvCard>
+                            <InvIcon $color="#60a5fa"><Icon icon="solar:chart-square-bold-duotone" /></InvIcon>
+                            <InvInfo>
+                                <InvLabel>Ganancia potencial</InvLabel>
+                                <InvVal $green>{formatCOP(inversion.valor - inversion.costo)}</InvVal>
+                            </InvInfo>
+                        </InvCard>
+                        <InvCard>
+                            <InvIcon $color="#a78bfa"><Icon icon="solar:clipboard-list-bold-duotone" /></InvIcon>
+                            <InvInfo>
+                                <InvLabel>Productos / Unidades</InvLabel>
+                                <InvVal>{inversion.productos} / {inversion.unidades.toLocaleString("es-CO")}</InvVal>
+                            </InvInfo>
+                        </InvCard>
+                    </InversionRow>
 
                     {/* Total ventas */}
                     <TotalCard $loading={loading}>
@@ -445,6 +484,55 @@ const StatLabel = styled.span`
     font-size: 13px;
     font-weight: 600;
     color: ${({ theme }) => theme.colorsubtitlecard};
+`;
+
+/* ── Inversión cards ── */
+const InversionRow = styled.div`
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 500px) { grid-template-columns: 1fr; }
+`;
+
+const InvCard = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    background: ${({ theme }) => theme.bgcards};
+    border: 1px solid ${({ theme }) => theme.color2};
+    border-radius: 14px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    }
+`;
+
+const InvIcon = styled.div`
+    font-size: 28px;
+    color: ${({ $color }) => $color};
+    flex-shrink: 0;
+`;
+
+const InvInfo = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+`;
+
+const InvLabel = styled.span`
+    font-size: 11px;
+    font-weight: 600;
+    color: ${({ theme }) => theme.colorsubtitlecard};
+`;
+
+const InvVal = styled.span`
+    font-size: 16px;
+    font-weight: 900;
+    color: ${({ $green, theme }) => $green ? "#4ade80" : theme.text};
 `;
 
 const StatVal = styled.div`
