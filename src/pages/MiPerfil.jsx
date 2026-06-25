@@ -12,6 +12,7 @@ import { toastExito, toastError } from "../utils/toast";
 import { RiUserLine, RiShieldLine, RiBuildingLine, RiStoreLine, RiEditLine, RiSaveLine, RiCloseLine, RiLockLine } from "react-icons/ri";
 
 const TIPO_COLORS = {
+    superadmin:    { bg: "rgba(248,133,51,0.12)",  color: "#f88533" },
     cajero:        { bg: "rgba(96,165,250,0.12)",  color: "#60a5fa" },
     administrador: { bg: "rgba(167,139,250,0.12)", color: "#a78bfa" },
     supervisor:    { bg: "rgba(74,222,128,0.12)",  color: "#4ade80" },
@@ -51,11 +52,14 @@ export function MiPerfil() {
     const nombreCompleto = [u?.nombres, u?.apellidos].filter(Boolean).join(" ") || "Sin nombre";
     const inicial = (u?.nombres ?? "?")[0]?.toUpperCase();
 
-    const asignacion = u?.tipo === "cajero"
+    const esSuperAdmin = u?.tipo === "superadmin";
+    const asignacion = esSuperAdmin
+        ? "Administrador del sistema"
+        : u?.tipo === "cajero"
         ? (dataAlmacenes?.find(a => a.id === u?.id_almacen)?.nombre ?? "Sin almacén")
         : u?.tipo === "supervisor"
         ? (dataSucursales?.find(s => s.id === u?.id_sucursal)?.razon_social ?? "Sin sucursal")
-        : "Toda la empresa";
+        : dataempresa?.razon_social ?? "Empresa";
 
     const permisosActivos = Object.entries(u?.permisos ?? {})
         .filter(([, v]) => v)
@@ -111,7 +115,7 @@ export function MiPerfil() {
 
                         <Separator />
 
-                        <InfoFila><RiBuildingLine /><span>{dataempresa?.razon_social ?? "—"}</span></InfoFila>
+                        {!esSuperAdmin && <InfoFila><RiBuildingLine /><span>{dataempresa?.razon_social ?? "—"}</span></InfoFila>}
                         <InfoFila><RiStoreLine /><span>{asignacion}</span></InfoFila>
                         {u?.telefono && <InfoFila><RiUserLine /><span>{u.telefono}</span></InfoFila>}
                         {u?.nro_doc  && <InfoFila><RiUserLine /><span>Doc: {u.nro_doc}</span></InfoFila>}
@@ -210,19 +214,21 @@ export function MiPerfil() {
                     </Card>
                 </ColIzq>
 
-                {/* ── Columna derecha: permisos ── */}
-                <Card $wide>
-                    <CardTitle><RiShieldLine /> Mis permisos</CardTitle>
-                    {permisosActivos.length === 0 ? (
-                        <MsgVacio>Sin permisos asignados</MsgVacio>
-                    ) : (
-                        <PermisosGrid>
-                            {permisosActivos.map(p => (
-                                <PermisoPill key={p}>{p}</PermisoPill>
-                            ))}
-                        </PermisosGrid>
-                    )}
-                </Card>
+                {/* ── Columna derecha: permisos (no superadmin) ── */}
+                {!esSuperAdmin && (
+                    <Card $wide>
+                        <CardTitle><RiShieldLine /> Mis permisos</CardTitle>
+                        {permisosActivos.length === 0 ? (
+                            <MsgVacio>Sin permisos asignados</MsgVacio>
+                        ) : (
+                            <PermisosGrid>
+                                {permisosActivos.map(p => (
+                                    <PermisoPill key={p}>{p}</PermisoPill>
+                                ))}
+                            </PermisosGrid>
+                        )}
+                    </Card>
+                )}
             </Contenido>
         </Page>
     );
