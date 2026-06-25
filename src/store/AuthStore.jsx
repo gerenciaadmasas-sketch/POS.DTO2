@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { supabase } from "../supabase/supabase.config";
+import { QueryClient } from "@tanstack/react-query";
 
 export const useAuthStore = create((set) => ({
     loginEmail: async ({ email, password }) => {
@@ -9,6 +10,8 @@ export const useAuthStore = create((set) => ({
     },
     cerrarSesion: async () => {
         await supabase.auth.signOut();
-        window.location.reload();
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/login";
     },
 }));

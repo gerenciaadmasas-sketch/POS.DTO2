@@ -22,7 +22,10 @@ export function Myroutes() {
 
   const { isLoading, error } = useQuery({
     queryKey: ["Mostrar Usuarios"],
-    queryFn: mostrarusuarios, refetchOnWindowFocus: false
+    queryFn: mostrarusuarios,
+    refetchOnWindowFocus: false,
+    staleTime: 0,
+    gcTime: 0,
   });
 
   // Carga empresa por id_auth del usuario (funciona para administrador/superadmin)
