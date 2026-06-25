@@ -117,7 +117,7 @@ export function MiPerfil() {
                         {!esSuperAdmin && <InfoFila><RiBuildingLine /><span>{dataempresa?.razon_social ?? "—"}</span></InfoFila>}
                         <InfoFila><RiStoreLine /><span>{asignacion}</span></InfoFila>
                         {u?.telefono && <InfoFila><RiUserLine /><span>{u.telefono}</span></InfoFila>}
-                        {u?.nro_doc  && <InfoFila><RiUserLine /><span>Doc: {u.nro_doc}</span></InfoFila>}
+                        {u?.nro_doc  && <InfoFila><RiUserLine /><span>CC: {Number(u.nro_doc).toLocaleString("es-CO")}</span></InfoFila>}
                     </Card>
                 </ColIzq>
 
