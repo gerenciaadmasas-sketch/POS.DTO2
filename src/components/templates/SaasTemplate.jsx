@@ -29,7 +29,7 @@ const ACTIVIDADES = [
     { key: "farmacia",       label: "Farmacia / Droguería" },
     { key: "ferreteria",     label: "Ferretería" },
     { key: "salon_belleza",  label: "Salón de belleza" },
-    { key: "veterinaria",    label: "Veterinaria" },
+    { key: "salud",          label: "Salud" },
 ];
 
 export function SaasTemplate() {
