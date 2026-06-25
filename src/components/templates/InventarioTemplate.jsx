@@ -347,22 +347,21 @@ export function InventarioTemplate() {
                                 <Th>Producto</Th>
                                 <Th>Precio</Th>
                                 <Th $center>Stock</Th>
-                                <Th $center>Mín.</Th>
                                 <Th>Estado</Th>
                                 {!esCajero && <Th>Acción</Th>}
                             </tr>
                         </thead>
                         <tbody>
                             {!almacenId ? (
-                                <tr><TdVacio colSpan={esCajero ? 5 : 6}>
+                                <tr><TdVacio colSpan={esCajero ? 4 : 5}>
                                     {esSuperAdmin
                                         ? "Expande un cliente y selecciona un almacén para ver su inventario"
                                         : "Selecciona un almacén para ver su inventario"}
                                 </TdVacio></tr>
                             ) : isFetching ? (
-                                <tr><TdVacio colSpan={esCajero ? 5 : 6}>Cargando inventario...</TdVacio></tr>
+                                <tr><TdVacio colSpan={esCajero ? 4 : 5}>Cargando inventario...</TdVacio></tr>
                             ) : productosFiltrados.length === 0 ? (
-                                <tr><TdVacio colSpan={esCajero ? 5 : 6}>Sin productos{busqueda ? ` para "${busqueda}"` : " en este almacén"}</TdVacio></tr>
+                                <tr><TdVacio colSpan={esCajero ? 4 : 5}>Sin productos{busqueda ? ` para "${busqueda}"` : " en este almacén"}</TdVacio></tr>
                             ) : productosFiltrados.map(p => {
                                 const estado    = getEstado(p.stock, p.stock_minimo);
                                 const enEdicion = editando === p.id;
@@ -374,12 +373,6 @@ export function InventarioTemplate() {
                                             {enEdicion
                                                 ? <InputStock type="number" min="0" value={editStock} onChange={e => setEditStock(e.target.value)} autoFocus />
                                                 : <StockPill $estado={estado}>{p.stock}</StockPill>
-                                            }
-                                        </Td>
-                                        <Td $center>
-                                            {enEdicion
-                                                ? <InputStock type="number" min="0" value={editMin} onChange={e => setEditMin(e.target.value)} />
-                                                : <span style={{ opacity: 0.7 }}>{p.stock_minimo}</span>
                                             }
                                         </Td>
                                         <Td>
