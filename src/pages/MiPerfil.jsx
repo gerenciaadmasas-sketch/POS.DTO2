@@ -104,11 +104,10 @@ export function MiPerfil() {
             </TopBar>
 
             <Contenido>
-                {/* ── Columna izquierda: datos ── */}
+                {/* ── Columna izquierda: avatar ── */}
                 <ColIzq>
-                    {/* Avatar + info */}
                     <Card>
-                        <AvatarGrande>{inicial}</AvatarGrande>
+                        <AvatarGrande $color={tc.color}>{inicial}</AvatarGrande>
                         <Nombre>{nombreCompleto}</Nombre>
                         <Usuario>@{u?.usuario ?? u?.email ?? "—"}</Usuario>
                         <TipoBadge $bg={tc.bg} $color={tc.color}>{u?.tipo ?? "cajero"}</TipoBadge>
@@ -120,8 +119,10 @@ export function MiPerfil() {
                         {u?.telefono && <InfoFila><RiUserLine /><span>{u.telefono}</span></InfoFila>}
                         {u?.nro_doc  && <InfoFila><RiUserLine /><span>Doc: {u.nro_doc}</span></InfoFila>}
                     </Card>
+                </ColIzq>
 
-                    {/* Editar datos personales */}
+                {/* ── Columna derecha: formularios ── */}
+                <ColDer>
                     <Card $align="stretch">
                         <CardHeaderRow>
                             <CardTitle><RiEditLine /> Datos personales</CardTitle>
@@ -212,9 +213,8 @@ export function MiPerfil() {
                             </FormDatos>
                         )}
                     </Card>
-                </ColIzq>
 
-                {/* ── Columna derecha: permisos (no superadmin) ── */}
+                    {/* Permisos (no superadmin) */}
                 {!esSuperAdmin && (
                     <Card $wide>
                         <CardTitle><RiShieldLine /> Mis permisos</CardTitle>
@@ -229,6 +229,7 @@ export function MiPerfil() {
                         )}
                     </Card>
                 )}
+                </ColDer>
             </Contenido>
         </Page>
     );
@@ -239,56 +240,74 @@ const fadeUp = keyframes`from{opacity:0;transform:translateY(14px)}to{opacity:1;
 
 const Page = styled.div`
     min-height: 100vh; background: ${({ theme }) => theme.bgtotal};
-    padding: 28px; animation: ${fadeUp} 0.3s ease;
+    padding: 36px 32px; animation: ${fadeUp} 0.3s ease;
+    display: flex; flex-direction: column; gap: 28px;
 
     @media (max-width: 767px) {
-        padding: 68px 12px 20px;
+        padding: 68px 14px 24px;
+        gap: 20px;
     }
 `;
 
 const TopBar = styled.div`
-    margin-bottom: 28px;
-    h1 { font-size: 22px; font-weight: 900; color: ${({ theme }) => theme.text}; margin: 0 0 4px; }
+    h1 { font-size: 24px; font-weight: 900; color: ${({ theme }) => theme.text}; margin: 0 0 4px; }
     p  { font-size: 13px; color: ${({ theme }) => theme.colorsubtitlecard}; margin: 0; }
 `;
 
-const Contenido = styled.div`display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;`;
+const Contenido = styled.div`
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 24px;
+    align-items: start;
 
-const ColIzq = styled.div`display: flex; flex-direction: column; gap: 16px; flex: 0 0 300px; min-width: 260px;`;
+    @media (max-width: 800px) {
+        grid-template-columns: 1fr;
+    }
+`;
+
+const ColIzq = styled.div`display: flex; flex-direction: column; gap: 20px;`;
+const ColDer = styled.div`display: flex; flex-direction: column; gap: 20px;`;
 
 const Card = styled.div`
     background: ${({ theme }) => theme.bgcards};
     border: 1px solid ${({ theme }) => theme.color2};
-    border-radius: 18px; padding: 24px;
+    border-radius: 20px; padding: 28px;
     display: flex; flex-direction: column;
     align-items: ${({ $wide, $align }) => $wide ? "flex-start" : $align === "stretch" ? "stretch" : "center"};
-    gap: 12px;
+    gap: 14px;
     flex: ${({ $wide }) => $wide ? 1 : "none"};
     min-width: ${({ $wide }) => $wide ? "280px" : "auto"};
+    transition: box-shadow 0.2s;
+    &:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.1); }
 `;
 
 const AvatarGrande = styled.div`
-    width: 80px; height: 80px; border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1, #2563eb);
+    width: 90px; height: 90px; border-radius: 50%;
+    background: ${({ $color }) => $color
+        ? `linear-gradient(135deg, ${$color}, ${$color}88)`
+        : "linear-gradient(135deg, #6366f1, #2563eb)"};
     display: flex; align-items: center; justify-content: center;
-    font-size: 32px; font-weight: 900; color: #fff; margin-bottom: 4px;
+    font-size: 36px; font-weight: 900; color: #fff;
+    margin-bottom: 6px;
+    box-shadow: 0 8px 24px ${({ $color }) => $color ? `${$color}40` : "rgba(99,102,241,0.3)"};
 `;
 
-const Nombre  = styled.div`font-size: 18px; font-weight: 900; color: ${({ theme }) => theme.text};`;
-const Usuario = styled.div`font-size: 13px; color: ${({ theme }) => theme.colorsubtitlecard};`;
+const Nombre  = styled.div`font-size: 20px; font-weight: 900; color: ${({ theme }) => theme.text};`;
+const Usuario = styled.div`font-size: 13px; color: ${({ theme }) => theme.colorsubtitlecard}; margin-top: -4px;`;
 
 const TipoBadge = styled.span`
-    display: inline-block; padding: 4px 14px; border-radius: 20px;
-    font-size: 12px; font-weight: 800; text-transform: capitalize;
+    display: inline-block; padding: 5px 16px; border-radius: 20px;
+    font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.8px;
     background: ${({ $bg }) => $bg}; color: ${({ $color }) => $color};
+    border: 1px solid ${({ $color }) => $color}30;
 `;
 
-const Separator = styled.div`width: 100%; height: 1px; background: ${({ theme }) => theme.color2}; margin: 4px 0;`;
+const Separator = styled.div`width: 100%; height: 1px; background: ${({ theme }) => theme.color2}; margin: 6px 0;`;
 
 const InfoFila = styled.div`
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 10px;
     font-size: 13px; color: ${({ theme }) => theme.colorsubtitlecard};
-    svg { font-size: 15px; flex-shrink: 0; }
+    svg { font-size: 16px; flex-shrink: 0; opacity: 0.6; }
     align-self: flex-start;
 `;
 
