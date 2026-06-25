@@ -110,3 +110,6 @@ export * from './components/templates/TicketConfigTemplate';
 export * from './pages/TicketConfig';
 export * from './components/templates/SucursalesCajasTemplate';
 export * from './pages/SucursalesCajas';
+export * from './supabase/crudSuscripciones';
+export * from './components/templates/SaasTemplate';
+export * from './pages/Saas';

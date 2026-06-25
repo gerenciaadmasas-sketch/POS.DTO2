@@ -32,6 +32,11 @@ export const LinksArray = [
     to: "/",
   },
   {
+    label: "Clientes",
+    icon: "solar:users-group-rounded-bold-duotone",
+    to: "/saas",
+  },
+  {
     label: "Vender",
     icon: "solar:cart-large-2-bold-duotone",
     to: "/pos",

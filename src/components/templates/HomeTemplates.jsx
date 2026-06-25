@@ -13,6 +13,15 @@ const ROL_STYLE = {
     cajero:        { color: "#60a5fa", bg: "rgba(96,165,250,0.10)",  glow: "rgba(96,165,250,0.35)" },
 };
 
+const ACCESOS_SUPERADMIN = [
+    { key: "saas",    icon: "solar:users-group-rounded-bold-duotone", label: "Clientes",     to: "/saas",          accent: "#f88533", big: true  },
+    { key: "inv",     icon: "solar:box-bold-duotone",            label: "Inventario",     to: "/inventario",    accent: "#4ade80", big: false },
+    { key: "report",  icon: "solar:chart-square-bold-duotone",   label: "Reportes",       to: "/reportes",      accent: "#60a5fa", big: false },
+    { key: "kardex",  icon: "solar:clipboard-list-bold-duotone", label: "Kardex",         to: "/kardex",        accent: "#f59e0b", big: false },
+    { key: "arqueo",  icon: "solar:wallet-money-bold-duotone",   label: "Arqueo",         to: "/arqueo",        accent: "#ec4899", big: false },
+    { key: "config",  icon: "solar:settings-bold-duotone",       label: "Configuración",  to: "/configuracion", accent: "#a78bfa", big: false },
+];
+
 const ACCESOS_ADMIN = [
     { key: "pos",     icon: "solar:cart-large-2-bold-duotone",   label: "Punto de venta", to: "/pos",           accent: "#f88533", big: true  },
     { key: "inv",     icon: "solar:box-bold-duotone",            label: "Inventario",     to: "/inventario",    accent: "#4ade80", big: false },
@@ -61,6 +70,7 @@ export function HomeTemplates() {
 
     const accesos = tipo === "cajero" ? ACCESOS_CAJERO
                   : tipo === "supervisor" ? ACCESOS_SUPERVISOR
+                  : tipo === "superadmin" ? ACCESOS_SUPERADMIN
                   : ACCESOS_ADMIN;
 
     const fecha = new Date().toLocaleDateString("es-CO", {
