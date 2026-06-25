@@ -242,7 +242,7 @@ export function SaasTemplate() {
                         <ModalForm onSubmit={handleGuardar}>
                             <Campo>
                                 <label>Nombre del cliente</label>
-                                <Input value={form.nombre_cliente} onChange={e => setForm({ ...form, nombre_cliente: e.target.value })} placeholder="Ej: Kelly Hernandez - Dikei" required />
+                                <Input value={form.nombre_cliente} onChange={e => setForm({ ...form, nombre_cliente: e.target.value })} placeholder="Nombre y apellido del cliente" required />
                             </Campo>
                             <FilaDos>
                                 <Campo>
