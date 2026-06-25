@@ -274,16 +274,33 @@ export function SaasTemplate() {
                                         const { default: Swal } = await import("sweetalert2");
                                         const { value: metodo } = await Swal.fire({
                                             title: "Registrar pago",
-                                            text: `Monto: ${formatCOP(s.valor_mensual)}`,
-                                            input: "select",
-                                            inputOptions: { efectivo: "Efectivo", transferencia: "Transferencia", qr: "QR" },
-                                            inputPlaceholder: "Medio de pago",
+                                            html: `
+                                                <div style="margin-bottom:18px;font-size:14px;color:#94a3b8;">Monto: <strong style="color:#4ade80;font-size:18px;">${formatCOP(s.valor_mensual)}</strong></div>
+                                                <div style="display:flex;gap:10px;justify-content:center;">
+                                                    <button class="swal-metodo" data-metodo="efectivo" style="flex:1;padding:16px 10px;border-radius:14px;border:2px solid #1e3347;background:#162436;color:#fff;cursor:pointer;font-family:Poppins,sans-serif;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s;">
+                                                        <span style="font-size:28px;">💵</span>Efectivo
+                                                    </button>
+                                                    <button class="swal-metodo" data-metodo="transferencia" style="flex:1;padding:16px 10px;border-radius:14px;border:2px solid #1e3347;background:#162436;color:#fff;cursor:pointer;font-family:Poppins,sans-serif;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s;">
+                                                        <span style="font-size:28px;">🏦</span>Transferencia
+                                                    </button>
+                                                    <button class="swal-metodo" data-metodo="qr" style="flex:1;padding:16px 10px;border-radius:14px;border:2px solid #1e3347;background:#162436;color:#fff;cursor:pointer;font-family:Poppins,sans-serif;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .15s;">
+                                                        <span style="font-size:28px;">📱</span>QR
+                                                    </button>
+                                                </div>
+                                            `,
+                                            showConfirmButton: false,
                                             showCancelButton: true,
-                                            confirmButtonText: "Registrar",
                                             cancelButtonText: "Cancelar",
-                                            confirmButtonColor: "#f88533",
+                                            background: "#0E1C2A",
+                                            color: "#D8E8F5",
                                             customClass: { popup: "swal-pos" },
-                                            inputValidator: (v) => !v && "Selecciona un medio de pago",
+                                            didOpen: () => {
+                                                document.querySelectorAll(".swal-metodo").forEach(btn => {
+                                                    btn.addEventListener("mouseenter", () => { btn.style.borderColor = "#f88533"; btn.style.background = "rgba(248,133,51,0.1)"; });
+                                                    btn.addEventListener("mouseleave", () => { btn.style.borderColor = "#1e3347"; btn.style.background = "#162436"; });
+                                                    btn.addEventListener("click", () => Swal.close(btn.dataset.metodo));
+                                                });
+                                            },
                                         });
                                         if (metodo) mutPago.mutate({ ...s, metodo_pago: metodo });
                                     }}>
