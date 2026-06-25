@@ -11,6 +11,10 @@ const OCULTOS_SUPERVISOR = [
     "/configuracion/serializacion",
 ];
 
+const OCULTOS_ADMIN = [
+    "/configuracion/empresa",
+];
+
 // Íconos locales por módulo — edita aquí para cambiar cualquier ícono
 // Íconos por módulo — clave = item.link (sin tildes, siempre consistente)
 const ICONOS_MODULOS = {
@@ -34,12 +38,15 @@ export function ConfiguracionesTemplate() {
     const { dataModulos = [] } = useModulosStore();
     const { datausuarios } = useUsuariosStore();
     const gridRef = useRef(null);
-    const esSupervisor = datausuarios?.tipo === "supervisor";
+    const tipo = datausuarios?.tipo;
+    const esSupervisor = tipo === "supervisor";
+    const esAdmin = tipo === "administrador";
 
     const modulosFiltrados = useMemo(() => {
-        if (!esSupervisor) return dataModulos;
-        return dataModulos.filter((m) => !OCULTOS_SUPERVISOR.includes(m.link));
-    }, [dataModulos, esSupervisor]);
+        if (esSupervisor) return dataModulos.filter((m) => !OCULTOS_SUPERVISOR.includes(m.link));
+        if (esAdmin) return dataModulos.filter((m) => !OCULTOS_ADMIN.includes(m.link));
+        return dataModulos;
+    }, [dataModulos, esSupervisor, esAdmin]);
 
     useEffect(() => {
         const handleMouseMove = (e) => {
