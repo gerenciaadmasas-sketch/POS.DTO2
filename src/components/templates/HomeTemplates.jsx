@@ -15,10 +15,7 @@ const ROL_STYLE = {
 
 const ACCESOS_SUPERADMIN = [
     { key: "saas",    icon: "solar:users-group-rounded-bold-duotone", label: "Clientes",     to: "/saas",          accent: "#f88533", big: true  },
-    { key: "inv",     icon: "solar:box-bold-duotone",            label: "Inventario",     to: "/inventario",    accent: "#4ade80", big: false },
     { key: "report",  icon: "solar:chart-square-bold-duotone",   label: "Reportes",       to: "/reportes",      accent: "#60a5fa", big: false },
-    { key: "kardex",  icon: "solar:clipboard-list-bold-duotone", label: "Kardex",         to: "/kardex",        accent: "#f59e0b", big: false },
-    { key: "arqueo",  icon: "solar:wallet-money-bold-duotone",   label: "Arqueo",         to: "/arqueo",        accent: "#ec4899", big: false },
     { key: "config",  icon: "solar:settings-bold-duotone",       label: "Configuración",  to: "/configuracion", accent: "#a78bfa", big: false },
 ];
 

@@ -116,3 +116,6 @@ export * from './pages/Saas';
 export * from './supabase/crudConfigPlanes';
 export * from './components/templates/PlanesConfigTemplate';
 export * from './pages/PlanesConfig';
+export * from './supabase/crudVersion';
+export * from './components/templates/VersionTemplate';
+export * from './pages/Version';

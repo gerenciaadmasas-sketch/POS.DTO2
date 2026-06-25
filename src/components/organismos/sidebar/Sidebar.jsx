@@ -14,7 +14,7 @@ import Swal from "sweetalert2";
 
 const LINKS_CAJERO     = ["/", "/pos", "/inventario", "/reportes"];
 const LINKS_ADMIN      = ["/", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo"];
-const LINKS_SUPERADMIN = ["/", "/saas", "/inventario", "/kardex", "/reportes", "/arqueo"];
+const LINKS_SUPERADMIN = ["/", "/saas", "/reportes"];
 
 export function Sidebar({ state, setState, onNavClick }) {
     const { cerrarSesion } = useAuthStore();

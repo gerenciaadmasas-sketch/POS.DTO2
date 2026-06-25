@@ -11,11 +11,13 @@ const OCULTOS_SUPERVISOR = [
     "/configuracion/serializacion",
     "/configuracion/proveedores",
     "/configuracion/planes",
+    "/configuracion/version",
 ];
 
 const OCULTOS_ADMIN = [
     "/configuracion/empresa",
     "/configuracion/planes",
+    "/configuracion/version",
 ];
 
 // Íconos locales por módulo — edita aquí para cambiar cualquier ícono
