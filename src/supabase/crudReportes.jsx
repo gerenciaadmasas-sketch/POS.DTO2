@@ -41,6 +41,26 @@ export async function GetDetalleStats({ id_empresa, desde, hasta, id_almacen }) 
 }
 
 export async function GetInversionInventario({ id_empresa, id_almacen }) {
+    if (!id_almacen && id_empresa) {
+        const { data: alms } = await supabase.from("almacenes").select("id").eq("id_empresa", id_empresa);
+        const ids = (alms ?? []).map(a => a.id);
+        if (ids.length === 0) return { costo: 0, valor: 0, productos: 0, unidades: 0 };
+        const { data, error } = await supabase
+            .from("almacen")
+            .select("stock, id_producto, productos!almacen_id_producto_fkey(precio_compra, precio_venta)")
+            .gt("stock", 0)
+            .in("id_almacen", ids);
+        if (error) { toastError(error.message, "Reportes › Inversión"); return { costo: 0, valor: 0, productos: 0, unidades: 0 }; }
+        const rows = data ?? [];
+        let costo = 0, valor = 0, unidades = 0;
+        rows.forEach(r => {
+            const stock = Number(r.stock) || 0;
+            const pc = Number(r.productos?.precio_compra) || 0;
+            const pv = Number(r.productos?.precio_venta) || 0;
+            costo += stock * pc; valor += stock * pv; unidades += stock;
+        });
+        return { costo, valor, productos: rows.length, unidades };
+    }
     let query = supabase
         .from("almacen")
         .select("stock, id_producto, productos!almacen_id_producto_fkey(precio_compra, precio_venta)")

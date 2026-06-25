@@ -24,7 +24,7 @@ export async function BuscarProductos(p) {
 }
 
 export async function EliminarProducto(p) {
-    const { error } = await supabase.from(tabla).delete().eq("id", p.id);
+    const { error } = await supabase.from(tabla).delete().eq("id", p.id).eq("id_empresa", p.id_empresa);
     if (error) {
         toastError(error.message, "Productos › Eliminar");
         throw new Error(error.message);

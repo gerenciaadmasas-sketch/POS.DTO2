@@ -69,8 +69,10 @@ export async function CrearUsuarioEmpleado(p) {
 export async function ObtenerEmailPorUsuario(usuario) {
     const { data } = await supabase
         .from(tabla)
-        .select("email, tipo")
+        .select("email, tipo, id_empresa")
         .eq("usuario", usuario)
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
     if (!data) return null;
     return { email: data.email ?? null, tipo: data.tipo ?? null };

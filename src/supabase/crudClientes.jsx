@@ -42,7 +42,7 @@ export async function EditarCliente(p) {
 }
 
 export async function EliminarCliente(p) {
-    const { error } = await supabase.from(tabla).delete().eq("id", p.id);
+    const { error } = await supabase.from(tabla).delete().eq("id", p.id).eq("id_empresa", p.id_empresa);
     if (error) {
         toastError(error.message, "Clientes › Eliminar");
     }

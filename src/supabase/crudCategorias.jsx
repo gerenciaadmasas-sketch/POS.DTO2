@@ -60,7 +60,7 @@ export async function BuscarCategorias(p) {
 }
 
 export async function EliminarCategoria(p) {
-    const { error } = await supabase.from(tabla).delete().eq("id", p.id);
+    const { error } = await supabase.from(tabla).delete().eq("id", p.id).eq("id_empresa", p.id_empresa);
     if (error) {
         toastError(error.message, "Categorías › Eliminar");
         return;
