@@ -39,7 +39,8 @@ export function SaasTemplate() {
     const [editando, setEditando] = useState(null);
 
     const [form, setForm] = useState({
-        nombre_cliente: "", plan: "basico", valor_mensual: "",
+        nombre_cliente: "", apellido_cliente: "", cedula_cliente: "",
+        plan: "mensual", valor_mensual: "",
         costo_implementacion: "", estado: "al_dia", fecha_proximo_pago: "", notas: "",
         actividad_economica: "retail_ropa",
     });
@@ -85,16 +86,21 @@ export function SaasTemplate() {
             const proximoPago = new Date(hoy.getFullYear(), hoy.getMonth() + planObj.meses, hoy.getDate());
             return InsertarSuscripcion({
                 nombre_cliente: form.nombre_cliente,
+                apellido_cliente: form.apellido_cliente,
+                cedula_cliente: form.cedula_cliente,
                 plan: form.plan,
                 valor_mensual: Number(form.valor_mensual) || 0,
                 costo_implementacion: Number(form.costo_implementacion) || 0,
-                estado: "al_dia",
                 fecha_proximo_pago: proximoPago.toISOString().split("T")[0],
                 notas: form.notas,
                 actividad_economica: form.actividad_economica,
             });
         },
-        onSuccess: () => { toastExito("Cliente agregado"); invalidar(); cerrar(); },
+        onSuccess: (result) => {
+            toastExito(`Cliente creado — Usuario: ${result.usuario} / Contraseña: ${result.password}`);
+            invalidar();
+            cerrar();
+        },
     });
 
     const mutEditar = useMutation({
@@ -119,7 +125,7 @@ export function SaasTemplate() {
 
     function abrirNuevo() {
         const precioDefault = preciosPlanes.find(p => p.plan === "mensual")?.precio ?? 0;
-        setForm({ nombre_cliente: "", plan: "mensual", valor_mensual: String(precioDefault), costo_implementacion: "", estado: "al_dia", fecha_proximo_pago: "", notas: "", actividad_economica: "retail_ropa" });
+        setForm({ nombre_cliente: "", apellido_cliente: "", cedula_cliente: "", plan: "mensual", valor_mensual: String(precioDefault), costo_implementacion: "", estado: "al_dia", fecha_proximo_pago: "", notas: "", actividad_economica: "retail_ropa" });
         setEditando(null);
         setModal(true);
     }
@@ -127,7 +133,9 @@ export function SaasTemplate() {
     function abrirEditar(s) {
         setForm({
             nombre_cliente: s.nombre_cliente ?? "",
-            plan: s.plan ?? "basico",
+            apellido_cliente: s.apellido_cliente ?? "",
+            cedula_cliente: s.cedula_cliente ?? "",
+            plan: s.plan ?? "mensual",
             valor_mensual: String(s.valor_mensual ?? ""),
             costo_implementacion: String(s.costo_implementacion ?? ""),
             estado: s.estado ?? "al_dia",
@@ -245,6 +253,18 @@ export function SaasTemplate() {
                                         </InfoVal>
                                     </InfoFila>
                                 )}
+                                {s.usuario_admin && (
+                                    <CredencialesBox>
+                                        <InfoFila>
+                                            <InfoLabel>Usuario</InfoLabel>
+                                            <InfoVal style={{ fontFamily: "monospace" }}>{s.usuario_admin}</InfoVal>
+                                        </InfoFila>
+                                        <InfoFila>
+                                            <InfoLabel>Contraseña</InfoLabel>
+                                            <InfoVal style={{ fontFamily: "monospace" }}>{s.password_admin}</InfoVal>
+                                        </InfoFila>
+                                    </CredencialesBox>
+                                )}
                                 {s.notas && <Notas>{s.notas}</Notas>}
                             </CardBody>
 
@@ -279,10 +299,22 @@ export function SaasTemplate() {
                             <BtnCerrar onClick={cerrar}><RiCloseLine /></BtnCerrar>
                         </ModalHeader>
                         <ModalForm onSubmit={handleGuardar}>
-                            <Campo>
-                                <label>Nombre del cliente</label>
-                                <Input value={form.nombre_cliente} onChange={e => setForm({ ...form, nombre_cliente: e.target.value })} placeholder="Nombre y apellido" required />
-                            </Campo>
+                            <FilaDos>
+                                <Campo>
+                                    <label>Nombre</label>
+                                    <Input value={form.nombre_cliente} onChange={e => setForm({ ...form, nombre_cliente: e.target.value })} placeholder="Kelly Johanna" required />
+                                </Campo>
+                                <Campo>
+                                    <label>Apellido</label>
+                                    <Input value={form.apellido_cliente} onChange={e => setForm({ ...form, apellido_cliente: e.target.value })} placeholder="Hernandez" required={!editando} />
+                                </Campo>
+                            </FilaDos>
+                            {!editando && (
+                                <Campo>
+                                    <label>Cédula (será la contraseña)</label>
+                                    <Input value={form.cedula_cliente} onChange={e => setForm({ ...form, cedula_cliente: e.target.value })} placeholder="53054567" required />
+                                </Campo>
+                            )}
                             <FilaDos>
                                 <Campo>
                                     <label>Actividad económica</label>
@@ -444,6 +476,16 @@ const Notas = styled.div`
 const CardActions = styled.div`
     display: flex; gap: 6px; justify-content: flex-end;
     border-top: 1px solid ${({ theme }) => theme.color2}; padding-top: 10px;
+`;
+
+const CredencialesBox = styled.div`
+    background: ${({ theme }) => theme.bgtotal};
+    border: 1px dashed ${({ theme }) => theme.color2};
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 `;
 
 const BtnPago = styled.button`

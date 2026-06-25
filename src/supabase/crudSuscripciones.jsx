@@ -13,22 +13,79 @@ export async function MostrarSuscripciones() {
 }
 
 export async function InsertarSuscripcion(p) {
-    // 1. Crear empresa aislada (tenant) para el nuevo cliente
+    const nombre = p.nombre_cliente?.split(" ")[0] ?? "";
+    const apellido = p.apellido_cliente ?? "";
+    const usuario = nombre.charAt(0).toUpperCase() + apellido.toLowerCase();
+    const password = p.cedula_cliente ?? "123456";
+    const nombreEmpresa = `${nombre} ${apellido}`.trim();
+
+    // 1. Crear empresa aislada (tenant)
     const { data: empresa, error: errEmp } = await supabase
         .from("empresa")
-        .insert({ razon_social: p.nombre_cliente })
+        .insert({ razon_social: nombreEmpresa })
         .select()
         .maybeSingle();
     if (errEmp) { toastError(errEmp.message, "Suscripciones › Crear empresa"); throw errEmp; }
 
-    // 2. Crear suscripción vinculada a la nueva empresa
+    const email = `${usuario}@emp${empresa.id}.pos`;
+
+    // 2. Crear usuario admin via Edge Function
+    const { error: errUser } = await supabase.functions.invoke("dynamic-worker", {
+        body: {
+            email,
+            password,
+            usuario,
+            nombres: nombre,
+            apellidos: apellido,
+            nro_doc: p.cedula_cliente ?? "",
+            id_empresa: empresa.id,
+            tipo: "administrador",
+            permisos: {
+                ventas: true, cobrar_venta: true, configuracion: true,
+                impresoras: true, empresa: true, categorias: true,
+                productos: true, clientes: true, proveedores: true,
+                sucursales_cajas: true, usuarios: true, almacenes: true,
+                inventario: true, kardex: true, dashboard: true,
+                config_ticket: true, serializacion: true,
+            },
+        },
+    });
+    if (errUser) {
+        toastError("Error al crear usuario admin", "Suscripciones");
+        // Limpiar empresa huérfana
+        await supabase.from("empresa").delete().eq("id", empresa.id);
+        throw errUser;
+    }
+
+    // Guardar email en usuario
+    await supabase.from("usuarios").update({ email }).eq("usuario", usuario).eq("id_empresa", empresa.id);
+
+    // Vincular empresa al usuario admin
+    const { data: adminUser } = await supabase.from("usuarios").select("id").eq("usuario", usuario).eq("id_empresa", empresa.id).maybeSingle();
+    if (adminUser) {
+        await supabase.from("empresa").update({ id_usuario: adminUser.id }).eq("id", empresa.id);
+    }
+
+    // 3. Crear suscripción con credenciales guardadas
     const { error } = await supabase.from(tabla).insert({
-        ...p,
+        nombre_cliente: p.nombre_cliente,
+        apellido_cliente: apellido,
+        cedula_cliente: p.cedula_cliente ?? "",
+        plan: p.plan,
+        valor_mensual: p.valor_mensual,
+        costo_implementacion: p.costo_implementacion,
+        estado: "al_dia",
+        fecha_proximo_pago: p.fecha_proximo_pago,
+        notas: p.notas,
+        actividad_economica: p.actividad_economica,
         id_empresa: empresa.id,
+        usuario_admin: usuario,
+        password_admin: password,
+        email_admin: email,
     });
     if (error) { toastError(error.message, "Suscripciones › Insertar"); throw error; }
 
-    return empresa;
+    return { empresa, usuario, password };
 }
 
 export async function EditarSuscripcion({ id, ...campos }) {
