@@ -33,6 +33,8 @@ const ICONOS_MODULOS = {
     "/configuracion/tickets":        "https://i.ibb.co/jPFnGLdQ/factura.png",
     "/configuracion/ticket":         "https://i.ibb.co/jPFnGLdQ/factura.png",
     "/configuracion/serializacion":  "https://i.ibb.co/WNZ8wt6g/codigo-binario.png",
+    "/configuracion/version":        "https://i.ibb.co/k6cNngBD/rack-de-servidores.png",
+    "/configuracion/planes":         "https://i.ibb.co/vxFGWK7V/diamante.png",
     "/configuracion/comprobantes":   "https://i.ibb.co/WNZ8wt6g/codigo-binario.png",
 };
 
