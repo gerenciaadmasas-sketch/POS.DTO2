@@ -71,63 +71,47 @@ export function RegistrarCliente({ onClose, dataSelect, accion }) {
 
                     <form className="formulario" onSubmit={handleSubmit(handlesub)}>
                         <section className="form-subcontainer">
-                            <article>
-                                <InputText icono={<v.icononombre />}>
-                                    <input
-                                        className="form__field"
-                                        type="text"
-                                        placeholder="Nombre"
-                                        {...register("nombre", { required: true })}
-                                    />
-                                    <label className="form__label">Nombre</label>
-                                    {errors.nombre?.type === "required" && <p>Campo requerido</p>}
-                                </InputText>
-                            </article>
-                            <article>
-                                <InputText icono={<v.icononombre />}>
-                                    <input
-                                        className="form__field"
-                                        type="text"
-                                        placeholder="Apellido"
-                                        {...register("apellido")}
-                                    />
-                                    <label className="form__label">Apellido (opcional)</label>
-                                </InputText>
-                            </article>
-                            <article>
-                                <InputText icono={<v.iconoflechaderecha />}>
-                                    <input
-                                        className="form__field"
-                                        type="text"
-                                        placeholder="Teléfono"
-                                        {...register("telefono")}
-                                    />
-                                    <label className="form__label">Teléfono (opcional)</label>
-                                </InputText>
-                            </article>
-                            <article>
-                                <InputText icono={<v.iconoemail />}>
-                                    <input
-                                        className="form__field"
-                                        type="email"
-                                        placeholder="Email"
-                                        {...register("email")}
-                                    />
-                                    <label className="form__label">Email (opcional)</label>
-                                </InputText>
-                            </article>
+                            <div className="fila-dos">
+                                <article>
+                                    <InputText icono={<v.icononombre />}>
+                                        <input className="form__field" type="text" placeholder="Nombre"
+                                            {...register("nombre", { required: true })} />
+                                        <label className="form__label">Nombre</label>
+                                        {errors.nombre?.type === "required" && <p>Campo requerido</p>}
+                                    </InputText>
+                                </article>
+                                <article>
+                                    <InputText icono={<v.icononombre />}>
+                                        <input className="form__field" type="text" placeholder="Apellido"
+                                            {...register("apellido")} />
+                                        <label className="form__label">Apellido</label>
+                                    </InputText>
+                                </article>
+                            </div>
                             <article>
                                 <InputText icono={<v.iconocodigointerno />}>
-                                    <input
-                                        className="form__field"
-                                        type="text"
-                                        placeholder="Documento"
-                                        {...register("documento")}
-                                    />
-                                    <label className="form__label">Documento (opcional)</label>
+                                    <input className="form__field" type="text" placeholder="Documento"
+                                        {...register("documento")} />
+                                    <label className="form__label">Nro. documento</label>
                                 </InputText>
                             </article>
-                            <Btn1 icono={<v.iconoguardar />} titulo="Guardar" bgcolor="#F9D70B" />
+                            <div className="fila-dos">
+                                <article>
+                                    <InputText icono={<v.iconoflechaderecha />}>
+                                        <input className="form__field" type="text" placeholder="Teléfono"
+                                            {...register("telefono")} />
+                                        <label className="form__label">Teléfono</label>
+                                    </InputText>
+                                </article>
+                                <article>
+                                    <InputText icono={<v.iconoemail />}>
+                                        <input className="form__field" type="email" placeholder="Email"
+                                            {...register("email")} />
+                                        <label className="form__label">Email</label>
+                                    </InputText>
+                                </article>
+                            </div>
+                            <Btn1 icono={<v.iconoguardar />} titulo="Guardar" bgcolor="#f88533" />
                         </section>
                     </form>
                 </div>
@@ -170,6 +154,11 @@ const Container = styled.div`
             gap: 20px;
             display: flex;
             flex-direction: column;
+        }
+        .fila-dos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
         }
     }
 `;
