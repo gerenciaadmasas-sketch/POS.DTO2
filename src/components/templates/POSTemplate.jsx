@@ -24,6 +24,14 @@ export function POSTemplate() {
         enabled: !!dataempresa?.id,
     });
 
+    const tipoUsuario = datausuarios?.tipo;
+    const esCajero = tipoUsuario === "cajero";
+    const esSupervisor = tipoUsuario === "supervisor";
+
+    const almacenesDisponibles = esSupervisor
+        ? (dataAlmacenes ?? []).filter(a => String(a.id_sucursal) === String(datausuarios?.id_sucursal))
+        : (dataAlmacenes ?? []).filter(a => a.id_sucursal === dataSucursales?.[0]?.id);
+
     const [almacenActivo,  setAlmacenActivo]  = useState(null);
     const [cajaAbierta,    setCajaAbierta]    = useState(false);
     const [saldoInicial,   setSaldoInicial]   = useState("");
@@ -69,13 +77,15 @@ export function POSTemplate() {
         refetchOnWindowFocus: false,
     });
 
-    // Al cargar almacenes, seleccionar el primero de la sucursal activa
+    // Auto-seleccionar almacén según rol
     useEffect(() => {
-        if (!almacenActivo && dataAlmacenes.length > 0 && dataSucursales?.[0]?.id) {
-            const deEstaSucursal = dataAlmacenes.filter(a => a.id_sucursal === dataSucursales[0].id);
-            if (deEstaSucursal.length > 0) setAlmacenActivo(deEstaSucursal[0]);
+        if (almacenActivo || dataAlmacenes.length === 0) return;
+        if (esCajero && datausuarios?.id_almacen) {
+            const fijo = dataAlmacenes.find(a => a.id === datausuarios.id_almacen);
+            if (fijo) return setAlmacenActivo(fijo);
         }
-    }, [dataAlmacenes, dataSucursales, almacenActivo]);
+        if (almacenesDisponibles.length > 0) setAlmacenActivo(almacenesDisponibles[0]);
+    }, [dataAlmacenes, dataSucursales, almacenActivo, almacenesDisponibles]);
 
     // Verificar si ya hay sesión abierta HOY para este usuario+almacén
     useEffect(() => {
@@ -398,7 +408,12 @@ export function POSTemplate() {
             <Header>
                 <FilaSucursal>
                     <span>SUCURSAL: {sucursal}</span>
-                    {dataAlmacenes.filter(a => a.id_sucursal === dataSucursales?.[0]?.id).length > 0 && (
+                    {esCajero ? (
+                        <AlmacenSelector>
+                            <span>ALMACÉN:</span>
+                            <span style={{ fontWeight: 700 }}>{almacenActivo?.nombre ?? "—"}</span>
+                        </AlmacenSelector>
+                    ) : almacenesDisponibles.length > 0 && (
                         <AlmacenSelector>
                             <span>ALMACÉN:</span>
                             <SelectAlmacen
@@ -408,10 +423,9 @@ export function POSTemplate() {
                                     if (alm) setAlmacenActivo(alm);
                                 }}
                             >
-                                {dataAlmacenes
-                                    .filter(a => a.id_sucursal === dataSucursales?.[0]?.id)
-                                    .map(a => <option key={a.id} value={a.id}>{a.nombre}</option>)
-                                }
+                                {almacenesDisponibles.map(a => (
+                                    <option key={a.id} value={a.id}>{a.nombre}</option>
+                                ))}
                             </SelectAlmacen>
                         </AlmacenSelector>
                     )}
