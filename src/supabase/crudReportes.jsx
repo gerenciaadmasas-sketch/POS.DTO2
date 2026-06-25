@@ -15,11 +15,24 @@ export async function GetVentasStats({ id_empresa, desde, hasta, id_almacen }) {
 }
 
 export async function GetDetalleStats({ id_empresa, desde, hasta, id_almacen }) {
+    if (id_almacen) {
+        let qVentas = supabase.from("ventas").select("id").eq("id_empresa", id_empresa).eq("id_almacen", id_almacen);
+        if (desde) qVentas = qVentas.gte("created_at", desde);
+        if (hasta) qVentas = qVentas.lte("created_at", hasta);
+        const { data: ventas } = await qVentas;
+        if (!ventas?.length) return [];
+        const ids = ventas.map(v => v.id);
+        const { data, error } = await supabase
+            .from("detalle_ventas")
+            .select("cantidad, total_item, nombre, id_producto")
+            .in("id_venta", ids);
+        if (error) { toastError(error.message, "Reportes"); return []; }
+        return data ?? [];
+    }
     let query = supabase
         .from("detalle_ventas")
         .select("cantidad, total_item, nombre, id_producto")
         .eq("id_empresa", id_empresa);
-    if (id_almacen) query = query.eq("id_almacen", id_almacen);
     if (desde) query = query.gte("created_at", desde);
     if (hasta) query = query.lte("created_at", hasta);
     const { data, error } = await query;
