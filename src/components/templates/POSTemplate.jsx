@@ -783,10 +783,9 @@ export function POSTemplate() {
                                 <TicketLogo><img src={ticketConfig.logo_url} alt="logo" /></TicketLogo>
                             )}
                             <TicketEmpresa>
-                                <div className="nombre">{ticketConfig?.linea1 || ticketData.empresa}</div>
-                                {ticketConfig?.linea2 && <div className="sucursal">{ticketConfig.linea2}</div>}
-                                {ticketConfig?.linea3 && <div className="sucursal">{ticketConfig.linea3}</div>}
-                                {!ticketConfig?.linea2 && <div className="sucursal">{ticketData.sucursal}</div>}
+                                <div className="nombre">{almacenActivo?.nombre ?? ticketData.empresa}</div>
+                                <div className="sucursal">{dataSucursales?.[0]?.direccion ?? ""}</div>
+                                {ticketConfig?.linea1 && <div className="sucursal">{ticketConfig.linea1}</div>}
                             </TicketEmpresa>
                             <TicketMeta>
                                 <span>Venta #{ticketData.idVenta}</span>
@@ -836,7 +835,12 @@ export function POSTemplate() {
                                 )}
                             </TicketPago>
 
-                            <TicketGracias>{ticketConfig?.pie_pagina || "¡Gracias por tu compra!"}</TicketGracias>
+                            {ticketConfig?.pie_pagina && (
+                                <TicketFirma>{ticketConfig.pie_pagina}</TicketFirma>
+                            )}
+                            <TicketGracias>
+                                Gracias por elegir {dataSucursales?.[0]?.razon_social ?? "nuestra marca"}, te esperamos en nuestros almacenes: {(dataAlmacenes ?? []).map(a => a.nombre).join(", ")}
+                            </TicketGracias>
                         </TicketBody>
                         <TicketPerforacion />
                         <BotonesTicket>
@@ -1908,6 +1912,17 @@ const TicketGracias = styled.div`
     font-weight: 700;
     letter-spacing: 0.5px;
     opacity: 0.55;
+`;
+
+const TicketFirma = styled.div`
+    text-align: center;
+    margin-top: 10px;
+    font-size: 10px;
+    color: #555;
+    line-height: 1.5;
+    font-style: italic;
+    border-top: 1px dashed #ccc;
+    padding-top: 8px;
 `;
 
 const BotonesTicket = styled.div`
