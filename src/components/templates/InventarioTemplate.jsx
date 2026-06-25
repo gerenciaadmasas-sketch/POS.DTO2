@@ -99,15 +99,22 @@ export function InventarioTemplate() {
         });
     }
 
+    const esSupervisor = datausuarios?.tipo === "supervisor";
+
     /* ── Datos agrupados ── */
     const grupos = useMemo(() => {
+        const almsFiltrados = esCajero
+            ? (dataAlmacenes ?? []).filter(a => a.id === datausuarios?.id_almacen)
+            : esSupervisor
+            ? (dataAlmacenes ?? []).filter(a => String(a.id_sucursal) === String(datausuarios?.id_sucursal))
+            : (dataAlmacenes ?? []);
         return (dataSucursales ?? [])
             .map(s => ({
                 ...s,
-                almacenes: (dataAlmacenes ?? []).filter(a => a.id_sucursal === s.id),
+                almacenes: almsFiltrados.filter(a => a.id_sucursal === s.id),
             }))
             .filter(s => s.almacenes.length > 0);
-    }, [dataSucursales, dataAlmacenes]);
+    }, [dataSucursales, dataAlmacenes, esCajero, esSupervisor, datausuarios]);
 
     const empresaGrupos = useMemo(() => {
         return todasEmpresas.map(emp => ({
@@ -125,7 +132,9 @@ export function InventarioTemplate() {
     const listAlmacenes  = esSuperAdmin ? todosAlmacenes   : (dataAlmacenes  ?? []);
     const listSucursales = esSuperAdmin ? todasSucursales  : (dataSucursales ?? []);
 
-    const almacenId   = almacenActivo ?? (esSuperAdmin ? null : (dataAlmacenes?.[0]?.id ?? null));
+    const almacenId   = esCajero
+        ? datausuarios?.id_almacen
+        : almacenActivo ?? (esSuperAdmin ? null : (dataAlmacenes?.[0]?.id ?? null));
     const almacenObj  = listAlmacenes.find(a => a.id === almacenId);
     const sucursalObj = listSucursales.find(s => s.id === almacenObj?.id_sucursal);
     const empresaObj  = esSuperAdmin
