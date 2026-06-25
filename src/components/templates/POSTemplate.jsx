@@ -301,9 +301,35 @@ export function POSTemplate() {
             });
             resetear();
             setVerPago(false);
+
+            // Auto-imprimir ticket
+            setTimeout(() => intentarImprimir(), 600);
         } finally {
             setCobrando(false);
         }
+    };
+
+    /* ── Impresión automática ── */
+    const intentarImprimir = () => {
+        const tienePuertos = navigator?.usb || navigator?.serial;
+        if (!window.matchMedia("(pointer: fine)").matches && !tienePuertos) {
+            import("sweetalert2").then(({ default: Swal }) => {
+                Swal.fire({
+                    title: "Sin impresora detectada",
+                    text: "¿Desea continuar sin imprimir?",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Continuar sin imprimir",
+                    cancelButtonText: "Reintentar",
+                    confirmButtonColor: "#f88533",
+                    customClass: { popup: "swal-pos" },
+                }).then((result) => {
+                    if (!result.isConfirmed) window.print();
+                });
+            });
+            return;
+        }
+        window.print();
     };
 
     /* ── Helpers caja ── */
