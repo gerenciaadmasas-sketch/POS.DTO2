@@ -68,6 +68,147 @@ const FILTROS = [
 
 /* ── Component ───────────────────────────────── */
 
+/* ── Dashboard SaaS (solo superadmin) ─────────────── */
+import { MostrarSuscripciones } from "../../supabase/crudSuscripciones";
+import { MostrarVersion } from "../../supabase/crudVersion";
+
+function DashboardSaaS() {
+    const { data: suscripciones = [] } = useQuery({
+        queryKey: ["dash-saas-suscripciones"],
+        queryFn: MostrarSuscripciones,
+    });
+    const { data: versiones = [] } = useQuery({
+        queryKey: ["dash-saas-version"],
+        queryFn: MostrarVersion,
+    });
+
+    const totalMensual = suscripciones.reduce((s, c) => s + (Number(c.valor_mensual) || 0), 0);
+    const totalAnual = totalMensual * 12;
+    const totalImplementacion = suscripciones.reduce((s, c) => s + (Number(c.costo_implementacion) || 0), 0);
+
+    function estadoAuto(s) {
+        if (s.estado === "suspendido" || s.estado === "cancelado") return s.estado;
+        if (!s.fecha_proximo_pago) return "al_dia";
+        return new Date(s.fecha_proximo_pago) < new Date() ? "mora" : "al_dia";
+    }
+
+    const alDia = suscripciones.filter(c => estadoAuto(c) === "al_dia").length;
+    const enMora = suscripciones.filter(c => estadoAuto(c) === "mora").length;
+    const versionActual = versiones[0]?.version ?? "POS.v1";
+
+    return (
+        <Page>
+            <TopBar>
+                <TopLeft>
+                    <TituloPage>Mi negocio</TituloPage>
+                    <VersionBadge>{versionActual}</VersionBadge>
+                </TopLeft>
+            </TopBar>
+
+            <StatsRow $cols={4}>
+                <StatCard>
+                    <StatTop>
+                        <StatLabel>Clientes activos</StatLabel>
+                        <Icon icon="solar:users-group-rounded-bold-duotone" style={{ fontSize: 22, color: "#60a5fa" }} />
+                    </StatTop>
+                    <StatVal>{suscripciones.length}</StatVal>
+                    <PctNeutro>{alDia} al día · {enMora} en mora</PctNeutro>
+                </StatCard>
+
+                <StatCard>
+                    <StatTop>
+                        <StatLabel>Ingreso mensual</StatLabel>
+                        <Icon icon="solar:wallet-money-bold-duotone" style={{ fontSize: 22, color: "#4ade80" }} />
+                    </StatTop>
+                    <StatVal $green>{formatCOP(totalMensual)}</StatVal>
+                    <PctNeutro>recurrente cada mes</PctNeutro>
+                </StatCard>
+
+                <StatCard>
+                    <StatTop>
+                        <StatLabel>Proyección anual</StatLabel>
+                        <Icon icon="solar:chart-square-bold-duotone" style={{ fontSize: 22, color: "#a78bfa" }} />
+                    </StatTop>
+                    <StatVal>{formatCOP(totalAnual)}</StatVal>
+                    <PctNeutro>si se mantienen los clientes</PctNeutro>
+                </StatCard>
+
+                <StatCard>
+                    <StatTop>
+                        <StatLabel>Implementaciones</StatLabel>
+                        <Icon icon="solar:hand-money-bold-duotone" style={{ fontSize: 22, color: "#f59e0b" }} />
+                    </StatTop>
+                    <StatVal>{formatCOP(totalImplementacion)}</StatVal>
+                    <PctNeutro>ingresos por setup</PctNeutro>
+                </StatCard>
+            </StatsRow>
+
+            {/* Resumen por cliente */}
+            <TableCard>
+                <TableHeader>
+                    <TableTitle>Resumen de clientes</TableTitle>
+                </TableHeader>
+                <TableWrap>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Actividad</th>
+                                <th>Plan</th>
+                                <th>Mensualidad</th>
+                                <th>Estado</th>
+                                <th>Próximo pago</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {suscripciones.length === 0 ? (
+                                <tr><td colSpan={6} style={{ textAlign: "center", padding: 24, color: "#64748b" }}>Sin clientes registrados</td></tr>
+                            ) : suscripciones.map(s => {
+                                const est = estadoAuto(s);
+                                const diasRest = s.fecha_proximo_pago
+                                    ? Math.ceil((new Date(s.fecha_proximo_pago) - new Date()) / 86400000)
+                                    : null;
+                                return (
+                                    <tr key={s.id}>
+                                        <td style={{ fontWeight: 700 }}>{s.nombre_cliente}</td>
+                                        <td>{s.actividad_economica?.replace(/_/g, " ") ?? "—"}</td>
+                                        <td style={{ textTransform: "capitalize" }}>{s.plan}</td>
+                                        <td style={{ fontWeight: 700, color: "#4ade80" }}>{formatCOP(s.valor_mensual)}</td>
+                                        <td>
+                                            <TipoBadge $tipo={est === "al_dia" ? "efectivo" : "error"}>
+                                                {est === "al_dia" ? "Al día" : est === "mora" ? "En mora" : est}
+                                            </TipoBadge>
+                                        </td>
+                                        <td>
+                                            {s.fecha_proximo_pago
+                                                ? new Date(s.fecha_proximo_pago).toLocaleDateString("es-CO")
+                                                : "—"}
+                                            {diasRest !== null && diasRest <= 5 && (
+                                                <span style={{ marginLeft: 6, fontSize: 10, color: diasRest <= 0 ? "#f87171" : "#f59e0b", fontWeight: 800 }}>
+                                                    {diasRest <= 0 ? "¡Vencido!" : `${diasRest}d`}
+                                                </span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </TableWrap>
+            </TableCard>
+        </Page>
+    );
+}
+
+const VersionBadge = styled.span`
+    padding: 4px 12px; border-radius: 20px;
+    font-size: 11px; font-weight: 800;
+    color: #4ade80; background: rgba(74,222,128,0.12);
+    border: 1px solid rgba(74,222,128,0.25);
+`;
+
+/* ── Dashboard POS (admin/supervisor/cajero) ───── */
+
 export function DashboardTemplate() {
     const { dataempresa }    = useEmpresaStore();
     const { dataSucursales } = useSucursalesStore();
@@ -77,7 +218,11 @@ export function DashboardTemplate() {
     const queryClient = useQueryClient();
 
     const tipo = datausuarios?.tipo;
-    const esAdmin = tipo === "administrador" || tipo === "superadmin";
+
+    // Superadmin ve dashboard SaaS
+    if (tipo === "superadmin") return <DashboardSaaS />;
+
+    const esAdmin = tipo === "administrador";
     const esSupervisor = tipo === "supervisor";
     const esCajero = tipo === "cajero";
     const puedeVerGanancias = esAdmin;
