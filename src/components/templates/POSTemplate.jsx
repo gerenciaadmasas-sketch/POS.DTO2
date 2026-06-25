@@ -87,11 +87,12 @@ export function POSTemplate() {
         if (almacenesDisponibles.length > 0) setAlmacenActivo(almacenesDisponibles[0]);
     }, [dataAlmacenes, dataSucursales, almacenActivo, almacenesDisponibles]);
 
-    // Verificar si ya hay sesión abierta HOY para este usuario+almacén
+    // Verificar si ya hay sesión abierta para este usuario+almacén
     useEffect(() => {
         if (!almacenActivo || !dataempresa?.id || !datausuarios?.id) return;
         (async () => {
             setCargandoSesion(true);
+            try {
             const sesionExistente = await ObtenerSesionAbierta({
                 id_empresa: dataempresa.id,
                 id_almacen: almacenActivo.id,
@@ -101,7 +102,11 @@ export function POSTemplate() {
                 setSesionActiva(sesionExistente);
                 setCajaAbierta(true);
             }
-            setCargandoSesion(false);
+            } catch (err) {
+                console.error("Error al verificar sesión:", err);
+            } finally {
+                setCargandoSesion(false);
+            }
         })();
     }, [almacenActivo?.id, dataempresa?.id, datausuarios?.id]);
 

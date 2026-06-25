@@ -8,6 +8,9 @@ import { useAuthStore } from "../../../store/AuthStore";
 import { useEmpresaStore } from "../../../store/EmpresaStore";
 import { useUsuariosStore } from "../../../store/UsuariosStore";
 import { ROLES_DARK } from "../../../store/ThemeStore";
+import { ObtenerSesionAbierta } from "../../../supabase/crudSesionesCaja";
+import { useAlmacenesConfigStore } from "../../../store/AlmacenesConfigStore";
+import Swal from "sweetalert2";
 
 const LINKS_CAJERO     = ["/", "/pos", "/inventario"];
 const LINKS_ADMIN      = ["/", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo"];
@@ -17,6 +20,32 @@ export function Sidebar({ state, setState, onNavClick }) {
     const { cerrarSesion } = useAuthStore();
     const { dataempresa } = useEmpresaStore();
     const { datausuarios } = useUsuariosStore();
+    const { dataAlmacenes } = useAlmacenesConfigStore();
+
+    async function handleCerrarSesion() {
+        if (datausuarios?.permisos?.ventas && dataempresa?.id && datausuarios?.id) {
+            const almacenId = datausuarios.id_almacen ?? dataAlmacenes?.[0]?.id;
+            if (almacenId) {
+                const sesion = await ObtenerSesionAbierta({
+                    id_empresa: dataempresa.id,
+                    id_almacen: almacenId,
+                    id_usuario: datausuarios.id,
+                });
+                if (sesion) {
+                    Swal.fire({
+                        title: "Tienes una caja abierta",
+                        text: "Debes cerrar tu turno antes de salir. Ve al POS y cierra la caja.",
+                        icon: "warning",
+                        confirmButtonText: "Entendido",
+                        confirmButtonColor: "#f88533",
+                        customClass: { popup: "swal-pos" },
+                    });
+                    return;
+                }
+            }
+        }
+        cerrarSesion();
+    }
 
     const tipo = datausuarios?.tipo;
     const esCajero     = tipo === "cajero";
@@ -83,7 +112,7 @@ export function Sidebar({ state, setState, onNavClick }) {
                 </NavLink>
 
                 {/* Salir */}
-                <BtnSalir onClick={cerrarSesion} $open={state}>
+                <BtnSalir onClick={handleCerrarSesion} $open={state}>
                     <Icon icon="solar:logout-2-bold-duotone" className="icon" color="#f87171" />
                     <span className="link-label">Salir</span>
                 </BtnSalir>
