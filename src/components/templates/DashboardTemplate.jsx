@@ -300,15 +300,17 @@ export function DashboardTemplate() {
                     )}
 
                     {/* Gráfica de ventas */}
-                    {ventasDiarias.length > 0 && (
-                        <ChartCard>
-                            <ChartHeader>
-                                <TableTitle>Ventas por día</TableTitle>
-                                {metaVentas > 0 && (
-                                    <MetaBadge>Meta: {formatCOP(metaVentas)}</MetaBadge>
-                                )}
-                            </ChartHeader>
-                            <ChartWrap>
+                    <ChartCard>
+                        <ChartHeader>
+                            <TableTitle>Ventas por día</TableTitle>
+                            {metaVentas > 0 && (
+                                <MetaBadge>Meta: {formatCOP(metaVentas)}</MetaBadge>
+                            )}
+                        </ChartHeader>
+                        <ChartWrap>
+                            {ventasDiarias.length === 0 ? (
+                                <ChartVacio>Sin ventas en este periodo</ChartVacio>
+                            ) : (
                                 <ResponsiveContainer width="100%" height={220}>
                                     <LineChart data={ventasDiarias}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
@@ -325,9 +327,9 @@ export function DashboardTemplate() {
                                         )}
                                     </LineChart>
                                 </ResponsiveContainer>
-                            </ChartWrap>
-                        </ChartCard>
-                    )}
+                            )}
+                        </ChartWrap>
+                    </ChartCard>
 
                     {/* Movimientos de caja */}
                     <TableCard>
@@ -558,6 +560,16 @@ const MetaBadge = styled.span`
 
 const ChartWrap = styled.div`
     padding: 0 10px 10px;
+`;
+
+const ChartVacio = styled.div`
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: ${({ theme }) => theme.colorsubtitlecard};
+    opacity: 0.6;
 `;
 
 /* ── Stat cards ── */
