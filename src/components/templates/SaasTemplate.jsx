@@ -302,17 +302,17 @@ export function SaasTemplate() {
                             <FilaDos>
                                 <Campo>
                                     <label>Nombre</label>
-                                    <Input value={form.nombre_cliente} onChange={e => setForm({ ...form, nombre_cliente: e.target.value })} placeholder="Kelly Johanna" required />
+                                    <Input value={form.nombre_cliente} onChange={e => setForm({ ...form, nombre_cliente: e.target.value })} placeholder="Nombre" required />
                                 </Campo>
                                 <Campo>
                                     <label>Apellido</label>
-                                    <Input value={form.apellido_cliente} onChange={e => setForm({ ...form, apellido_cliente: e.target.value })} placeholder="Hernandez" required={!editando} />
+                                    <Input value={form.apellido_cliente} onChange={e => setForm({ ...form, apellido_cliente: e.target.value })} placeholder="Apellido" required={!editando} />
                                 </Campo>
                             </FilaDos>
                             {!editando && (
                                 <Campo>
                                     <label>Cédula (será la contraseña)</label>
-                                    <Input value={form.cedula_cliente} onChange={e => setForm({ ...form, cedula_cliente: e.target.value })} placeholder="53054567" required />
+                                    <Input value={form.cedula_cliente} onChange={e => setForm({ ...form, cedula_cliente: e.target.value })} placeholder="Número de cédula" required />
                                 </Campo>
                             )}
                             <FilaDos>
