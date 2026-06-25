@@ -10,7 +10,7 @@ import { useUsuariosStore } from "../../../store/UsuariosStore";
 import { ROLES_DARK } from "../../../store/ThemeStore";
 
 const LINKS_CAJERO     = ["/", "/pos", "/inventario"];
-const LINKS_ADMIN      = ["/", "/inventario", "/kardex", "/reportes", "/arqueo"];
+const LINKS_ADMIN      = ["/", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo"];
 const LINKS_SUPERADMIN = ["/", "/inventario", "/kardex", "/reportes", "/arqueo"];
 
 export function Sidebar({ state, setState, onNavClick }) {
