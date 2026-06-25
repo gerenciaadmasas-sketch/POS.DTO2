@@ -280,12 +280,18 @@ export function SaasTemplate() {
                             )}
                             <FilaDos>
                                 <Campo>
-                                    <label>Valor mensual ($)</label>
-                                    <Input type="number" min="0" value={form.valor_mensual} onChange={e => setForm({ ...form, valor_mensual: e.target.value })} placeholder="150000" />
+                                    <label>Valor mensual</label>
+                                    <InputReadonly>{formatCOP(Number(form.valor_mensual) || 0)}</InputReadonly>
                                 </Campo>
                                 <Campo>
-                                    <label>Costo implementación ($)</label>
-                                    <Input type="number" min="0" value={form.costo_implementacion} onChange={e => setForm({ ...form, costo_implementacion: e.target.value })} placeholder="500000" />
+                                    <label>Costo implementación</label>
+                                    <Input
+                                        type="text"
+                                        inputMode="numeric"
+                                        value={form.costo_implementacion ? formatCOP(Number(form.costo_implementacion)) : ""}
+                                        onChange={e => setForm({ ...form, costo_implementacion: e.target.value.replace(/\D/g, "") })}
+                                        placeholder="$ 0"
+                                    />
                                 </Campo>
                             </FilaDos>
                             {editando && (
@@ -481,6 +487,14 @@ const Textarea = styled.textarea`
     background: ${({ theme }) => theme.bgtotal}; color: ${({ theme }) => theme.text};
     font-size: 13px; font-family: "Poppins", sans-serif; outline: none; resize: vertical;
     &:focus { border-color: #f88533; }
+`;
+
+const InputReadonly = styled.div`
+    padding: 10px 14px; border-radius: 10px;
+    border: 1.5px solid ${({ theme }) => theme.color2};
+    background: ${({ theme }) => theme.bgtotal}; color: #4ade80;
+    font-size: 14px; font-weight: 800; font-family: "Poppins", sans-serif;
+    opacity: 0.85;
 `;
 
 const BtnGuardar = styled.button`
