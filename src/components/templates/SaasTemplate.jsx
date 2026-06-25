@@ -1,7 +1,7 @@
 import { useState } from "react";
 import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MostrarSuscripciones, InsertarSuscripcion, EditarSuscripcion, EliminarSuscripcion, RegistrarPago } from "../../supabase/crudSuscripciones";
+import { MostrarSuscripciones, InsertarSuscripcion, EditarSuscripcion, EliminarSuscripcion, RegistrarPago, MostrarPagosCliente } from "../../supabase/crudSuscripciones";
 import { MostrarConfigPlanes } from "../../supabase/crudConfigPlanes";
 import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine } from "react-icons/ri";
 import { Icon } from "@iconify/react";
@@ -37,6 +37,13 @@ export function SaasTemplate() {
     const queryClient = useQueryClient();
     const [modal, setModal] = useState(false);
     const [editando, setEditando] = useState(null);
+    const [historialId, setHistorialId] = useState(null);
+
+    const { data: pagosHistorial = [] } = useQuery({
+        queryKey: ["pagos-historial", historialId],
+        queryFn: () => MostrarPagosCliente({ id_suscripcion: historialId }),
+        enabled: !!historialId,
+    });
 
     const [form, setForm] = useState({
         nombre_cliente: "", apellido_cliente: "", cedula_cliente: "",
@@ -76,7 +83,11 @@ export function SaasTemplate() {
             notas: "",
             plan: s.plan,
         }),
-        onSuccess: () => { toastExito("Pago registrado — fecha actualizada"); invalidar(); },
+        onSuccess: () => {
+            toastExito("Pago registrado — fecha actualizada");
+            invalidar();
+            queryClient.invalidateQueries({ queryKey: ["pagos-historial"] });
+        },
     });
 
     const mutCrear = useMutation({
@@ -266,6 +277,31 @@ export function SaasTemplate() {
                                     </CredencialesBox>
                                 )}
                                 {s.notas && <Notas>{s.notas}</Notas>}
+
+                                {/* Historial de pagos */}
+                                <BtnHistorial onClick={() => setHistorialId(historialId === s.id ? null : s.id)}>
+                                    <Icon icon="solar:clipboard-list-bold-duotone" style={{ fontSize: 14 }} />
+                                    {historialId === s.id ? "Ocultar historial" : "Ver historial de pagos"}
+                                </BtnHistorial>
+
+                                {historialId === s.id && (
+                                    <HistorialBox>
+                                        {pagosHistorial.length === 0 ? (
+                                            <HistorialVacio>Sin pagos registrados</HistorialVacio>
+                                        ) : pagosHistorial.map(p => (
+                                            <HistorialFila key={p.id}>
+                                                <HistorialFecha>
+                                                    {new Date(p.fecha_pago).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" })}
+                                                    <span>{new Date(p.fecha_pago).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</span>
+                                                </HistorialFecha>
+                                                <HistorialMetodo $metodo={p.metodo}>
+                                                    {p.metodo === "efectivo" ? "💵" : p.metodo === "transferencia" ? "🏦" : "📱"} {p.metodo}
+                                                </HistorialMetodo>
+                                                <HistorialMonto>{formatCOP(p.monto)}</HistorialMonto>
+                                            </HistorialFila>
+                                        ))}
+                                    </HistorialBox>
+                                )}
                             </CardBody>
 
                             <CardActions>
@@ -505,6 +541,53 @@ const Notas = styled.div`
 const CardActions = styled.div`
     display: flex; gap: 6px; justify-content: flex-end;
     border-top: 1px solid ${({ theme }) => theme.color2}; padding-top: 10px;
+`;
+
+const BtnHistorial = styled.button`
+    display: flex; align-items: center; gap: 6px;
+    background: none; border: 1px solid ${({ theme }) => theme.color2};
+    border-radius: 8px; padding: 6px 12px;
+    color: ${({ theme }) => theme.colorsubtitlecard};
+    font-size: 11px; font-weight: 700; cursor: pointer;
+    font-family: "Poppins", sans-serif;
+    transition: all 0.15s;
+    &:hover { border-color: #f88533; color: #f88533; }
+`;
+
+const HistorialBox = styled.div`
+    background: ${({ theme }) => theme.bgtotal};
+    border: 1px solid ${({ theme }) => theme.color2};
+    border-radius: 12px;
+    padding: 10px;
+    display: flex; flex-direction: column; gap: 6px;
+    max-height: 200px; overflow-y: auto;
+`;
+
+const HistorialVacio = styled.div`
+    text-align: center; padding: 16px;
+    font-size: 12px; color: ${({ theme }) => theme.colorsubtitlecard};
+`;
+
+const HistorialFila = styled.div`
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 8px;
+    background: ${({ theme }) => theme.bgcards};
+    font-size: 12px;
+`;
+
+const HistorialFecha = styled.div`
+    flex: 1; color: ${({ theme }) => theme.text}; font-weight: 600;
+    display: flex; flex-direction: column; gap: 1px;
+    span { font-size: 10px; color: ${({ theme }) => theme.colorsubtitlecard}; }
+`;
+
+const HistorialMetodo = styled.span`
+    font-size: 11px; font-weight: 700; text-transform: capitalize;
+    color: ${({ theme }) => theme.colorsubtitlecard};
+`;
+
+const HistorialMonto = styled.span`
+    font-weight: 800; color: #4ade80; font-size: 13px;
 `;
 
 const CredencialesBox = styled.div`
