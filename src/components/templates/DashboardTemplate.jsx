@@ -68,23 +68,60 @@ const FILTROS = [
 
 /* ── Component ───────────────────────────────── */
 
-/* ── Dashboard SaaS (solo superadmin) ─────────────── */
+/* ── Dashboard Superadmin — Visor de clientes ───── */
 import { MostrarSuscripciones } from "../../supabase/crudSuscripciones";
-import { MostrarVersion } from "../../supabase/crudVersion";
 
 function DashboardSaaS() {
+    const [clienteId, setClienteId] = useState("todos");
+    const [filtro, setFiltro] = useState("todo");
+    const [page, setPage] = useState(0);
+
     const { data: suscripciones = [] } = useQuery({
         queryKey: ["dash-saas-suscripciones"],
         queryFn: MostrarSuscripciones,
     });
-    const { data: versiones = [] } = useQuery({
-        queryKey: ["dash-saas-version"],
-        queryFn: MostrarVersion,
+
+    const empresaSeleccionada = clienteId === "todos" ? null : Number(clienteId);
+    const { desde, hasta } = getRango(filtro);
+
+    const { data: ventasData = [], isFetching: loadV } = useQuery({
+        queryKey: ["dash-sa-ventas", empresaSeleccionada, filtro],
+        queryFn: () => GetVentasStats({ id_empresa: empresaSeleccionada, desde, hasta }),
+        enabled: !!empresaSeleccionada,
     });
 
+    const { data: detalleData = [] } = useQuery({
+        queryKey: ["dash-sa-detalle", empresaSeleccionada, filtro],
+        queryFn: () => GetDetalleStats({ id_empresa: empresaSeleccionada, desde, hasta }),
+        enabled: !!empresaSeleccionada,
+    });
+
+    const { data: inversion = { costo: 0, valor: 0, productos: 0, unidades: 0 } } = useQuery({
+        queryKey: ["dash-sa-inversion", empresaSeleccionada],
+        queryFn: () => GetInversionInventario({ id_empresa: empresaSeleccionada }),
+        enabled: !!empresaSeleccionada,
+    });
+
+    const { data: ventasDiarias = [] } = useQuery({
+        queryKey: ["dash-sa-diarias", empresaSeleccionada, filtro],
+        queryFn: () => GetVentasDiarias({ id_empresa: empresaSeleccionada, desde, hasta }),
+        enabled: !!empresaSeleccionada,
+    });
+
+    const { data: movData } = useQuery({
+        queryKey: ["dash-sa-mov", empresaSeleccionada, filtro, page],
+        queryFn: () => GetMovimientosCaja({ id_empresa: empresaSeleccionada, desde, hasta, page, pageSize: 10 }),
+        enabled: !!empresaSeleccionada,
+    });
+
+    const totalVentas = sumTotal(ventasData);
+    const cantProductos = sumCant(detalleData);
+    const movimientos = movData?.data ?? [];
+    const totalPages = Math.max(1, Math.ceil((movData?.count ?? 0) / 10));
+
+    // Stats SaaS
     const totalMensual = suscripciones.reduce((s, c) => s + (Number(c.valor_mensual) || 0), 0);
     const totalAnual = totalMensual * 12;
-    const totalImplementacion = suscripciones.reduce((s, c) => s + (Number(c.costo_implementacion) || 0), 0);
 
     function estadoAuto(s) {
         if (s.estado === "suspendido" || s.estado === "cancelado") return s.estado;
@@ -92,119 +129,192 @@ function DashboardSaaS() {
         return new Date(s.fecha_proximo_pago) < new Date() ? "mora" : "al_dia";
     }
 
-    const alDia = suscripciones.filter(c => estadoAuto(c) === "al_dia").length;
-    const enMora = suscripciones.filter(c => estadoAuto(c) === "mora").length;
-    const versionActual = versiones[0]?.version ?? "POS.v1";
+    const clienteActivo = suscripciones.find(s => String(s.id_empresa) === String(clienteId));
 
     return (
         <Page>
             <TopBar>
                 <TopLeft>
-                    <TituloPage>Mi negocio</TituloPage>
-                    <VersionBadge>{versionActual}</VersionBadge>
+                    <TituloPage>Visor de clientes</TituloPage>
+                    <SelectAlmacenDash
+                        value={clienteId}
+                        onChange={e => { setClienteId(e.target.value); setPage(0); }}
+                    >
+                        <option value="todos">— Selecciona un cliente —</option>
+                        {suscripciones.map(s => (
+                            <option key={s.id} value={s.id_empresa}>{s.nombre_cliente}</option>
+                        ))}
+                    </SelectAlmacenDash>
                 </TopLeft>
+                {empresaSeleccionada && (
+                    <Filtros>
+                        {FILTROS.map(f => (
+                            <BtnFiltro key={f.key} $active={filtro === f.key} onClick={() => { setFiltro(f.key); setPage(0); }}>
+                                {f.label}
+                            </BtnFiltro>
+                        ))}
+                        <BtnFiltro $limpiar onClick={() => { setFiltro("todo"); setPage(0); }}>
+                            Limpiar filtro
+                        </BtnFiltro>
+                    </Filtros>
+                )}
             </TopBar>
 
-            <StatsRow $cols={4}>
-                <StatCard>
-                    <StatTop>
-                        <StatLabel>Clientes activos</StatLabel>
-                        <Icon icon="solar:users-group-rounded-bold-duotone" style={{ fontSize: 22, color: "#60a5fa" }} />
-                    </StatTop>
-                    <StatVal>{suscripciones.length}</StatVal>
-                    <PctNeutro>{alDia} al día · {enMora} en mora</PctNeutro>
-                </StatCard>
+            {!empresaSeleccionada ? (
+                <>
+                    {/* Vista general SaaS */}
+                    <StatsRow $cols={3}>
+                        <StatCard>
+                            <StatTop>
+                                <StatLabel>Clientes activos</StatLabel>
+                                <Icon icon="solar:users-group-rounded-bold-duotone" style={{ fontSize: 22, color: "#60a5fa" }} />
+                            </StatTop>
+                            <StatVal>{suscripciones.length}</StatVal>
+                        </StatCard>
+                        <StatCard>
+                            <StatTop>
+                                <StatLabel>Ingreso mensual</StatLabel>
+                                <Icon icon="solar:wallet-money-bold-duotone" style={{ fontSize: 22, color: "#4ade80" }} />
+                            </StatTop>
+                            <StatVal $green>{formatCOP(totalMensual)}</StatVal>
+                        </StatCard>
+                        <StatCard>
+                            <StatTop>
+                                <StatLabel>Proyección anual</StatLabel>
+                                <Icon icon="solar:chart-square-bold-duotone" style={{ fontSize: 22, color: "#a78bfa" }} />
+                            </StatTop>
+                            <StatVal>{formatCOP(totalAnual)}</StatVal>
+                        </StatCard>
+                    </StatsRow>
 
-                <StatCard>
-                    <StatTop>
-                        <StatLabel>Ingreso mensual</StatLabel>
-                        <Icon icon="solar:wallet-money-bold-duotone" style={{ fontSize: 22, color: "#4ade80" }} />
-                    </StatTop>
-                    <StatVal $green>{formatCOP(totalMensual)}</StatVal>
-                    <PctNeutro>recurrente cada mes</PctNeutro>
-                </StatCard>
+                    <TableCard>
+                        <TableHeader><TableTitle>Selecciona un cliente para ver sus métricas</TableTitle></TableHeader>
+                        <TableWrap>
+                            <table>
+                                <thead><tr><th>Cliente</th><th>Actividad</th><th>Plan</th><th>Mensualidad</th><th>Estado</th></tr></thead>
+                                <tbody>
+                                    {suscripciones.map(s => {
+                                        const est = estadoAuto(s);
+                                        return (
+                                            <tr key={s.id} style={{ cursor: "pointer" }} onClick={() => setClienteId(String(s.id_empresa))}>
+                                                <td style={{ fontWeight: 700 }}>{s.nombre_cliente}</td>
+                                                <td style={{ textTransform: "capitalize" }}>{s.actividad_economica?.replace(/_/g, " ") ?? "—"}</td>
+                                                <td style={{ textTransform: "capitalize" }}>{s.plan}</td>
+                                                <td style={{ fontWeight: 700, color: "#4ade80" }}>{formatCOP(s.valor_mensual)}</td>
+                                                <td><TipoBadge $tipo={est === "al_dia" ? "efectivo" : "error"}>{est === "al_dia" ? "Al día" : "En mora"}</TipoBadge></td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </TableWrap>
+                    </TableCard>
+                </>
+            ) : (
+                <>
+                    {/* Dashboard del cliente seleccionado */}
+                    {clienteActivo && (
+                        <ClienteBanner>
+                            <span className="nombre">{clienteActivo.nombre_cliente}</span>
+                            <span className="actividad">{clienteActivo.actividad_economica?.replace(/_/g, " ")}</span>
+                        </ClienteBanner>
+                    )}
 
-                <StatCard>
-                    <StatTop>
-                        <StatLabel>Proyección anual</StatLabel>
-                        <Icon icon="solar:chart-square-bold-duotone" style={{ fontSize: 22, color: "#a78bfa" }} />
-                    </StatTop>
-                    <StatVal>{formatCOP(totalAnual)}</StatVal>
-                    <PctNeutro>si se mantienen los clientes</PctNeutro>
-                </StatCard>
+                    <StatsRow $cols={4}>
+                        <StatCard $loading={loadV}>
+                            <StatTop>
+                                <StatLabel>Ventas</StatLabel>
+                                <Icon icon="solar:cart-large-2-bold-duotone" style={{ fontSize: 20, color: "#f88533" }} />
+                            </StatTop>
+                            <StatVal>{formatCOP(totalVentas)}</StatVal>
+                        </StatCard>
+                        <StatCard>
+                            <StatTop>
+                                <StatLabel>Productos vendidos</StatLabel>
+                                <Icon icon="solar:bag-check-bold-duotone" style={{ fontSize: 20, color: "#60a5fa" }} />
+                            </StatTop>
+                            <StatVal>{cantProductos.toLocaleString("es-CO")}</StatVal>
+                        </StatCard>
+                        <StatCard>
+                            <StatTop>
+                                <StatLabel>Invertido</StatLabel>
+                                <Icon icon="solar:box-bold-duotone" style={{ fontSize: 20, color: "#f59e0b" }} />
+                            </StatTop>
+                            <StatVal>{formatCOP(inversion.costo)}</StatVal>
+                        </StatCard>
+                        <StatCard>
+                            <StatTop>
+                                <StatLabel>Valor inventario</StatLabel>
+                                <Icon icon="solar:tag-price-bold-duotone" style={{ fontSize: 20, color: "#4ade80" }} />
+                            </StatTop>
+                            <StatVal $green>{formatCOP(inversion.valor)}</StatVal>
+                            <PctNeutro>{inversion.productos} productos · {inversion.unidades.toLocaleString("es-CO")} uds</PctNeutro>
+                        </StatCard>
+                    </StatsRow>
 
-                <StatCard>
-                    <StatTop>
-                        <StatLabel>Implementaciones</StatLabel>
-                        <Icon icon="solar:hand-money-bold-duotone" style={{ fontSize: 22, color: "#f59e0b" }} />
-                    </StatTop>
-                    <StatVal>{formatCOP(totalImplementacion)}</StatVal>
-                    <PctNeutro>ingresos por setup</PctNeutro>
-                </StatCard>
-            </StatsRow>
+                    {/* Gráfica */}
+                    <ChartCard>
+                        <ChartHeader><TableTitle>Ventas por día</TableTitle></ChartHeader>
+                        <ChartWrap>
+                            {ventasDiarias.length === 0 ? (
+                                <ChartVacio>Sin ventas en este periodo</ChartVacio>
+                            ) : (
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <LineChart data={ventasDiarias}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                                        <XAxis dataKey="dia" tick={{ fontSize: 10, fill: "#94a3b8" }} />
+                                        <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} tickFormatter={v => `$${(v/1000).toFixed(0)}k`} />
+                                        <Tooltip formatter={(v) => [formatCOP(v), "Ventas"]} contentStyle={{ background: "#1C2E42", border: "1px solid #2d4a66", borderRadius: 10, fontSize: 12 }} />
+                                        <Line type="monotone" dataKey="total" stroke="#f88533" strokeWidth={3} dot={{ r: 4, fill: "#f88533" }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            )}
+                        </ChartWrap>
+                    </ChartCard>
 
-            {/* Resumen por cliente */}
-            <TableCard>
-                <TableHeader>
-                    <TableTitle>Resumen de clientes</TableTitle>
-                </TableHeader>
-                <TableWrap>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Cliente</th>
-                                <th>Actividad</th>
-                                <th>Plan</th>
-                                <th>Mensualidad</th>
-                                <th>Estado</th>
-                                <th>Próximo pago</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {suscripciones.length === 0 ? (
-                                <tr><td colSpan={6} style={{ textAlign: "center", padding: 24, color: "#64748b" }}>Sin clientes registrados</td></tr>
-                            ) : suscripciones.map(s => {
-                                const est = estadoAuto(s);
-                                const diasRest = s.fecha_proximo_pago
-                                    ? Math.ceil((new Date(s.fecha_proximo_pago) - new Date()) / 86400000)
-                                    : null;
-                                return (
-                                    <tr key={s.id}>
-                                        <td style={{ fontWeight: 700 }}>{s.nombre_cliente}</td>
-                                        <td>{s.actividad_economica?.replace(/_/g, " ") ?? "—"}</td>
-                                        <td style={{ textTransform: "capitalize" }}>{s.plan}</td>
-                                        <td style={{ fontWeight: 700, color: "#4ade80" }}>{formatCOP(s.valor_mensual)}</td>
-                                        <td>
-                                            <TipoBadge $tipo={est === "al_dia" ? "efectivo" : "error"}>
-                                                {est === "al_dia" ? "Al día" : est === "mora" ? "En mora" : est}
-                                            </TipoBadge>
-                                        </td>
-                                        <td>
-                                            {s.fecha_proximo_pago
-                                                ? new Date(s.fecha_proximo_pago).toLocaleDateString("es-CO")
-                                                : "—"}
-                                            {diasRest !== null && diasRest <= 5 && (
-                                                <span style={{ marginLeft: 6, fontSize: 10, color: diasRest <= 0 ? "#f87171" : "#f59e0b", fontWeight: 800 }}>
-                                                    {diasRest <= 0 ? "¡Vencido!" : `${diasRest}d`}
-                                                </span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </TableWrap>
-            </TableCard>
+                    {/* Movimientos */}
+                    <TableCard>
+                        <TableHeader><TableTitle>Últimas ventas</TableTitle></TableHeader>
+                        <TableWrap>
+                            <table>
+                                <thead><tr><th>Fecha</th><th>Tipo</th><th>Monto</th></tr></thead>
+                                <tbody>
+                                    {movimientos.length === 0 ? (
+                                        <tr><td colSpan={3} style={{ textAlign: "center", padding: 24, color: "#64748b" }}>Sin ventas</td></tr>
+                                    ) : movimientos.map(m => (
+                                        <tr key={m.id}>
+                                            <td>{fmtFecha(m.created_at)}</td>
+                                            <td><TipoBadge $tipo={m.metodo_pago}>{m.metodo_pago ?? "—"}</TipoBadge></td>
+                                            <td style={{ fontWeight: 700 }}>{formatCOP(m.total)}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </TableWrap>
+                        {totalPages > 1 && (
+                            <Paginacion>
+                                <BtnPag disabled={page === 0} onClick={() => setPage(0)}>«</BtnPag>
+                                <BtnPag disabled={page === 0} onClick={() => setPage(p => p - 1)}>‹</BtnPag>
+                                <PagInfo>{page + 1} de {totalPages}</PagInfo>
+                                <BtnPag disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>›</BtnPag>
+                                <BtnPag disabled={page >= totalPages - 1} onClick={() => setPage(totalPages - 1)}>»</BtnPag>
+                            </Paginacion>
+                        )}
+                    </TableCard>
+                </>
+            )}
         </Page>
     );
 }
 
-const VersionBadge = styled.span`
-    padding: 4px 12px; border-radius: 20px;
-    font-size: 11px; font-weight: 800;
-    color: #4ade80; background: rgba(74,222,128,0.12);
-    border: 1px solid rgba(74,222,128,0.25);
+const ClienteBanner = styled.div`
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px; border-radius: 14px;
+    background: ${({ theme }) => theme.bgcards};
+    border: 1px solid ${({ theme }) => theme.color2};
+    margin-bottom: 16px;
+    .nombre { font-size: 18px; font-weight: 900; color: ${({ theme }) => theme.text}; }
+    .actividad { font-size: 12px; color: ${({ theme }) => theme.colorsubtitlecard}; text-transform: capitalize; }
 `;
 
 /* ── Dashboard POS (admin/supervisor/cajero) ───── */
