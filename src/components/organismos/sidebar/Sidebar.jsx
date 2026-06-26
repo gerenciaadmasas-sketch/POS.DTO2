@@ -7,7 +7,6 @@ import { Icon } from "@iconify/react";
 import { useAuthStore } from "../../../store/AuthStore";
 import { useEmpresaStore } from "../../../store/EmpresaStore";
 import { useUsuariosStore } from "../../../store/UsuariosStore";
-import { ROLES_DARK } from "../../../store/ThemeStore";
 import { ObtenerSesionAbierta } from "../../../supabase/crudSesionesCaja";
 import { useAlmacenesConfigStore } from "../../../store/AlmacenesConfigStore";
 import Swal from "sweetalert2";
@@ -118,12 +117,9 @@ export function Sidebar({ state, setState, onNavClick }) {
                 </BtnSalir>
             </Nav>
 
-            {/* Toggle tema — solo visible para cajero */}
-            {esCajero && (
-                <Bottom>
-                    <ToggleTema />
-                </Bottom>
-            )}
+            <Bottom>
+                <ToggleTema />
+            </Bottom>
         </Wrap>
     );
 }

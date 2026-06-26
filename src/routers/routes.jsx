@@ -6,19 +6,13 @@ import { Arqueo } from "../pages/Arqueo";
 import { useQuery } from "@tanstack/react-query";
 import { Spinner1 } from "../components/moleculas/Spinner1";
 import { MostrarEmpresaPorId } from "../supabase/crudEmpresa";
-import { useThemeStore } from "../store/ThemeStore";
 import { useEffect } from "react";
 
 export function Myroutes() {
   const { user } = UserAuth();
   const { datausuarios, mostrarusuarios } = useUsuariosStore();
   const { mostrarempresa, dataempresa, setEmpresa } = useEmpresaStore();
-  const { applyRoleTheme } = useThemeStore();
 
-  /* Forzar tema oscuro para admins en cuanto se carga el usuario */
-  useEffect(() => {
-    if (datausuarios?.tipo) applyRoleTheme(datausuarios.tipo);
-  }, [datausuarios?.tipo]);
 
   const { isLoading, error } = useQuery({
     queryKey: ["Mostrar Usuarios"],
