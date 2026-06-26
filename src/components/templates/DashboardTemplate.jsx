@@ -487,68 +487,47 @@ export function DashboardTemplate() {
             <Grid>
                 {/* Columna izquierda (3/4) */}
                 <ColLeft>
-                    {/* Métricas principales — no cajero */}
+                    {/* Métricas principales */}
                     {!esCajero && (
-                        <>
-                            <StatsRow $cols={puedeVerGanancias ? 3 : 4}>
-                                <StatCard $loading={loading}>
-                                    <StatTop>
-                                        <StatLabel>Ventas</StatLabel>
-                                        <Icon icon="solar:cart-large-2-bold-duotone" style={{ fontSize: 20, color: "#f88533" }} />
-                                    </StatTop>
-                                    <StatVal>{loading ? "—" : formatCOP(totalVentas)}</StatVal>
-                                    <PctBadge pct={filtro === "todo" ? null : calcPct(totalVentas, totalVentasPrev)} />
-                                </StatCard>
+                        <StatsRow $cols={2}>
+                            <StatCard $loading={loading}>
+                                <StatTop>
+                                    <StatLabel>Ventas</StatLabel>
+                                    <Icon icon="solar:cart-large-2-bold-duotone" style={{ fontSize: 20, color: "#f88533" }} />
+                                </StatTop>
+                                <StatVal>{loading ? "—" : formatCOP(totalVentas)}</StatVal>
+                                <PctBadge pct={filtro === "todo" ? null : calcPct(totalVentas, totalVentasPrev)} />
+                            </StatCard>
 
-                                <StatCard $loading={loading}>
-                                    <StatTop>
-                                        <StatLabel>Productos vendidos</StatLabel>
-                                        <Icon icon="solar:bag-check-bold-duotone" style={{ fontSize: 20, color: "#60a5fa" }} />
-                                    </StatTop>
-                                    <StatVal>{loading ? "—" : cantProductos.toLocaleString("es-CO")}</StatVal>
-                                    <PctBadge pct={filtro === "todo" ? null : calcPct(cantProductos, cantPrev)} />
-                                </StatCard>
+                            <StatCard $loading={loading}>
+                                <StatTop>
+                                    <StatLabel>Productos vendidos</StatLabel>
+                                    <Icon icon="solar:bag-check-bold-duotone" style={{ fontSize: 20, color: "#60a5fa" }} />
+                                </StatTop>
+                                <StatVal>{loading ? "—" : cantProductos.toLocaleString("es-CO")}</StatVal>
+                                <PctBadge pct={filtro === "todo" ? null : calcPct(cantProductos, cantPrev)} />
+                            </StatCard>
 
-                                <StatCard>
-                                    <StatTop>
-                                        <StatLabel>Valor del inventario</StatLabel>
-                                        <Icon icon="solar:tag-price-bold-duotone" style={{ fontSize: 20, color: "#4ade80" }} />
-                                    </StatTop>
-                                    <StatVal $green>{formatCOP(inversion.valor)}</StatVal>
-                                    <PctNeutro>{inversion.productos} productos · {inversion.unidades.toLocaleString("es-CO")} uds</PctNeutro>
-                                </StatCard>
-
-                                {puedeVerGanancias && (
-                                    <StatCard $loading={loading}>
-                                        <StatTop>
-                                            <StatLabel>Ganancias</StatLabel>
-                                            <Icon icon="solar:chart-square-bold-duotone" style={{ fontSize: 20, color: "#a78bfa" }} />
-                                        </StatTop>
-                                        <StatVal>{loading ? "—" : formatCOP(totalVentas)}</StatVal>
-                                        <PctBadge pct={filtro === "todo" ? null : calcPct(totalVentas, totalVentasPrev)} />
-                                    </StatCard>
-                                )}
-                            </StatsRow>
+                            <StatCard>
+                                <StatTop>
+                                    <StatLabel>Valor del inventario</StatLabel>
+                                    <Icon icon="solar:tag-price-bold-duotone" style={{ fontSize: 20, color: "#4ade80" }} />
+                                </StatTop>
+                                <StatVal $green>{formatCOP(inversion.valor)}</StatVal>
+                                <PctNeutro>{inversion.productos} productos · {inversion.unidades.toLocaleString("es-CO")} uds</PctNeutro>
+                            </StatCard>
 
                             {puedeVerGanancias && (
-                                <InversionRow>
-                                    <InvCard>
-                                        <InvIcon $color="#f59e0b"><Icon icon="solar:box-bold-duotone" /></InvIcon>
-                                        <InvInfo>
-                                            <InvLabel>Invertido en inventario</InvLabel>
-                                            <InvVal>{formatCOP(inversion.costo)}</InvVal>
-                                        </InvInfo>
-                                    </InvCard>
-                                    <InvCard>
-                                        <InvIcon $color="#4ade80"><Icon icon="solar:chart-square-bold-duotone" /></InvIcon>
-                                        <InvInfo>
-                                            <InvLabel>Ganancia potencial</InvLabel>
-                                            <InvVal $green>{formatCOP(inversion.valor - inversion.costo)}</InvVal>
-                                        </InvInfo>
-                                    </InvCard>
-                                </InversionRow>
+                                <StatCard>
+                                    <StatTop>
+                                        <StatLabel>Invertido en inventario</StatLabel>
+                                        <Icon icon="solar:box-bold-duotone" style={{ fontSize: 20, color: "#f59e0b" }} />
+                                    </StatTop>
+                                    <StatVal>{formatCOP(inversion.costo)}</StatVal>
+                                    <PctNeutro>Ganancia potencial: <span style={{ color: "#4ade80", fontWeight: 800 }}>{formatCOP(inversion.valor - inversion.costo)}</span></PctNeutro>
+                                </StatCard>
                             )}
-                        </>
+                        </StatsRow>
                     )}
 
                     {/* Gráfica de ventas */}
