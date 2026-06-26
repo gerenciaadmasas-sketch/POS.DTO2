@@ -18,9 +18,20 @@ export async function MostrarProductos(p) {
 }
 
 export async function BuscarProductos(p) {
-    const { data } = await supabase
-        .rpc("buscarproductos", { _id_empresa: p.id_empresa, _descripcion: p.descripcion });
-    return data;
+    const { data, error } = await supabase
+        .from(tabla)
+        .select("*, categorias(nombre)")
+        .eq("id_empresa", p.id_empresa)
+        .ilike("nombre", `%${p.descripcion}%`)
+        .order("nombre")
+        .limit(20);
+    if (error) { console.error("Buscar productos:", error.message); return []; }
+    return (data ?? []).map(prod => ({
+        ...prod,
+        categoria: prod.categorias?.nombre ?? "Sin categoría",
+        p_venta: `$ ${Number(prod.precio_venta).toLocaleString("es-CO")}`,
+        p_compra: `$ ${Number(prod.precio_compra).toLocaleString("es-CO")}`,
+    }));
 }
 
 export async function EliminarProducto(p) {
