@@ -5,7 +5,7 @@ import { useEmpresaStore } from "../../store/EmpresaStore";
 import { useSucursalesStore } from "../../store/SucursalesStore";
 import { useAlmacenesConfigStore } from "../../store/AlmacenesConfigStore";
 import { useUsuariosStore } from "../../store/UsuariosStore";
-import { GetVentasStats, GetDetalleStats, GetMovimientosCaja, GetInversionInventario, GetVentasDiarias } from "../../supabase/crudReportes";
+import { GetVentasStats, GetDetalleStats, GetMovimientosCaja, GetInversionInventario, GetVentasDiarias, GetProductosEstancados } from "../../supabase/crudReportes";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid } from "recharts";
 import { supabase } from "../../supabase/supabase.config";
 import { Icon } from "@iconify/react";
@@ -427,7 +427,12 @@ export function DashboardTemplate() {
     }, [detalleData]);
 
     const top5  = topProductos.slice(0, 5);
-    const bottom5 = [...topProductos].sort((a, b) => a.cantidad - b.cantidad).slice(0, 5);
+
+    const { data: estancados = [] } = useQuery({
+        queryKey: ["dash-estancados", id_empresa, almacenEfectivo],
+        queryFn: () => GetProductosEstancados({ id_empresa, id_almacen: almacenEfectivo }),
+        enabled: !!id_empresa,
+    });
 
     const loading = loadV || loadD;
 
@@ -635,19 +640,19 @@ export function DashboardTemplate() {
                         )}
                     </TopCard>
 
-                    {/* TOP 5 menos vendidos */}
+                    {/* TOP 5 estancados */}
                     <TopCard>
                         <TopTitle>TOP 5</TopTitle>
-                        <TopSubtitle $warn>productos menos vendidos</TopSubtitle>
-                        {bottom5.length === 0 ? (
-                            <EmptyTop><span style={{ color: "#64748b", fontSize: 13 }}>sin data...</span></EmptyTop>
+                        <TopSubtitle $warn>sin movimiento (+2 semanas)</TopSubtitle>
+                        {estancados.length === 0 ? (
+                            <EmptyTop><span style={{ color: "#64748b", fontSize: 13 }}>todo se está moviendo bien</span></EmptyTop>
                         ) : (
                             <TopList>
-                                {bottom5.map((p, i) => (
+                                {estancados.map((p, i) => (
                                     <TopItem key={p.nombre}>
                                         <TopRank $pos={-1}>{i + 1}</TopRank>
                                         <TopNombre>{p.nombre}</TopNombre>
-                                        <TopCant style={{ color: "#f87171" }}>{p.cantidad.toLocaleString("es-CO")} uds</TopCant>
+                                        <TopCant style={{ color: "#f87171" }}>{p.stock} uds</TopCant>
                                     </TopItem>
                                 ))}
                             </TopList>

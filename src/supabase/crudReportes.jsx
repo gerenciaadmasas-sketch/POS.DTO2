@@ -100,6 +100,34 @@ export async function GetVentasDiarias({ id_empresa, desde, hasta, id_almacen })
     return Object.entries(mapa).map(([dia, total]) => ({ dia, total }));
 }
 
+export async function GetProductosEstancados({ id_empresa, id_almacen }) {
+    const hace2Semanas = new Date(Date.now() - 14 * 86400000).toISOString();
+
+    // Productos con stock en el almacén
+    let qStock = supabase.from("almacen")
+        .select("stock, id_producto, productos!almacen_id_producto_fkey(id, nombre)")
+        .gt("stock", 0);
+    if (id_almacen) qStock = qStock.eq("id_almacen", id_almacen);
+    else if (id_empresa) {
+        const { data: alms } = await supabase.from("almacenes").select("id").eq("id_empresa", id_empresa);
+        if (alms?.length) qStock = qStock.in("id_almacen", alms.map(a => a.id));
+    }
+    const { data: stockData } = await qStock;
+    if (!stockData?.length) return [];
+
+    // Ventas recientes (últimas 2 semanas)
+    let qVentas = supabase.from("detalle_ventas").select("id_producto").eq("id_empresa", id_empresa).gte("created_at", hace2Semanas);
+    const { data: ventasRecientes } = await qVentas;
+    const idsVendidos = new Set((ventasRecientes ?? []).map(v => v.id_producto));
+
+    // Filtrar: productos con stock que NO se vendieron en 2 semanas
+    return stockData
+        .filter(s => s.productos && !idsVendidos.has(s.productos.id))
+        .map(s => ({ nombre: s.productos.nombre, stock: s.stock }))
+        .sort((a, b) => b.stock - a.stock)
+        .slice(0, 5);
+}
+
 export async function GetMovimientosCaja({ id_empresa, desde, hasta, id_almacen, page = 0, pageSize = 10 }) {
     let query = supabase
         .from("ventas")
