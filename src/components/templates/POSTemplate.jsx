@@ -595,26 +595,52 @@ export function POSTemplate() {
                             onClick={() => seleccionarMetodo("mixto")}>MIXTO</BtnPago>
                     </GridPagos>
 
-                    {/* Panel efectivo — solo si hay productos */}
-                    {metodoPago === "efectivo" && carrito.length > 0 && (
-                        <PanelPago>
-                            <label>Paga con</label>
-                            <InputPago
-                                type="number"
-                                min="0"
-                                placeholder="$ 0"
-                                value={pagaCon}
-                                onChange={e => setPagoConStore(e.target.value)}
-                                autoFocus
+                    {/* Cliente (opcional) */}
+                    <ClienteWrap>
+                        {clienteSeleccionado ? (
+                            <ClienteBadge>
+                                <span>👤 {clienteSeleccionado.nombre} {clienteSeleccionado.apellido ?? ""}</span>
+                                <BtnQuitarCliente onClick={() => setClienteSeleccionado(null)}>✕</BtnQuitarCliente>
+                            </ClienteBadge>
+                        ) : (
+                            <ClienteInput
+                                type="text"
+                                placeholder="👤 Cliente (opcional)"
+                                value={buscarCliente}
+                                onChange={e => {
+                                    const texto = e.target.value;
+                                    setBuscarCliente(texto);
+                                    clearTimeout(debounceClienteRef.current);
+                                    if (texto.length < 2) { setClientesResultados([]); setDropCliente(false); return; }
+                                    debounceClienteRef.current = setTimeout(async () => {
+                                        const { data } = await supabase.from("clientes")
+                                            .select("id, nombre, apellido, documento")
+                                            .eq("id_empresa", dataempresa?.id)
+                                            .ilike("nombre", `%${texto}%`)
+                                            .limit(5);
+                                        setClientesResultados(data ?? []);
+                                        setDropCliente(true);
+                                    }, 300);
+                                }}
+                                onFocus={() => clientesResultados.length > 0 && setDropCliente(true)}
                             />
-                            {pagaCon !== "" && (
-                                <FilaCambio $negativo={cambio < 0}>
-                                    <span>{cambio >= 0 ? "Cambio:" : "Falta:"}</span>
-                                    <span>{formatCOP(Math.abs(cambio))}</span>
-                                </FilaCambio>
-                            )}
-                        </PanelPago>
-                    )}
+                        )}
+                        {dropCliente && clientesResultados.length > 0 && (
+                            <ClienteDropdown>
+                                {clientesResultados.map(c => (
+                                    <ClienteItem key={c.id} onClick={() => {
+                                        setClienteSeleccionado(c);
+                                        setBuscarCliente("");
+                                        setDropCliente(false);
+                                        setClientesResultados([]);
+                                    }}>
+                                        <span>{c.nombre} {c.apellido ?? ""}</span>
+                                        {c.documento && <small>{c.documento}</small>}
+                                    </ClienteItem>
+                                ))}
+                            </ClienteDropdown>
+                        )}
+                    </ClienteWrap>
 
                     {/* Panel mixto */}
                     {metodoPago === "mixto" && (
@@ -1317,6 +1343,50 @@ const BtnPago = styled.button`
     transform: ${({ $activo }) => $activo ? "translate(2px, 2px)" : "none"};
     &:hover { opacity: 1; }
     &:active { box-shadow: 2px 2px ${({ $shadow }) => $shadow}; transform: translate(2px, 2px); }
+`;
+
+const ClienteWrap = styled.div`
+    position: relative;
+    margin: 8px 0;
+`;
+
+const ClienteInput = styled.input`
+    width: 100%; padding: 10px 14px; border-radius: 10px;
+    border: 1px dashed ${({ theme }) => theme.color2};
+    background: transparent; color: ${({ theme }) => theme.text};
+    font-size: 12px; font-family: "Poppins", sans-serif; outline: none;
+    &:focus { border-color: #f88533; border-style: solid; }
+    &::placeholder { color: ${({ theme }) => theme.colorsubtitlecard}; }
+`;
+
+const ClienteBadge = styled.div`
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; border-radius: 10px;
+    background: rgba(248,133,51,0.1); border: 1px solid rgba(248,133,51,0.3);
+    font-size: 12px; font-weight: 700; color: #f88533;
+`;
+
+const BtnQuitarCliente = styled.button`
+    background: none; border: none; cursor: pointer;
+    color: ${({ theme }) => theme.colorsubtitlecard}; font-size: 14px;
+    &:hover { color: #f87171; }
+`;
+
+const ClienteDropdown = styled.div`
+    position: absolute; top: 100%; left: 0; right: 0;
+    background: ${({ theme }) => theme.bgcards};
+    border: 1px solid ${({ theme }) => theme.color2};
+    border-radius: 10px; margin-top: 4px; z-index: 20;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    overflow: hidden;
+`;
+
+const ClienteItem = styled.div`
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; cursor: pointer;
+    font-size: 12px; color: ${({ theme }) => theme.text};
+    &:hover { background: ${({ theme }) => theme.bgtotal}; }
+    small { color: ${({ theme }) => theme.colorsubtitlecard}; font-size: 10px; }
 `;
 
 const PanelPago = styled.div`
