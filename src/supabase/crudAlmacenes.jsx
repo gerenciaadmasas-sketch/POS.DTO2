@@ -55,35 +55,24 @@ export async function EliminarStockAlmacen(p) {
     }
 }
 
-export async function MostrarInventarioPorAlmacen({ id_empresa, id_almacen, soloConInventario = true }) {
-    let q = supabase
-        .from("productos")
-        .select("id, nombre, precio_venta, maneja_inventarios")
-        .eq("id_empresa", id_empresa)
-        .order("nombre", { ascending: true });
-    if (soloConInventario) q = q.eq("maneja_inventarios", true);
-    const { data: productos, error: errorProductos } = await q;
-    if (errorProductos) {
-        toastError(errorProductos.message, "Inventario › Mostrar productos");
-        return [];
-    }
+export async function MostrarInventarioPorAlmacen({ id_empresa, id_almacen }) {
     const { data: stockData, error: errorStock } = await supabase
         .from(tabla)
-        .select()
+        .select("id, id_producto, stock, stock_minimo, productos(id, nombre, precio_venta, maneja_inventarios)")
         .eq("id_almacen", id_almacen);
     if (errorStock) {
         toastError(errorStock.message, "Inventario › Mostrar stock");
         return [];
     }
-    return (productos ?? []).map(p => {
-        const registro = (stockData ?? []).find(s => s.id_producto === p.id);
-        return {
-            ...p,
-            stock: registro?.stock ?? 0,
-            stock_minimo: registro?.stock_minimo ?? 0,
-            id_stock: registro?.id ?? null,
-        };
-    });
+    return (stockData ?? []).map(s => ({
+        id: s.productos?.id ?? s.id_producto,
+        nombre: s.productos?.nombre ?? "—",
+        precio_venta: s.productos?.precio_venta ?? 0,
+        maneja_inventarios: s.productos?.maneja_inventarios ?? true,
+        stock: s.stock ?? 0,
+        stock_minimo: s.stock_minimo ?? 0,
+        id_stock: s.id,
+    })).sort((a, b) => a.nombre.localeCompare(b.nombre));
 }
 
 export async function AjustarStock({ id_stock, id_producto, id_almacen, id_sucursal, id_empresa, stock, stock_minimo, stock_anterior = 0, nombre_producto = "", id_usuario = null, tipo = "ajuste", descripcion = null }) {
