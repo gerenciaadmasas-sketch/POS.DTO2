@@ -10,12 +10,14 @@ import { toastWarning } from "../../../utils/toast";
 import { useForm } from "react-hook-form";
 import { useEmpresaStore } from "../../../store/EmpresaStore";
 import { useAlmacenesConfigStore } from "../../../store/AlmacenesConfigStore";
+import { useUsuariosStore } from "../../../store/UsuariosStore";
 import { useMutation } from "@tanstack/react-query";
 
 export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding }) {
     const { insertarProducto, editarProducto, generarCodigo } = useProductosStore();
     const { datacategorias } = useCategoriasStore();
     const { dataempresa } = useEmpresaStore();
+    const esAdmin = useUsuariosStore.getState().datausuarios?.tipo === "administrador";
     const { sucursalesItemSelect, selectSucursal } = useSucursalesStore();
     const { dataAlmacenes } = useAlmacenesConfigStore();
 
@@ -163,12 +165,13 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                                     {errors.precio_venta && <p>Campo requerido</p>}
                                 </InputText>
 
-                                <InputText icono={<v.iconopreciocompra />}>
-                                    <input className="form__field" type="number" step="0.01" placeholder="precio compra"
-                                        {...register("precio_compra", { required: true })} />
-                                    <label className="form__label">precio compra</label>
-                                    {errors.precio_compra && <p>Campo requerido</p>}
-                                </InputText>
+                                {esAdmin && (
+                                    <InputText icono={<v.iconopreciocompra />}>
+                                        <input className="form__field" type="number" step="0.01" placeholder="precio compra"
+                                            {...register("precio_compra")} />
+                                        <label className="form__label">precio compra</label>
+                                    </InputText>
+                                )}
 
                                 <div className="fila-generar">
                                     <InputText icono={<v.iconocodigobarras />}>

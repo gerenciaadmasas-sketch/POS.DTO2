@@ -2,8 +2,9 @@ import styled from "styled-components";
 import { ContentAccionesTabla, Paginacion, Checkbox1 } from "../../../index";
 import { confirmar } from "../../../utils/toast";
 import { v } from "../../../styles/variables";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useProductosStore } from "../../../store/ProductosStore";
+import { useUsuariosStore } from "../../../store/UsuariosStore";
 import {
     flexRender, getCoreRowModel, getFilteredRowModel,
     getPaginationRowModel, getSortedRowModel, useReactTable,
@@ -12,6 +13,8 @@ import { FaArrowsAltV } from "react-icons/fa";
 
 export function TablaProductos({ data, SetopenRegistro, setdataSelect, setAccion }) {
     if (data == null) return;
+    const { datausuarios } = useUsuariosStore();
+    const esAdmin = datausuarios?.tipo === "administrador";
     const [columnFilters, setColumnFilters] = useState([]);
     const { eliminarProducto } = useProductosStore();
 
@@ -40,11 +43,11 @@ export function TablaProductos({ data, SetopenRegistro, setdataSelect, setAccion
             header: "P. Venta",
             cell: (info) => <span>{info.getValue()}</span>,
         },
-        {
+        ...(esAdmin ? [{
             accessorKey: "p_compra",
             header: "P. Compra",
             cell: (info) => <span>{info.getValue()}</span>,
-        },
+        }] : []),
         {
             accessorKey: "categoria",
             header: "Categoría",
