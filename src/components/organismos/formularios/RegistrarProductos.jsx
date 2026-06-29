@@ -9,13 +9,15 @@ import {
 import { toastWarning } from "../../../utils/toast";
 import { useForm } from "react-hook-form";
 import { useEmpresaStore } from "../../../store/EmpresaStore";
+import { useAlmacenesConfigStore } from "../../../store/AlmacenesConfigStore";
 import { useMutation } from "@tanstack/react-query";
 
 export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding }) {
     const { insertarProducto, editarProducto, generarCodigo } = useProductosStore();
     const { datacategorias } = useCategoriasStore();
     const { dataempresa } = useEmpresaStore();
-    const { sucursalesItemSelect, dataSucursales, selectSucursal } = useSucursalesStore();
+    const { sucursalesItemSelect, selectSucursal } = useSucursalesStore();
+    const { dataAlmacenes } = useAlmacenesConfigStore();
 
     const [aplicaIva, setAplicaIva] = useState(false);
     const [seVendePorUnidad, setSeVendePorUnidad] = useState(true);
@@ -244,19 +246,19 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                                 {/* Stock — siempre visible */}
                                 <ContainerStock>
                                     <div className="grupo">
-                                        <label className="grupo-label">Sucursal:</label>
+                                        <label className="grupo-label">Almacén:</label>
                                         <ContainerSelector style={{ position: "relative" }}>
                                             <Selector
                                                 state={stateSucursalesLista}
                                                 funcion={() => setStateSucursalesLista(!stateSucursalesLista)}
-                                                texto1="🏢"
-                                                texto2={sucursalesItemSelect?.razon_social ?? sucursalesItemSelect?.nombre ?? "-- elegir --"}
+                                                texto1="📦"
+                                                texto2={sucursalesItemSelect?.nombre ?? "-- elegir --"}
                                                 color="#fc6027"
                                             />
                                             <ListaDesplegable
                                                 funcion={selectSucursal}
                                                 state={stateSucursalesLista}
-                                                data={dataSucursales}
+                                                data={dataAlmacenes}
                                                 top="3rem"
                                                 scroll="auto"
                                                 setState={() => setStateSucursalesLista(false)}
