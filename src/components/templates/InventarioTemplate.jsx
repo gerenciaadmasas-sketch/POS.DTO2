@@ -22,7 +22,14 @@ function getEstado(stock, min) {
     return "normal";
 }
 
-const COLORES = ["#6366f1", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#3b82f6"];
+const COLORES_ALMACEN = {
+    "Fit": "#F5A623",
+    "Urbano": "#8B5E3C",
+    "Milkositas": "#9B59B6",
+};
+const COLORES_FALLBACK = ["#f59e0b", "#8B5E3C", "#9B59B6", "#6366f1", "#10b981", "#3b82f6"];
+
+const getColorAlmacen = (alm, idx) => COLORES_ALMACEN[alm?.nombre] ?? COLORES_FALLBACK[idx % COLORES_FALLBACK.length];
 
 export function InventarioTemplate() {
     const { dataempresa }    = useEmpresaStore();
@@ -135,7 +142,7 @@ export function InventarioTemplate() {
         : dataempresa;
 
     const id_empresa_query = esSuperAdmin ? (sucursalObj?.id_empresa ?? null) : id_empresa;
-    const colorAlmacen = COLORES[(listAlmacenes.findIndex(a => a.id === almacenId) ?? 0) % COLORES.length];
+    const colorAlmacen = getColorAlmacen(almacenObj, listAlmacenes.findIndex(a => a.id === almacenId));
 
     /* ── Inventario del almacén activo ── */
     const { data: inventario = [], isFetching } = useQuery({
@@ -236,9 +243,8 @@ export function InventarioTemplate() {
                                                         <RiStore2Line style={{ fontSize: 12 }} />
                                                         {suc.nombre}
                                                     </GrupoLabel>
-                                                    {suc.almacenes.map(alm => {
-                                                        const idx   = todosAlmacenes.findIndex(a => a.id === alm.id);
-                                                        const color = COLORES[idx % COLORES.length];
+                                                    {suc.almacenes.map((alm, idx) => {
+                                                        const color = getColorAlmacen(alm, idx);
                                                         const activo = almacenId === alm.id;
                                                         return (
                                                             <AlmacenItem
@@ -273,9 +279,8 @@ export function InventarioTemplate() {
                                 <RiStore2Line style={{ fontSize: 12 }} />
                                 {suc.nombre}
                             </GrupoLabel>
-                            {suc.almacenes.map((alm) => {
-                                const idx   = dataAlmacenes?.findIndex(a => a.id === alm.id) ?? 0;
-                                const color = COLORES[idx % COLORES.length];
+                            {suc.almacenes.map((alm, idx) => {
+                                const color = getColorAlmacen(alm, idx);
                                 const activo = almacenId === alm.id;
                                 return (
                                     <AlmacenItem
