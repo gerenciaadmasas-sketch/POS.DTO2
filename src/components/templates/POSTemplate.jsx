@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import styled, { keyframes } from "styled-components";
 import { useUsuariosStore, useEmpresaStore, useSucursalesStore, BuscarProductos, BuscarProductoPorCodigo, UserAuth, RegistrarVenta, Lottieanimacion, useCartVentasStore, useAlmacenesConfigStore } from "../../index";
 import { toastExito } from "../../utils/toast";
+import { supabase } from "../../supabase/supabase.config";
 import { AbrirSesionCaja, CerrarSesionCaja, ObtenerTotalesVentasTurno, ObtenerSesionAbierta } from "../../supabase/crudSesionesCaja";
 import { useTicketConfigStore } from "../../store/TicketConfigStore";
 import vacioanimacion from "../../assets/vacioanimacion.json";
@@ -42,6 +43,11 @@ export function POSTemplate() {
     const [cerrandoCaja,   setCerrandoCaja]   = useState(false);
     const [totalesTurno,   setTotalesTurno]   = useState(null);
     const [cargandoSesion, setCargandoSesion] = useState(true);
+    const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+    const [buscarCliente, setBuscarCliente] = useState("");
+    const [clientesResultados, setClientesResultados] = useState([]);
+    const [dropCliente, setDropCliente] = useState(false);
+    const debounceClienteRef = useRef(null);
 
     const {
         items: carrito,
@@ -589,8 +595,8 @@ export function POSTemplate() {
                             onClick={() => seleccionarMetodo("mixto")}>MIXTO</BtnPago>
                     </GridPagos>
 
-                    {/* Panel efectivo */}
-                    {metodoPago === "efectivo" && (
+                    {/* Panel efectivo — solo si hay productos */}
+                    {metodoPago === "efectivo" && carrito.length > 0 && (
                         <PanelPago>
                             <label>Paga con</label>
                             <InputPago
