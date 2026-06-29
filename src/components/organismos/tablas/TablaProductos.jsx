@@ -65,9 +65,9 @@ export function TablaProductos({ data, SetopenRegistro, setdataSelect, setAccion
             header: "Inventarios",
             enableSorting: false,
             cell: (info) => (
-                <td data-title="Inventarios" className="ContentCell">
+                <div className="ContentCell">
                     <Checkbox1 isChecked={info.getValue()} onChange={() => {}} />
-                </td>
+                </div>
             ),
         },
         {
@@ -75,12 +75,12 @@ export function TablaProductos({ data, SetopenRegistro, setdataSelect, setAccion
             header: "",
             enableSorting: false,
             cell: (info) => (
-                <td data-title="Acciones" className="ContentCell">
+                <div className="ContentCell">
                     <ContentAccionesTabla
                         funcionEditar={() => editar(info.row.original)}
                         funcionEliminar={() => eliminar(info.row.original)}
                     />
-                </td>
+                </div>
             ),
         },
     ];
