@@ -40,6 +40,7 @@ export function InventarioTemplate() {
 
     const esCajero    = datausuarios?.tipo === "cajero";
     const esSuperAdmin = datausuarios?.tipo === "superadmin";
+    const esAdmin = datausuarios?.tipo === "administrador";
 
     const id_empresa = dataempresa?.id;
 
@@ -316,7 +317,6 @@ export function InventarioTemplate() {
                         <AlmacenNombreGrande>
                             {almacenObj?.nombre ?? (esSuperAdmin ? "Selecciona un cliente y almacén" : "Selecciona un almacén")}
                         </AlmacenNombreGrande>
-                        {sucursalObj && <AlmacenSucursalTag>Sucursal: {sucursalObj.nombre}</AlmacenSucursalTag>}
                     </HeaderLeft>
                     <ResumenBadges>
                         <Badge $color="#64748b">
@@ -352,7 +352,8 @@ export function InventarioTemplate() {
                         <thead>
                             <tr>
                                 <Th>Producto</Th>
-                                <Th>Precio</Th>
+                                <Th>Precio venta</Th>
+                                {esAdmin && <Th>Costo</Th>}
                                 <Th $center>Stock</Th>
                                 <Th>Estado</Th>
                                 {!esCajero && <Th>Acción</Th>}
@@ -360,15 +361,15 @@ export function InventarioTemplate() {
                         </thead>
                         <tbody>
                             {!almacenId ? (
-                                <tr><TdVacio colSpan={esCajero ? 4 : 5}>
+                                <tr><TdVacio colSpan={esCajero ? 4 : esAdmin ? 6 : 5}>
                                     {esSuperAdmin
                                         ? "Expande un cliente y selecciona un almacén para ver su inventario"
                                         : "Selecciona un almacén para ver su inventario"}
                                 </TdVacio></tr>
                             ) : isFetching ? (
-                                <tr><TdVacio colSpan={esCajero ? 4 : 5}>Cargando inventario...</TdVacio></tr>
+                                <tr><TdVacio colSpan={esCajero ? 4 : esAdmin ? 6 : 5}>Cargando inventario...</TdVacio></tr>
                             ) : productosFiltrados.length === 0 ? (
-                                <tr><TdVacio colSpan={esCajero ? 4 : 5}>Sin productos{busqueda ? ` para "${busqueda}"` : " en este almacén"}</TdVacio></tr>
+                                <tr><TdVacio colSpan={esCajero ? 4 : esAdmin ? 6 : 5}>Sin productos{busqueda ? ` para "${busqueda}"` : " en este almacén"}</TdVacio></tr>
                             ) : productosFiltrados.map(p => {
                                 const estado    = getEstado(p.stock, p.stock_minimo);
                                 const enEdicion = editando === p.id;
@@ -376,6 +377,7 @@ export function InventarioTemplate() {
                                     <FilaTr key={p.id}>
                                         <Td><NombreProd>{p.nombre}</NombreProd></Td>
                                         <Td>{formatCOP(p.precio_venta)}</Td>
+                                        {esAdmin && <Td>{formatCOP(p.precio_compra)}</Td>}
                                         <Td $center>
                                             {enEdicion
                                                 ? <InputStock type="number" min="0" value={editStock} onChange={e => setEditStock(e.target.value)} autoFocus />

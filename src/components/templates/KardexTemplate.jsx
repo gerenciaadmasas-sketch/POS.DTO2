@@ -330,7 +330,6 @@ export function KardexTemplate() {
                         <AlmacenNombre>
                             {almacenObj?.nombre ?? (esSuperAdmin ? "Selecciona un cliente y almacén" : "Selecciona un almacén")}
                         </AlmacenNombre>
-                        {sucursalObj && <AlmacenSucursal>Sucursal: {sucursalObj.nombre}</AlmacenSucursal>}
                     </HeaderLeft>
                     <BtnNuevo onClick={() => setModalAbierto(true)} disabled={!almacenId}>
                         <RiAddLine style={{ fontSize: 18 }} />

@@ -58,7 +58,7 @@ export async function EliminarStockAlmacen(p) {
 export async function MostrarInventarioPorAlmacen({ id_empresa, id_almacen }) {
     const { data: stockData, error: errorStock } = await supabase
         .from(tabla)
-        .select("id, id_producto, stock, stock_minimo, productos(id, nombre, precio_venta, maneja_inventarios)")
+        .select("id, id_producto, stock, stock_minimo, productos(id, nombre, precio_venta, precio_compra, maneja_inventarios)")
         .eq("id_almacen", id_almacen);
     if (errorStock) {
         toastError(errorStock.message, "Inventario › Mostrar stock");
@@ -68,6 +68,7 @@ export async function MostrarInventarioPorAlmacen({ id_empresa, id_almacen }) {
         id: s.productos?.id ?? s.id_producto,
         nombre: s.productos?.nombre ?? "—",
         precio_venta: s.productos?.precio_venta ?? 0,
+        precio_compra: s.productos?.precio_compra ?? 0,
         maneja_inventarios: s.productos?.maneja_inventarios ?? true,
         stock: s.stock ?? 0,
         stock_minimo: s.stock_minimo ?? 0,
