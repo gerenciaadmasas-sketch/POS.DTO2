@@ -16,7 +16,7 @@ export function ListaDesplegable({ data, setState, funcion, scroll,top,state }) 
           return (
             <ItemContainer  key={index} onClick={() => seleccionar(item)}>
               <span>🌫️</span>
-              <span>{item?.nombre}</span>
+              <span>{item?.nombre ?? item?.razon_social}</span>
             </ItemContainer>
           );
         })}

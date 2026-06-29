@@ -12,9 +12,18 @@ export async function InsertarProducto(p) {
 }
 
 export async function MostrarProductos(p) {
-    const { data } = await supabase
-        .rpc("mostrarproductos", { _id_empresa: p.id_empresa });
-    return data;
+    const { data, error } = await supabase
+        .from(tabla)
+        .select("*, categorias(nombre)")
+        .eq("id_empresa", p.id_empresa)
+        .order("nombre");
+    if (error) { console.error("Mostrar productos:", error.message); return []; }
+    return (data ?? []).map(prod => ({
+        ...prod,
+        categoria: prod.categorias?.nombre ?? "Sin categoría",
+        p_venta: `$ ${Number(prod.precio_venta).toLocaleString("es-CO")}`,
+        p_compra: `$ ${Number(prod.precio_compra).toLocaleString("es-CO")}`,
+    }));
 }
 
 export async function BuscarProductos(p) {

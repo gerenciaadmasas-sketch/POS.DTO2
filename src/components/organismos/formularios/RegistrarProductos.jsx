@@ -250,7 +250,7 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                                                 state={stateSucursalesLista}
                                                 funcion={() => setStateSucursalesLista(!stateSucursalesLista)}
                                                 texto1="🏢"
-                                                texto2={sucursalesItemSelect?.nombre ?? "-- elegir --"}
+                                                texto2={sucursalesItemSelect?.razon_social ?? sucursalesItemSelect?.nombre ?? "-- elegir --"}
                                                 color="#fc6027"
                                             />
                                             <ListaDesplegable
