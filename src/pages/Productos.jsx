@@ -1,10 +1,12 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { ProductoTemplate, Spinner1, useProductosStore, useCategoriasStore, useEmpresaStore, useSucursalesStore } from "../index";
+import { useAlmacenesConfigStore } from "../store/AlmacenesConfigStore";
 
 export function Productos() {
     const { mostrarProductos, buscarProductos, buscador } = useProductosStore();
     const { mostrarCategorias } = useCategoriasStore();
     const { mostrarSucursales } = useSucursalesStore();
+    const { mostrarAlmacenes } = useAlmacenesConfigStore();
     const { dataempresa } = useEmpresaStore();
 
     useQuery({
@@ -17,6 +19,13 @@ export function Productos() {
     useQuery({
         queryKey: ["Mostrar sucursales", dataempresa?.id],
         queryFn: () => mostrarSucursales({ id_empresa: dataempresa?.id }),
+        enabled: !!dataempresa?.id,
+        refetchOnWindowFocus: false,
+    });
+
+    useQuery({
+        queryKey: ["Mostrar almacenes-prod", dataempresa?.id],
+        queryFn: () => mostrarAlmacenes({ id_empresa: dataempresa?.id }),
         enabled: !!dataempresa?.id,
         refetchOnWindowFocus: false,
     });
