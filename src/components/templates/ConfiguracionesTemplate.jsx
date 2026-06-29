@@ -118,33 +118,35 @@ const Container = styled.div`
     width: 100%;
     min-height: 100vh;
     background-color: ${({ theme }) => theme.bgtotal};
-    padding: 24px 20px;
+    padding: 36px 32px;
     box-sizing: border-box;
     overflow-y: auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
 
     @media (max-width: 767px) {
-        padding: 68px 12px 20px;
+        padding: 68px 14px 20px;
     }
 `;
 
 const Grid = styled.div`
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    max-width: 860px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+    width: 100%;
+    max-width: 1100px;
 
     &:hover > .card::after { opacity: 1; }
 
-    @media (max-width: 700px) { grid-template-columns: repeat(2, 1fr); }
-    @media (max-width: 420px) { grid-template-columns: 1fr; }
+    @media (max-width: 420px) { grid-template-columns: 1fr 1fr; }
 `;
 
 const CardWrap = styled.div`
     border-radius: 20px;
     cursor: ${({ $activo }) => $activo ? "pointer" : "default"};
 
-    /* altura necesaria para que absolute-inset funcione */
-    height: 200px;
+    height: 180px;
 
     position: relative;
 
