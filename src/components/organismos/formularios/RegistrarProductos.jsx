@@ -4,7 +4,7 @@ import { v } from "../../../styles/variables";
 import {
     InputText, Btn1, useProductosStore, useCategoriasStore, ConvertirCapitalize,
     ContainerSelector, useSucursalesStore, ListaDesplegable, Selector, Checkbox1,
-    BuscarProductoPorCodigo
+    BuscarProductoPorCodigo, Switch1
 } from "../../../index";
 import { toastWarning } from "../../../utils/toast";
 import { useForm } from "react-hook-form";
