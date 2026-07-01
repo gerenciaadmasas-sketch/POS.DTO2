@@ -37,6 +37,12 @@ export const LinksArray = [
     to: "/saas",
   },
   {
+    label: "Finanzas",
+    icon: "solar:dollar-minimalistic-bold-duotone",
+    to: "/finanzas",
+    color: "#34d399",
+  },
+  {
     label: "Vender",
     icon: "solar:cart-large-2-bold-duotone",
     to: "/pos",

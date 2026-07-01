@@ -6,6 +6,7 @@ import { Arqueo } from "../pages/Arqueo";
 import { Impresoras } from "../pages/Impresoras";
 import { Landing } from "../pages/Landing";
 import { Planes } from "../pages/Planes";
+import { Finanzas } from "../pages/Finanzas";
 import { useQuery } from "@tanstack/react-query";
 import { Spinner1 } from "../components/moleculas/Spinner1";
 import { MostrarEmpresaPorId } from "../supabase/crudEmpresa";
@@ -80,6 +81,7 @@ export function Myroutes() {
         <Route path="/saas" element={<Saas />} />
         <Route path="/configuracion/planes" element={<PlanesConfig />} />
         <Route path="/configuracion/version" element={<Version />} />
+        <Route path="/finanzas" element={<Finanzas />} />
 
         <Route path="/configurar" element={<Navigate to="/configuracion" replace />} />
         <Route path="/configurar/categorias" element={<Navigate to="/configuracion/categorias" replace />} />

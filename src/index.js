@@ -122,3 +122,5 @@ export * from './pages/Landing';
 export * from './pages/Planes';
 export * from './components/templates/LandingTemplate';
 export * from './components/templates/PlanesTemplate';
+export * from './pages/Finanzas';
+export * from './components/templates/FinanzasTemplate';
