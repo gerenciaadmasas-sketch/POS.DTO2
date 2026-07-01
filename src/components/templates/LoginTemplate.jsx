@@ -4,70 +4,26 @@ import { useAuthStore } from "../../store/AuthStore";
 import { Footer } from "../organismos/Footer";
 import { v } from "../../styles/variables";
 import { ObtenerEmailPorUsuario } from "../../supabase/crudUsuarios";
-import { RiArrowLeftSLine } from "react-icons/ri";
+import { RiArrowLeftSLine, RiShoppingCartLine, RiBarChartLine, RiStoreLine, RiTeamLine, RiFileListLine, RiArchiveLine } from "react-icons/ri";
 
-const modos = [
-    {
-        key: "superadmin",
-        titulo: "Super admin",
-        desc: "acceso exclusivo del sistema",
-        emoji: "👑",
-        bg: "#E8891A",
-        shadow: "#B56B12",
-        border: "#F5A14299",
-    },
-    {
-        key: "administrador",
-        titulo: "Administrador",
-        desc: "gestiona tu negocio",
-        emoji: "😎",
-        bg: "#0f3460",
-        shadow: "#081f3f",
-        border: "#1a5276aa",
-    },
-    {
-        key: "supervisor",
-        titulo: "Supervisor",
-        desc: "supervisa y gestiona",
-        emoji: "🔍",
-        bg: "#2d2d2d",
-        shadow: "#111111",
-        border: "#55555599",
-    },
-    {
-        key: "cajero",
-        titulo: "Cajero",
-        desc: "vende y cobra",
-        emoji: "🧾",
-        bg: "#1C1108",
-        shadow: "#0A0603",
-        border: "#5c3d1e99",
-    },
+const features = [
+    { icon: <RiShoppingCartLine />, texto: "Ventas rápidas desde el POS" },
+    { icon: <RiArchiveLine />,      texto: "Inventario y múltiples almacenes" },
+    { icon: <RiBarChartLine />,     texto: "Reportes en tiempo real" },
+    { icon: <RiTeamLine />,         texto: "Cajeros, supervisores y admin" },
+    { icon: <RiFileListLine />,     texto: "Kardex y trazabilidad completa" },
+    { icon: <RiStoreLine />,        texto: "Multi-sucursal y multi-empresa" },
 ];
 
 export function LoginTemplate() {
     const { loginEmail } = useAuthStore();
-    const [modo, setModo] = useState(null);
+    const [etapa, setEtapa] = useState("cta");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [cargando, setCargando] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
 
-    const TIPO_POR_MODO = {
-        cajero:        "cajero",
-        supervisor:    "supervisor",
-        administrador: "administrador",
-        superadmin:    "superadmin",
-    };
-
-    const LABEL_POR_MODO = {
-        cajero:        "cajeros",
-        supervisor:    "supervisores",
-        administrador: "administradores",
-        superadmin:    "super admins",
-    };
-
-    const handleLoginEmail = async (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         if (!email || !password) return;
         setCargando(true);
@@ -78,242 +34,364 @@ export function LoginTemplate() {
                 setErrorMsg("Usuario no encontrado. Verifica con tu administrador.");
                 return;
             }
-            const tipoEsperado = TIPO_POR_MODO[modo];
-            if (resultado.tipo !== tipoEsperado) {
-                setErrorMsg(`Este acceso es solo para ${LABEL_POR_MODO[modo]}.`);
-                return;
-            }
             await loginEmail({ email: resultado.email, password });
-        } catch (err) {
+        } catch {
             setErrorMsg("Credenciales incorrectas. Verifica con tu administrador.");
         } finally {
             setCargando(false);
         }
     };
 
-    const volverAModo = () => {
-        setModo(null);
+    const volver = () => {
+        setEtapa("cta");
         setEmail("");
         setPassword("");
         setErrorMsg("");
     };
 
     return (
-        <Fondo>
-            <Tarjeta>
-                {modo === null ? (
-                    <PanelSeleccion>
-                        <Logo>
-                            <img src={v.logo} alt="logo" />
-                            <span>POS DL v1</span>
-                        </Logo>
-                        <Titulo>Ingresar Modo</Titulo>
-                        {modos.map((m) => (
-                            <CardModo
-                                key={m.key}
-                                $bg={m.bg}
-                                $shadow={m.shadow}
-                                $border={m.border}
-                                onClick={() => setModo(m.key)}
-                            >
-                                <CardTexto>
-                                    <CardBadge>{m.titulo}</CardBadge>
-                                    <CardDesc>{m.desc}</CardDesc>
-                                </CardTexto>
-                                <CardEmoji>{m.emoji}</CardEmoji>
-                            </CardModo>
+        <Pagina>
+            <Marketing>
+                <MktInner>
+                    <MktLogo>
+                        <img src={v.logo} alt="logo" />
+                        <MktNombre>POS<span>.DTO2S</span></MktNombre>
+                    </MktLogo>
+                    <MktTagline>El sistema de punto de venta que impulsa tu negocio</MktTagline>
+                    <MktSub>Gestiona ventas, inventario y reportes desde cualquier dispositivo, en tiempo real.</MktSub>
+                    <MktFeatures>
+                        {features.map((f, i) => (
+                            <MktFeatureRow key={i}>
+                                <MktIcon>{f.icon}</MktIcon>
+                                <span>{f.texto}</span>
+                            </MktFeatureRow>
                         ))}
-                    </PanelSeleccion>
-                ) : modo === "superadmin" ? (
-                    <PanelLogin key="superadmin">
-                        <BtnVolver onClick={volverAModo}><RiArrowLeftSLine size={18} /> volver</BtnVolver>
-                        <Logo>
-                            <img src={v.logo} alt="logo" />
-                            <span>POS DL v1</span>
-                        </Logo>
-                        <BadgeModoActivo $color="#C8720F">👑 Super admin</BadgeModoActivo>
-                        <Form onSubmit={handleLoginEmail}>
-                            <InputField
-                                type="text"
-                                placeholder="Usuario"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                autoFocus
-                                required
-                            />
-                            <InputField
-                                type="password"
-                                placeholder="Contraseña"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-                            {errorMsg && <MsgError>{errorMsg}</MsgError>}
-                            <BtnIngresar type="submit" disabled={cargando || !email || !password} $gold>
-                                {cargando ? "Ingresando..." : "Ingresar"}
-                            </BtnIngresar>
-                        </Form>
-                    </PanelLogin>
-                ) : (
-                    <PanelLogin key={modo}>
-                        <BtnVolver onClick={volverAModo}><RiArrowLeftSLine size={18} /> volver</BtnVolver>
-                        <Logo>
-                            <img src={v.logo} alt="logo" />
-                            <span>POS DL v1</span>
-                        </Logo>
-                        <BadgeModoActivo $color={
-                            modo === "supervisor"    ? "#aaa"    :
-                            modo === "administrador" ? "#60a5fa" :
-                            "#f88533"
-                        }>
-                            {modos.find(m => m.key === modo)?.emoji} {modos.find(m => m.key === modo)?.titulo}
-                        </BadgeModoActivo>
-                        <Form onSubmit={handleLoginEmail}>
-                            <InputField
-                                type="text"
-                                placeholder="Usuario"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                autoFocus
-                                required
-                            />
-                            <InputField
-                                type="password"
-                                placeholder="Contraseña"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-                            {errorMsg && <MsgError>{errorMsg}</MsgError>}
-                            <BtnIngresar type="submit" disabled={cargando || !email || !password} $gray={modo === "supervisor"} $blue={modo === "administrador"}>
-                                {cargando ? "Ingresando..." : "Ingresar"}
-                            </BtnIngresar>
-                        </Form>
-                    </PanelLogin>
-                )}
-            </Tarjeta>
-            <Footer />
-        </Fondo>
+                    </MktFeatures>
+                    <MktBadge>✦ Publicado y en producción</MktBadge>
+                </MktInner>
+            </Marketing>
+
+            <LoginZona>
+                <LoginCard>
+                    {etapa === "cta" ? (
+                        <CtaPanel>
+                            <CtaLogo>
+                                <img src={v.logo} alt="logo" />
+                                <span>POS<b>.DTO2S</b></span>
+                            </CtaLogo>
+                            <CtaTexto>Bienvenido al sistema de gestión</CtaTexto>
+                            <BtnCta onClick={() => setEtapa("form")}>
+                                <BtnCtaTexto>
+                                    <BtnCtaBadge>Inicia sesión</BtnCtaBadge>
+                                    <BtnCtaDesc>Acceso exclusivo del sistema</BtnCtaDesc>
+                                </BtnCtaTexto>
+                                <BtnCtaEmoji>👑</BtnCtaEmoji>
+                            </BtnCta>
+                        </CtaPanel>
+                    ) : (
+                        <FormPanel>
+                            <BtnVolver onClick={volver}>
+                                <RiArrowLeftSLine size={18} /> volver
+                            </BtnVolver>
+                            <CtaLogo>
+                                <img src={v.logo} alt="logo" />
+                                <span>POS<b>.DTO2S</b></span>
+                            </CtaLogo>
+                            <FormTitulo>Inicia sesión</FormTitulo>
+                            <Form onSubmit={handleLogin}>
+                                <InputField
+                                    type="text"
+                                    placeholder="Usuario"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    autoFocus
+                                    required
+                                />
+                                <InputField
+                                    type="password"
+                                    placeholder="Contraseña"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+                                {errorMsg && <MsgError>{errorMsg}</MsgError>}
+                                <BtnIngresar type="submit" disabled={cargando || !email || !password}>
+                                    {cargando ? "Ingresando..." : "Ingresar"}
+                                </BtnIngresar>
+                            </Form>
+                        </FormPanel>
+                    )}
+                </LoginCard>
+                <Footer />
+            </LoginZona>
+        </Pagina>
     );
 }
 
 /* ── Animaciones ───────────────────────────── */
 const fadeUp = keyframes`
-    from { opacity: 0; transform: translateY(18px); }
+    from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
 `;
 
-/* ── Layout base ───────────────────────────── */
-const Fondo = styled.div`
+const shimmer = keyframes`
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+`;
+
+/* ── Layout principal ──────────────────────── */
+const Pagina = styled.div`
     min-height: 100vh;
+    display: flex;
     background: ${({ theme }) => theme.bgtotal};
+
+    @media (max-width: 768px) {
+        flex-direction: column;
+    }
+`;
+
+/* ── Marketing (izquierda) ─────────────────── */
+const Marketing = styled.aside`
+    flex: 1;
+    background: linear-gradient(145deg, #0d1117 0%, #0f1923 50%, #111827 100%);
+    border-right: 1px solid rgba(248,133,51,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 40px;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: -120px;
+        left: -80px;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(248,133,51,0.12) 0%, transparent 70%);
+        pointer-events: none;
+    }
+
+    @media (max-width: 768px) {
+        display: none;
+    }
+`;
+
+const MktInner = styled.div`
+    max-width: 420px;
+    width: 100%;
+    animation: ${fadeUp} 0.5s ease both;
+`;
+
+const MktLogo = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 28px;
+    img {
+        width: 42px;
+        height: 42px;
+        object-fit: contain;
+    }
+`;
+
+const MktNombre = styled.span`
+    font-size: 26px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -0.5px;
+    span {
+        color: #f88533;
+    }
+`;
+
+const MktTagline = styled.h1`
+    font-size: 28px;
+    font-weight: 900;
+    color: #fff;
+    line-height: 1.25;
+    margin: 0 0 12px;
+    letter-spacing: -0.4px;
+`;
+
+const MktSub = styled.p`
+    font-size: 14px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.6;
+    margin: 0 0 32px;
+`;
+
+const MktFeatures = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 36px;
+`;
+
+const MktFeatureRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.82);
+    font-weight: 500;
+`;
+
+const MktIcon = styled.span`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(248,133,51,0.15);
+    color: #f88533;
+    font-size: 16px;
+    flex-shrink: 0;
+`;
+
+const MktBadge = styled.div`
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(248,133,51,0.35);
+    background: rgba(248,133,51,0.08);
+    color: #f88533;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+
+    background-size: 200% auto;
+    animation: ${shimmer} 3s linear infinite;
+`;
+
+/* ── Zona de login (derecha) ───────────────── */
+const LoginZona = styled.div`
+    width: 420px;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 32px 24px 16px;
     gap: 16px;
+
+    @media (max-width: 768px) {
+        width: 100%;
+        min-height: 100vh;
+        padding: 40px 20px 20px;
+    }
 `;
 
-const Tarjeta = styled.div`
+const LoginCard = styled.div`
     width: 100%;
-    max-width: 420px;
+    max-width: 380px;
     animation: ${fadeUp} 0.35s ease both;
 `;
 
-/* ── Logo ──────────────────────────────────── */
-const Logo = styled.div`
+/* ── CTA Panel ─────────────────────────────── */
+const CtaPanel = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+`;
+
+const CtaLogo = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin-bottom: 6px;
     img {
-        width: 32px;
-        height: 32px;
+        width: 30px;
+        height: 30px;
         object-fit: contain;
     }
     span {
-        font-weight: 800;
-        font-size: 15px;
+        font-size: 16px;
+        font-weight: 700;
         color: ${({ theme }) => theme.text};
-        letter-spacing: 0.3px;
+        b { color: #f88533; font-weight: 900; }
     }
 `;
 
-/* ── Panel selección de modo ───────────────── */
-const PanelSeleccion = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-`;
-
-const Titulo = styled.h2`
+const CtaTexto = styled.p`
     text-align: center;
-    font-size: 26px;
-    font-weight: 900;
-    color: ${({ theme }) => theme.text};
-    margin: 0 0 4px;
-    letter-spacing: -0.3px;
+    font-size: 13px;
+    color: ${({ theme }) => theme.colorSubtitle};
+    margin: 0;
 `;
 
-const CardModo = styled.button`
+const BtnCta = styled.button`
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 22px;
-    border-radius: 16px;
-    border: 2px solid ${({ $border }) => $border};
-    background: ${({ $bg }) => $bg};
+    padding: 20px 24px;
+    border-radius: 18px;
+    border: 2px solid #F5A14299;
+    background: #E8891A;
     cursor: pointer;
     transition: transform 0.15s, box-shadow 0.15s;
-    box-shadow: 0 4px 18px rgba(0,0,0,0.18), 4px 4px 0 ${({ $shadow }) => $shadow};
+    box-shadow: 0 4px 20px rgba(232,137,26,0.25), 4px 4px 0 #B56B12;
+    width: 100%;
+
     &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.22), 4px 4px 0 ${({ $shadow }) => $shadow};
+        box-shadow: 0 8px 28px rgba(232,137,26,0.35), 4px 4px 0 #B56B12;
     }
     &:active {
         transform: translate(2px, 2px);
-        box-shadow: 2px 2px 0 ${({ $shadow }) => $shadow};
+        box-shadow: 2px 2px 0 #B56B12;
     }
 `;
 
-const CardTexto = styled.div`
+const BtnCtaTexto = styled.div`
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 5px;
+    gap: 6px;
 `;
 
-const CardBadge = styled.span`
+const BtnCtaBadge = styled.span`
     background: rgba(255,255,255,0.22);
     color: #fff;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
-    padding: 3px 12px;
+    padding: 3px 14px;
     border-radius: 20px;
     letter-spacing: 0.2px;
 `;
 
-const CardDesc = styled.span`
-    color: rgba(255,255,255,0.75);
+const BtnCtaDesc = styled.span`
+    color: rgba(255,255,255,0.78);
     font-size: 13px;
     font-weight: 500;
     padding-left: 4px;
 `;
 
-const CardEmoji = styled.span`
-    font-size: 46px;
+const BtnCtaEmoji = styled.span`
+    font-size: 48px;
     line-height: 1;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
 `;
 
-/* ── Panel login ───────────────────────────── */
-const PanelLogin = styled.div`
+/* ── Form Panel ────────────────────────────── */
+const FormPanel = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 16px;
     animation: ${fadeUp} 0.3s ease both;
+`;
+
+const FormTitulo = styled.h2`
+    text-align: center;
+    font-size: 22px;
+    font-weight: 900;
+    color: ${({ theme }) => theme.text};
+    margin: 0;
+    letter-spacing: -0.3px;
 `;
 
 const BtnVolver = styled.button`
@@ -330,7 +408,6 @@ const BtnVolver = styled.button`
     font-weight: 700;
     font-family: "Poppins", sans-serif;
     cursor: pointer;
-    letter-spacing: 0.2px;
     transition: all 0.18s ease;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     &:hover {
@@ -338,22 +415,11 @@ const BtnVolver = styled.button`
         color: #f88533;
         background: rgba(248,133,51,0.08);
         transform: translateX(-2px);
-        box-shadow: 0 4px 14px rgba(248,133,51,0.15);
     }
     &:active { transform: translateX(0); }
 `;
 
-const BadgeModoActivo = styled.div`
-    text-align: center;
-    padding: 10px 0 2px;
-    font-size: 20px;
-    font-weight: 900;
-    color: ${({ $color }) => $color};
-    letter-spacing: 0.3px;
-`;
-
-
-/* ── Formulario empleado ───────────────────── */
+/* ── Formulario ────────────────────────────── */
 const Form = styled.form`
     display: flex;
     flex-direction: column;
@@ -393,25 +459,17 @@ const BtnIngresar = styled.button`
     width: 100%;
     padding: 14px;
     border-radius: 14px;
-    border: 2px solid ${({ disabled, $gold, $gray, $blue }) =>
-        disabled ? "#9ca3af" : $gold ? "#B56B12" : $blue ? "#1e40af" : $gray ? "#111" : "#0A0603"};
-    background: ${({ disabled, $gold, $gray, $blue }) =>
-        disabled ? "#9ca3af" : $gold ? "#E8891A" : $blue ? "#1d4ed8" : $gray ? "#2d2d2d" : "#1C1108"};
+    border: 2px solid ${({ disabled }) => disabled ? "#9ca3af" : "#B56B12"};
+    background: ${({ disabled }) => disabled ? "#9ca3af" : "#E8891A"};
     color: #fff;
     font-size: 15px;
     font-weight: 800;
     cursor: ${({ disabled }) => disabled ? "not-allowed" : "pointer"};
     letter-spacing: 0.5px;
-    box-shadow: ${({ disabled, $gold, $gray, $blue }) =>
-        disabled ? "none" : $gold ? "4px 4px 0 #B56B12" : $blue ? "4px 4px 0 #1e40af" : $gray ? "4px 4px 0 #111" : "4px 4px 0 #0A0603"};
+    font-family: "Poppins", sans-serif;
+    box-shadow: ${({ disabled }) => disabled ? "none" : "4px 4px 0 #B56B12"};
     transition: box-shadow 0.1s, transform 0.1s;
     &:active {
-        ${({ disabled, $gold, $gray, $blue }) => !disabled && (
-            $gold ? "box-shadow: 2px 2px 0 #B56B12; transform: translate(2px, 2px);" :
-            $blue ? "box-shadow: 2px 2px 0 #1e40af; transform: translate(2px, 2px);" :
-            $gray ? "box-shadow: 2px 2px 0 #111; transform: translate(2px, 2px);" :
-                    "box-shadow: 2px 2px 0 #0A0603; transform: translate(2px, 2px);"
-        )}
+        ${({ disabled }) => !disabled && "box-shadow: 2px 2px 0 #B56B12; transform: translate(2px,2px);"}
     }
 `;
-
