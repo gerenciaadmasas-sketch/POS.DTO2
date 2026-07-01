@@ -67,15 +67,10 @@ export async function CrearUsuarioEmpleado(p) {
 }
 
 export async function ObtenerEmailPorUsuario(usuario) {
-    const { data } = await supabase
-        .from(tabla)
-        .select("email, tipo, id_empresa")
-        .eq("usuario", usuario)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-    if (!data) return null;
-    return { email: data.email ?? null, tipo: data.tipo ?? null };
+    const { data, error } = await supabase
+        .rpc("get_email_por_usuario", { p_usuario: usuario });
+    if (error || !data || data.length === 0) return null;
+    return { email: data[0].email ?? null, tipo: data[0].tipo ?? null };
 }
 
 export async function ActualizarUsuario(p) {
