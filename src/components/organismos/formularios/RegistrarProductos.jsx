@@ -16,7 +16,7 @@ import { useUsuariosStore } from "../../../store/UsuariosStore";
 import { useMutation } from "@tanstack/react-query";
 
 export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding }) {
-    const { insertarProducto, editarProducto, generarCodigo } = useProductosStore();
+    const { insertarProducto, editarProducto, generarCodigo, mostrarProductos, parametros } = useProductosStore();
     const { datacategorias } = useCategoriasStore();
     const { dataempresa } = useEmpresaStore();
     const esAdmin = useUsuariosStore.getState().datausuarios?.tipo === "administrador";
@@ -127,7 +127,10 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                 _id: dataSelect.id,
             };
             await editarProducto(p);
-            if (imgFile) await SubirImagenProducto({ id: dataSelect.id, id_empresa: dataempresa.id, file: imgFile });
+            if (imgFile) {
+                await SubirImagenProducto({ id: dataSelect.id, id_empresa: dataempresa.id, file: imgFile });
+                await mostrarProductos(parametros);
+            }
         } else {
             const p = {
                 _nombre: ConvertirCapitalize(data.nombre),
@@ -145,7 +148,10 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                 _stock: parseFloat(data.stock) || 0,
             };
             const nuevo_id = await insertarProducto(p);
-            if (imgFile && nuevo_id) await SubirImagenProducto({ id: nuevo_id, id_empresa: dataempresa.id, file: imgFile });
+            if (imgFile && nuevo_id) {
+                await SubirImagenProducto({ id: nuevo_id, id_empresa: dataempresa.id, file: imgFile });
+                await mostrarProductos(parametros);
+            }
         }
     }
 
