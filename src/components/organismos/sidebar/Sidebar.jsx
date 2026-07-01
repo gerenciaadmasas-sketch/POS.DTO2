@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import { ToggleTema } from "../ToggleTema";
 import { LinksArray, SecondarylinksArray } from "../../../utils/dataEstatica";
 import { v } from "../../../styles/variables";
@@ -12,9 +12,9 @@ import { ObtenerSesionAbierta } from "../../../supabase/crudSesionesCaja";
 import { useAlmacenesConfigStore } from "../../../store/AlmacenesConfigStore";
 import Swal from "sweetalert2";
 
-const LINKS_CAJERO     = ["/", "/pos", "/inventario", "/reportes"];
-const LINKS_ADMIN      = ["/", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo"];
-const LINKS_SUPERADMIN = ["/", "/saas", "/reportes"];
+const LINKS_CAJERO     = ["/home", "/pos", "/inventario", "/reportes"];
+const LINKS_ADMIN      = ["/home", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo"];
+const LINKS_SUPERADMIN = ["/home", "/saas", "/reportes"];
 
 export function Sidebar({ state, setState, onNavClick }) {
     const { cerrarSesion } = useAuthStore();
@@ -207,6 +207,11 @@ const LogoArea = styled.div`
     }
 `;
 
+const pulseGlow = keyframes`
+    0%, 100% { box-shadow: 0 0 0 0 rgba(248,133,51,0.5), 0 4px 14px rgba(248,133,51,0.35); }
+    50%       { box-shadow: 0 0 0 6px rgba(248,133,51,0), 0 4px 18px rgba(248,133,51,0.5); }
+`;
+
 const BtnCerrarMobile = styled.button`
     display: none;
 
@@ -215,17 +220,19 @@ const BtnCerrarMobile = styled.button`
         align-items: center;
         justify-content: center;
         margin-left: auto;
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
-        border: 1.5px solid ${({ theme }) => theme.color2};
-        background: ${({ theme }) => theme.bgtotal};
-        color: ${({ theme }) => theme.text};
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        border: none;
+        background: linear-gradient(135deg, #f88533 0%, #f56a00 100%);
+        color: #fff;
         font-size: 22px;
         cursor: pointer;
         flex-shrink: 0;
-        transition: background 0.15s, color 0.15s;
-        &:hover { background: rgba(248,113,113,0.1); color: #f87171; border-color: #f87171; }
+        animation: ${pulseGlow} 2.4s ease-in-out infinite;
+        transition: transform 0.15s, filter 0.15s;
+        &:hover  { filter: brightness(1.15); transform: scale(1.07); }
+        &:active { transform: scale(0.92); }
     }
 `;
 

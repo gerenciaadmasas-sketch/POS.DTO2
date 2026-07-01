@@ -4,6 +4,8 @@ import { UsuariosConfig } from "../pages/UsuariosConfig";
 import { MiPerfil } from "../pages/MiPerfil";
 import { Arqueo } from "../pages/Arqueo";
 import { Impresoras } from "../pages/Impresoras";
+import { Landing } from "../pages/Landing";
+import { Planes } from "../pages/Planes";
 import { useQuery } from "@tanstack/react-query";
 import { Spinner1 } from "../components/moleculas/Spinner1";
 import { MostrarEmpresaPorId } from "../supabase/crudEmpresa";
@@ -50,13 +52,14 @@ export function Myroutes() {
   }
   return (
     <Routes>
-      <Route
-        path="/login"
-        element={user ? <Navigate to="/" replace /> : <Login />}
-      />
+      {/* ── Rutas públicas (sin autenticación) ── */}
+      <Route path="/"       element={user ? <Navigate to="/home" replace /> : <Landing />} />
+      <Route path="/login"  element={user ? <Navigate to="/home" replace /> : <Login />} />
+      <Route path="/planes" element={<Planes />} />
 
-      <Route element={<ProtectedRoute user={user} redirectTo="/login" />}>
-        <Route path="/" element={<Home />} />
+      {/* ── Rutas protegidas ── */}
+      <Route element={<ProtectedRoute user={user} redirectTo="/" />}>
+        <Route path="/home" element={<Home />} />
         <Route path="/configuracion" element={<Configuraciones />} />
         <Route path="/configuracion/categorias" element={<Categorias />} />
         <Route path="/configuracion/productos" element={<Productos />} />
@@ -79,16 +82,10 @@ export function Myroutes() {
         <Route path="/configuracion/version" element={<Version />} />
 
         <Route path="/configurar" element={<Navigate to="/configuracion" replace />} />
-        <Route
-          path="/configurar/categorias"
-          element={<Navigate to="/configuracion/categorias" replace />}
-        />
+        <Route path="/configurar/categorias" element={<Navigate to="/configuracion/categorias" replace />} />
       </Route>
 
-      <Route
-        path="*"
-        element={<Navigate to={user ? "/" : "/login"} replace />}
-      />
+      <Route path="*" element={<Navigate to={user ? "/home" : "/"} replace />} />
     </Routes>
   );
 }

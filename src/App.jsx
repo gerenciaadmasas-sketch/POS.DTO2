@@ -8,13 +8,13 @@ import { Sidebar } from "./components/organismos/sidebar/Sidebar";
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { blurin } from "./styles/keyframes";
-import { RiMenuLine, RiCloseLine } from "react-icons/ri";
+import { RiMenuLine } from "react-icons/ri";
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { themeStyle } = useThemeStore();
   const { pathname } = useLocation();
-  const isLoginRoute = pathname === "/login";
+  const isLoginRoute = ["/login", "/", "/planes"].includes(pathname);
 
   return (
     <ThemeProvider theme={themeStyle}>

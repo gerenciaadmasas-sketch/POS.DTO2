@@ -118,3 +118,6 @@ export * from './components/templates/VersionTemplate';
 export * from './pages/Version';
 export * from './pages/Impresoras';
 export * from './components/templates/ImpresorasTemplate';
+export * from './pages/Landing';
+export * from './pages/Planes';
+export * from './components/templates/LandingTemplate';
