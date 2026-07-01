@@ -5,6 +5,7 @@ import {
   Paginacion,
 } from "../../../index";
 import { toastWarning, confirmar } from "../../../utils/toast";
+import { v } from "../../../styles/variables";
 import { useState } from "react";
 import {
   flexRender,
