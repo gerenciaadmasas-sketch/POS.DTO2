@@ -2,10 +2,9 @@ import styled from "styled-components";
 import {
   ContentAccionesTabla,
   useCategoriasStore,
-  Paginacion,ImagenContent, Icono
+  Paginacion,
 } from "../../../index";
 import { toastWarning, confirmar } from "../../../utils/toast";
-import { v } from "../../../styles/variables";
 import { useState } from "react";
 import {
   flexRender,
@@ -49,26 +48,6 @@ export function TablaCategorias({
     setAccion("Editar");
   }
   const columns = [
-    {
-      accessorKey: "icono",
-      header: "Icono", 
-      enableSorting: false,
-      cell: (info) => (
-        <div className="ContentCell">
-          {info.getValue() !== "-"
-            ? <ImagenContent imagen={info.getValue()} />
-            : <Icono>{<v.iconoimagenvacia />}</Icono>
-          }
-        </div>
-      ),
-
-      enableColumnFilter: true,
-      filterFn: (row, columnId, filterStatuses) => {
-        if (filterStatuses.length === 0) return true;
-        const status = row.getValue(columnId);
-        return filterStatuses.includes(status?.id);
-      },
-    },
     {
       accessorKey: "nombre",
       header: "Descripcion",
