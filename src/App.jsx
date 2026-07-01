@@ -33,9 +33,9 @@ function App() {
               <PageWrapper key={pathname}><Myroutes /></PageWrapper>
             </section>
 
-            {/* Botón hamburger — solo visible en móvil */}
-            <HamburgerBtn onClick={() => setSidebarOpen(!sidebarOpen)}>
-              {sidebarOpen ? <RiCloseLine /> : <RiMenuLine />}
+            {/* Botón hamburger — solo visible en móvil cuando el sidebar está cerrado */}
+            <HamburgerBtn $hidden={sidebarOpen} onClick={() => setSidebarOpen(true)}>
+              <RiMenuLine />
             </HamburgerBtn>
 
             {/* Overlay oscuro al abrir en móvil */}
@@ -92,7 +92,7 @@ const PageWrapper = styled.div`
   animation: ${blurin} 0.4s linear both;
 `;
 
-/* Botón hamburger — solo en móvil */
+/* Botón hamburger — solo en móvil, solo cuando sidebar está cerrado */
 const HamburgerBtn = styled.button`
   position: fixed;
   top: 10px;
@@ -104,7 +104,7 @@ const HamburgerBtn = styled.button`
   background: linear-gradient(135deg, #f88533 0%, #f56a00 100%);
   color: #fff;
   font-size: 22px;
-  display: flex;
+  display: ${({ $hidden }) => $hidden ? "none" : "flex"};
   align-items: center;
   justify-content: center;
   cursor: pointer;

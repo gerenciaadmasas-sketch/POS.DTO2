@@ -4,6 +4,7 @@ import { LinksArray, SecondarylinksArray } from "../../../utils/dataEstatica";
 import { v } from "../../../styles/variables";
 import { NavLink } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import { RiCloseLine } from "react-icons/ri";
 import { useAuthStore } from "../../../store/AuthStore";
 import { useEmpresaStore } from "../../../store/EmpresaStore";
 import { useUsuariosStore } from "../../../store/UsuariosStore";
@@ -70,6 +71,10 @@ export function Sidebar({ state, setState, onNavClick }) {
                 </LogoImg>
                 {state && <LogoNombre>{dataempresa?.razon_social ?? "POS DL"}</LogoNombre>}
                 <LogoNombreMobile>{dataempresa?.razon_social ?? "POS DL"}</LogoNombreMobile>
+                {/* Botón cerrar — solo en móvil, se mueve con la animación del drawer */}
+                <BtnCerrarMobile onClick={onNavClick}>
+                    <RiCloseLine />
+                </BtnCerrarMobile>
             </LogoArea>
 
             {/* Links primarios */}
@@ -195,6 +200,33 @@ const LogoArea = styled.div`
     gap: 10px;
     padding: ${({ $isopen }) => $isopen ? "0 8px 20px" : "0 0 20px"};
     justify-content: ${({ $isopen }) => $isopen ? "flex-start" : "center"};
+
+    @media (max-width: 767px) {
+        justify-content: flex-start;
+        width: 100%;
+    }
+`;
+
+const BtnCerrarMobile = styled.button`
+    display: none;
+
+    @media (max-width: 767px) {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        border: 1.5px solid ${({ theme }) => theme.color2};
+        background: ${({ theme }) => theme.bgtotal};
+        color: ${({ theme }) => theme.text};
+        font-size: 22px;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background 0.15s, color 0.15s;
+        &:hover { background: rgba(248,113,113,0.1); color: #f87171; border-color: #f87171; }
+    }
 `;
 
 const LogoImg = styled.div`
