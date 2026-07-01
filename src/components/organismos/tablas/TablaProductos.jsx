@@ -36,7 +36,14 @@ export function TablaProductos({ data, SetopenRegistro, setdataSelect, setAccion
         {
             accessorKey: "nombre",
             header: "Nombre",
-            cell: (info) => <span>{info.getValue()}</span>,
+            cell: (info) => (
+                <NombreCell>
+                    {info.row.original.imagen && info.row.original.imagen !== "-"
+                        ? <ThumbImg src={info.row.original.imagen} alt={info.getValue()} />
+                        : <ThumbPlaceholder />}
+                    <span>{info.getValue()}</span>
+                </NombreCell>
+            ),
         },
         {
             accessorKey: "p_venta",
@@ -141,6 +148,31 @@ export function TablaProductos({ data, SetopenRegistro, setdataSelect, setAccion
         </Container>
     );
 }
+
+const NombreCell = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+`;
+
+const ThumbImg = styled.img`
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.1);
+`;
+
+const ThumbPlaceholder = styled.div`
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    border: 1px dashed rgba(255,255,255,0.12);
+    flex-shrink: 0;
+`;
 
 const Container = styled.div`
     position: relative;

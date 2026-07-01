@@ -68,3 +68,18 @@ export async function EditarProducto(p) {
         throw new Error(error.message);
     }
 }
+
+export async function SubirImagenProducto({ id, id_empresa, file }) {
+    const ruta = `producto/${id}`;
+    const { error: uploadError } = await supabase.storage
+        .from("imagenes")
+        .upload(ruta, file, { cacheControl: "0", upsert: true });
+    if (uploadError) { toastError(uploadError.message, "Productos › Imagen"); return null; }
+    const { data: urlData } = await supabase.storage.from("imagenes").getPublicUrl(ruta);
+    const { error } = await supabase.from("productos")
+        .update({ imagen: urlData.publicUrl })
+        .eq("id", id)
+        .eq("id_empresa", id_empresa);
+    if (error) { toastError(error.message, "Productos › Imagen URL"); return null; }
+    return urlData.publicUrl;
+}

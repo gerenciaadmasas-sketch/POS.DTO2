@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import { v } from "../../../styles/variables";
+import { SubirImagenProducto } from "../../../supabase/crudProductos";
+import { RiImageAddLine } from "react-icons/ri";
 import {
     InputText, Btn1, useProductosStore, useCategoriasStore, ConvertirCapitalize,
     ContainerSelector, useSucursalesStore, ListaDesplegable, Selector, Checkbox1,
@@ -20,6 +22,10 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
     const esAdmin = useUsuariosStore.getState().datausuarios?.tipo === "administrador";
     const { sucursalesItemSelect, selectSucursal } = useSucursalesStore();
     const { dataAlmacenes } = useAlmacenesConfigStore();
+
+    const [imgFile,    setImgFile]    = useState(null);
+    const [imgPreview, setImgPreview] = useState(null);
+    const imgRef = useRef(null);
 
     const [aplicaIva, setAplicaIva] = useState(false);
     const [seVendePorUnidad, setSeVendePorUnidad] = useState(true);
@@ -59,8 +65,18 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
         },
     });
 
+    function pickImagen(e) {
+        const f = e.target.files?.[0];
+        if (!f) return;
+        setImgFile(f);
+        const r = new FileReader();
+        r.onload = () => setImgPreview(r.result);
+        r.readAsDataURL(f);
+    }
+
     useEffect(() => {
         if (accion === "Editar" && dataSelect) {
+            setImgPreview(dataSelect.imagen && dataSelect.imagen !== "-" ? dataSelect.imagen : null);
             setAplicaIva(dataSelect.aplica_iva ?? false);
             setSeVendePorUnidad(dataSelect.sevende_por === "Unidad");
             setSeVendePorGranel(dataSelect.sevende_por === "Granel");
@@ -111,6 +127,7 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                 _id: dataSelect.id,
             };
             await editarProducto(p);
+            if (imgFile) await SubirImagenProducto({ id: dataSelect.id, id_empresa: dataempresa.id, file: imgFile });
         } else {
             const p = {
                 _nombre: ConvertirCapitalize(data.nombre),
@@ -127,7 +144,8 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                 _id_sucursal: sucursalesItemSelect?.id ?? null,
                 _stock: parseFloat(data.stock) || 0,
             };
-            await insertarProducto(p);
+            const nuevo_id = await insertarProducto(p);
+            if (imgFile && nuevo_id) await SubirImagenProducto({ id: nuevo_id, id_empresa: dataempresa.id, file: imgFile });
         }
     }
 
@@ -145,6 +163,14 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                             <span onClick={onClose}>x</span>
                         </section>
                     </div>
+
+                    <ZonaImagen onClick={() => imgRef.current?.click()}>
+                        {imgPreview
+                            ? <FotoProducto src={imgPreview} alt="producto" />
+                            : <PlaceholderFoto><RiImageAddLine /><span>foto del producto <em>(opcional)</em></span></PlaceholderFoto>}
+                        {imgPreview && <BadgeCamara><RiImageAddLine /></BadgeCamara>}
+                        <input type="file" accept="image/*" ref={imgRef} style={{ display: "none" }} onChange={pickImagen} />
+                    </ZonaImagen>
 
                     <form className="formulario" onSubmit={handleSubmit(doGuardar)}>
                         <div className="dos-columnas">
@@ -420,4 +446,54 @@ const ContainerStock = styled.div`
     border-radius: 10px;
     border: 1px solid rgba(252, 96, 39, 0.4);
     background: rgba(252, 96, 39, 0.05);
+`;
+
+const ZonaImagen = styled.div`
+    position: relative;
+    width: 100%;
+    height: 130px;
+    border-radius: 14px;
+    border: 2px dashed ${({ theme }) => theme.color2};
+    background: ${({ theme }) => theme.bgcards};
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+    transition: border-color 0.2s;
+    &:hover { border-color: #f88533; }
+`;
+
+const FotoProducto = styled.img`
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+`;
+
+const PlaceholderFoto = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: ${({ theme }) => theme.colorsubtitlecard};
+    svg { font-size: 32px; }
+    span {
+        font-size: 13px;
+        font-weight: 600;
+        font-family: "Poppins", sans-serif;
+        em { font-style: normal; font-size: 11px; opacity: 0.6; }
+    }
+`;
+
+const BadgeCamara = styled.div`
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(248,133,51,0.9);
+    border-radius: 8px;
+    padding: 5px 8px;
+    display: flex;
+    align-items: center;
+    svg { font-size: 16px; color: #fff; }
 `;
