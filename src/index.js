@@ -121,3 +121,4 @@ export * from './components/templates/ImpresorasTemplate';
 export * from './pages/Landing';
 export * from './pages/Planes';
 export * from './components/templates/LandingTemplate';
+export * from './components/templates/PlanesTemplate';
