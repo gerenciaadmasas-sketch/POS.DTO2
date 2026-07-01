@@ -67,6 +67,7 @@ export function LandingTemplate() {
                 return;
             }
             await loginEmail({ email: resultado.email, password });
+            window.location.href = "/home";
         } catch (err) {
             const msg = err?.message ?? "";
             if (msg.includes("Invalid login") || msg.includes("invalid_credentials") || msg.includes("Wrong")) {
@@ -74,7 +75,6 @@ export function LandingTemplate() {
             } else {
                 setErrorMsg("Error al iniciar sesión. Verifica tu conexión e intenta de nuevo.");
             }
-        } finally {
             setCargando(false);
         }
     };
