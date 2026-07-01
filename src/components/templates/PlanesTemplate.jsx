@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import styled, { keyframes, css } from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { v } from "../../styles/variables";
+import { useAuthStore } from "../../store/AuthStore";
+import { ObtenerEmailPorUsuario } from "../../supabase/crudUsuarios";
 import {
     RiArrowLeftSLine, RiCheckLine, RiCloseLine,
     RiFlashlightLine, RiFireLine, RiPlanetLine,
@@ -10,7 +12,7 @@ import {
     RiTeamLine, RiBarChartBoxLine, RiFileListLine,
     RiArchiveLine, RiPrinterLine, RiStarLine,
     RiSmartphoneLine, RiInfinityLine, RiVipCrownLine,
-    RiTimeLine, RiGroupLine,
+    RiTimeLine, RiGroupLine, RiEyeLine, RiEyeOffLine,
 } from "react-icons/ri";
 
 /* ─────────────────────────────────────────
@@ -113,16 +115,66 @@ const formatCOP = (n) =>
 ───────────────────────────────────────── */
 export function PlanesTemplate() {
     const navigate = useNavigate();
+    const { loginEmail } = useAuthStore();
     const [anual, setAnual] = useState(false);
     const [visible, setVisible] = useState(false);
     const heroRef = useRef(null);
+
+    /* ── Estado del modal de login ── */
+    const [loginOpen, setLoginOpen] = useState(false);
+    const [usuario, setUsuario]     = useState("");
+    const [password, setPassword]   = useState("");
+    const [showPass, setShowPass]   = useState(false);
+    const [cargando, setCargando]   = useState(false);
+    const [errorMsg, setErrorMsg]   = useState("");
 
     useEffect(() => {
         const t = setTimeout(() => setVisible(true), 80);
         return () => clearTimeout(t);
     }, []);
 
+    useEffect(() => {
+        const onKey = (e) => { if (e.key === "Escape") cerrarLogin(); };
+        if (loginOpen) window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [loginOpen]);
+
+    useEffect(() => {
+        document.body.style.overflow = loginOpen ? "hidden" : "";
+        return () => { document.body.style.overflow = ""; };
+    }, [loginOpen]);
+
+    const abrirLogin = () => {
+        setLoginOpen(true);
+        setUsuario(""); setPassword(""); setErrorMsg(""); setShowPass(false);
+    };
+
+    const cerrarLogin = () => {
+        setLoginOpen(false);
+        setUsuario(""); setPassword(""); setErrorMsg("");
+    };
+
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        if (!usuario || !password) return;
+        setCargando(true);
+        setErrorMsg("");
+        try {
+            const resultado = await ObtenerEmailPorUsuario(usuario.trim());
+            if (!resultado?.email) {
+                setErrorMsg("Usuario no encontrado. Verifica con tu administrador.");
+                return;
+            }
+            await loginEmail({ email: resultado.email, password });
+        } catch {
+            setErrorMsg("Contraseña incorrecta. Intenta de nuevo.");
+        } finally {
+            setCargando(false);
+        }
+    };
+
     return (
+        <>
         <Pagina>
             {/* ── Decoración de fondo ── */}
             <BgOrb $x="-10%" $y="-8%"  $size="600px" $color="rgba(248,133,51,0.12)"  $dur="7s" />
@@ -147,9 +199,9 @@ export function PlanesTemplate() {
                     ))}
                 </NavCenter>
 
-                <BtnVolver onClick={() => navigate("/")}>
-                    <RiArrowLeftSLine size={16} /> Volver
-                </BtnVolver>
+                <BtnIniciarSesion onClick={abrirLogin}>
+                    Inicia sesión 👑
+                </BtnIniciarSesion>
             </Navbar>
 
             {/* ── Hero ── */}
@@ -241,7 +293,7 @@ export function PlanesTemplate() {
                                 $colorAlt={plan.colorAlt}
                                 $glow={plan.glow}
                                 $popular={plan.popular}
-                                onClick={() => navigate("/login")}
+                                onClick={abrirLogin}
                             >
                                 {plan.popular ? "Comenzar con Fuego 🔥" : `Elegir ${plan.nombre}`}
                             </BtnPlan>
@@ -313,7 +365,7 @@ export function PlanesTemplate() {
                     <BtnWA as="a" href="https://wa.me/573118303017" target="_blank" rel="noopener noreferrer">
                         <RiWhatsappLine size={20} /> Hablar por WhatsApp
                     </BtnWA>
-                    <BtnLogin onClick={() => navigate("/login")}>
+                    <BtnLogin onClick={abrirLogin}>
                         Probar gratis ahora →
                     </BtnLogin>
                 </CtaBtns>
@@ -329,6 +381,63 @@ export function PlanesTemplate() {
                 <FooterTexto>Medellín, Colombia 🇨🇴</FooterTexto>
             </PlanFooter>
         </Pagina>
+
+        {/* ══ MODAL DE LOGIN ══ */}
+        <Overlay $open={loginOpen} onClick={cerrarLogin} />
+
+        <LoginDrawer $open={loginOpen}>
+            <DrawerHandle />
+            <BtnCerrar onClick={cerrarLogin}><RiCloseLine /></BtnCerrar>
+
+            <DrawerLogo>
+                <img src={v.logo} alt="logo" />
+                <span>POS<b>.DTO2</b></span>
+            </DrawerLogo>
+
+            <DrawerTitle>Bienvenido de vuelta</DrawerTitle>
+            <DrawerSub>Ingresa tus credenciales para acceder</DrawerSub>
+
+            <LoginForm onSubmit={handleLogin}>
+                <InputGroup>
+                    <InputLabel>Usuario</InputLabel>
+                    <InputField
+                        type="text"
+                        placeholder="Tu nombre de usuario"
+                        value={usuario}
+                        onChange={e => setUsuario(e.target.value)}
+                        autoComplete="username"
+                        autoFocus={loginOpen}
+                        required
+                    />
+                </InputGroup>
+                <InputGroup>
+                    <InputLabel>Contraseña</InputLabel>
+                    <InputWrap>
+                        <InputField
+                            type={showPass ? "text" : "password"}
+                            placeholder="Tu contraseña"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            autoComplete="current-password"
+                            required
+                            style={{ paddingRight: "48px" }}
+                        />
+                        <BtnEye type="button" onClick={() => setShowPass(!showPass)}>
+                            {showPass ? <RiEyeOffLine /> : <RiEyeLine />}
+                        </BtnEye>
+                    </InputWrap>
+                </InputGroup>
+                {errorMsg && <MsgError>{errorMsg}</MsgError>}
+                <BtnIngresar type="submit" disabled={cargando || !usuario || !password}>
+                    {cargando ? "Ingresando..." : "Ingresar al sistema →"}
+                </BtnIngresar>
+            </LoginForm>
+
+            <DrawerFootNote>
+                ¿Nuevo por acá? <span onClick={cerrarLogin}>Ver los planes arriba</span>
+            </DrawerFootNote>
+        </LoginDrawer>
+    </>
     );
 }
 
@@ -458,19 +567,160 @@ const NavDot = styled.button`
     &:hover { background: ${({ $color }) => `${$color}22`}; border-color: ${({ $color }) => $color}66; color: ${({ $color }) => $color}; }
 `;
 
-const BtnVolver = styled.button`
-    display: flex; align-items: center; gap: 6px;
-    padding: 9px 18px 9px 12px;
+const BtnIniciarSesion = styled.button`
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 20px;
     border-radius: 999px;
-    border: 1.5px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.04);
-    color: rgba(255,255,255,0.6);
-    font-size: 13px; font-weight: 700;
+    border: 2px solid #B56B12;
+    background: #E8891A;
+    color: #fff;
+    font-size: 13px; font-weight: 800;
     font-family: "Poppins", sans-serif;
     cursor: pointer;
-    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 16px rgba(232,137,26,0.35), 3px 3px 0 #B56B12;
     transition: all 0.18s;
-    &:hover { border-color: #f88533; color: #f88533; background: rgba(248,133,51,0.08); }
+    white-space: nowrap;
+    &:hover  { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 6px 22px rgba(232,137,26,0.45), 3px 3px 0 #B56B12; }
+    &:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 #B56B12; }
+
+    @media (max-width: 767px) {
+        font-size: 12px; padding: 9px 16px;
+    }
+`;
+
+/* ── Styled modal de login ── */
+const Overlay = styled.div`
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.72);
+    backdrop-filter: blur(8px);
+    z-index: 300;
+    pointer-events: ${({ $open }) => $open ? "all" : "none"};
+    opacity: ${({ $open }) => $open ? 1 : 0};
+    transition: opacity 0.3s ease;
+`;
+
+const LoginDrawer = styled.div`
+    position: fixed; z-index: 301;
+    background: #0d1117;
+    display: flex; flex-direction: column; gap: 18px;
+
+    @media (min-width: 769px) {
+        top: 0; right: 0; bottom: 0; width: 420px;
+        padding: 40px 36px;
+        border-left: 1px solid rgba(248,133,51,0.2);
+        box-shadow: -12px 0 48px rgba(0,0,0,0.6);
+        transform: ${({ $open }) => $open ? "translateX(0)" : "translateX(100%)"};
+        opacity: ${({ $open }) => $open ? 1 : 0};
+        transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease;
+        overflow-y: auto;
+    }
+
+    @media (max-width: 768px) {
+        left: 0; right: 0; bottom: 0;
+        border-radius: 28px 28px 0 0;
+        padding: 12px 24px 40px;
+        border-top: 1px solid rgba(248,133,51,0.2);
+        box-shadow: 0 -12px 48px rgba(0,0,0,0.7);
+        transform: ${({ $open }) => $open ? "translateY(0)" : "translateY(100%)"};
+        opacity: ${({ $open }) => $open ? 1 : 0};
+        transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.35s ease;
+        max-height: 92vh; overflow-y: auto;
+    }
+`;
+
+const DrawerHandle = styled.div`
+    width: 40px; height: 4px; border-radius: 999px;
+    background: rgba(255,255,255,0.15);
+    align-self: center; margin-bottom: 4px;
+    @media (min-width: 769px) { display: none; }
+`;
+
+const BtnCerrar = styled.button`
+    position: absolute; top: 16px; right: 16px;
+    width: 36px; height: 36px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.6); font-size: 20px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s;
+    &:hover { border-color: #f88533; color: #f88533; }
+`;
+
+const DrawerLogo = styled.div`
+    display: flex; align-items: center; gap: 8px; margin-top: 8px;
+    img { width: 28px; height: 28px; object-fit: contain; }
+    span { font-size: 16px; font-weight: 900; color: #fff; b { color: #f88533; } }
+`;
+
+const DrawerTitle = styled.h2`
+    font-size: 22px; font-weight: 900; margin: 0; color: #fff; letter-spacing: -0.3px;
+`;
+
+const DrawerSub = styled.p`
+    font-size: 13px; color: rgba(255,255,255,0.45); margin: -8px 0 0; line-height: 1.5;
+`;
+
+const LoginForm = styled.form`
+    display: flex; flex-direction: column; gap: 14px;
+`;
+
+const InputGroup = styled.div`
+    display: flex; flex-direction: column; gap: 6px;
+`;
+
+const InputLabel = styled.label`
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.4px; color: rgba(255,255,255,0.4);
+`;
+
+const InputWrap = styled.div`
+    position: relative;
+`;
+
+const InputField = styled.input`
+    width: 100%; padding: 14px 16px; border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: #fff;
+    font-size: 16px; font-family: "Poppins", sans-serif;
+    outline: none; box-sizing: border-box; min-height: 52px;
+    transition: border-color 0.2s;
+    &:focus { border-color: #f88533; }
+    &::placeholder { color: rgba(255,255,255,0.25); }
+`;
+
+const BtnEye = styled.button`
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: rgba(255,255,255,0.35); font-size: 20px;
+    display: flex; align-items: center;
+    transition: color 0.15s;
+    &:hover { color: #f88533; }
+`;
+
+const MsgError = styled.p`
+    color: #f87171; font-size: 13px; font-weight: 600;
+    text-align: center; margin: 0;
+    background: rgba(248,113,113,0.1); padding: 10px 14px; border-radius: 10px;
+    border: 1px solid rgba(248,113,113,0.25);
+`;
+
+const BtnIngresar = styled.button`
+    width: 100%; padding: 16px; min-height: 54px; border-radius: 14px;
+    border: 2px solid ${({ disabled }) => disabled ? "rgba(255,255,255,0.1)" : "#B56B12"};
+    background: ${({ disabled }) => disabled ? "rgba(255,255,255,0.06)" : "#E8891A"};
+    color: ${({ disabled }) => disabled ? "rgba(255,255,255,0.35)" : "#fff"};
+    font-size: 16px; font-weight: 800; cursor: ${({ disabled }) => disabled ? "not-allowed" : "pointer"};
+    font-family: "Poppins", sans-serif;
+    box-shadow: ${({ disabled }) => disabled ? "none" : "4px 4px 0 #B56B12"};
+    transition: box-shadow 0.1s, transform 0.1s, filter 0.1s;
+    &:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+    &:active:not(:disabled) { box-shadow: 2px 2px 0 #B56B12; transform: translate(2px,2px); }
+`;
+
+const DrawerFootNote = styled.p`
+    font-size: 13px; text-align: center; color: rgba(255,255,255,0.35); margin: 0;
+    span { color: #f88533; font-weight: 700; cursor: pointer; &:hover { text-decoration: underline; } }
 `;
 
 /* ── Hero ── */
