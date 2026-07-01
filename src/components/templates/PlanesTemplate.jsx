@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { v } from "../../styles/variables";
 import { useAuthStore } from "../../store/AuthStore";
 import { ObtenerEmailPorUsuario } from "../../supabase/crudUsuarios";
+import { CrearProspecto } from "../../supabase/crudProspectos";
 import {
     RiArrowLeftSLine, RiCheckLine, RiCloseLine,
     RiFlashlightLine, RiFireLine, RiPlanetLine,
@@ -13,6 +14,7 @@ import {
     RiArchiveLine, RiPrinterLine, RiStarLine,
     RiSmartphoneLine, RiInfinityLine, RiVipCrownLine,
     RiTimeLine, RiGroupLine, RiEyeLine, RiEyeOffLine,
+    RiPhoneLine,
 } from "react-icons/ri";
 
 /* ─────────────────────────────────────────
@@ -119,6 +121,29 @@ export function PlanesTemplate() {
     const [anual, setAnual] = useState(false);
     const [visible, setVisible] = useState(false);
     const heroRef = useRef(null);
+
+    /* ── Estado del modal de registro ── */
+    const [registroOpen, setRegistroOpen] = useState(false);
+    const [regForm, setRegForm]           = useState({ nombre: "", apellido: "", telefono: "", contacto_preferido: "whatsapp", negocio: "" });
+    const [regCargando, setRegCargando]   = useState(false);
+    const [regOk, setRegOk]               = useState(false);
+    const [regError, setRegError]         = useState("");
+
+    const abrirRegistro  = () => { setRegistroOpen(true); setRegOk(false); setRegError(""); setRegForm({ nombre: "", apellido: "", telefono: "", contacto_preferido: "whatsapp", negocio: "" }); };
+    const cerrarRegistro = () => { setRegistroOpen(false); setRegOk(false); };
+
+    const handleRegistro = async (e) => {
+        e.preventDefault();
+        setRegCargando(true); setRegError("");
+        try {
+            await CrearProspecto(regForm);
+            setRegOk(true);
+        } catch {
+            setRegError("Ocurrió un error. Por favor intenta de nuevo.");
+        } finally {
+            setRegCargando(false);
+        }
+    };
 
     /* ── Estado del modal de login ── */
     const [loginOpen, setLoginOpen] = useState(false);
@@ -365,8 +390,8 @@ export function PlanesTemplate() {
                     <BtnWA as="a" href="https://wa.me/573118303017" target="_blank" rel="noopener noreferrer">
                         <RiWhatsappLine size={20} /> Hablar por WhatsApp
                     </BtnWA>
-                    <BtnLogin onClick={abrirLogin}>
-                        Probar gratis ahora →
+                    <BtnLogin onClick={() => setRegistroOpen(true)}>
+                        Regístrate ahora →
                     </BtnLogin>
                 </CtaBtns>
             </CtaFinal>
@@ -381,6 +406,85 @@ export function PlanesTemplate() {
                 <FooterTexto>Medellín, Colombia 🇨🇴</FooterTexto>
             </PlanFooter>
         </Pagina>
+
+        {/* ══ MODAL DE REGISTRO ══ */}
+        <Overlay $open={registroOpen} onClick={cerrarRegistro} />
+        <LoginDrawer $open={registroOpen}>
+            <DrawerHandle />
+            <BtnCerrar onClick={cerrarRegistro}><RiCloseLine /></BtnCerrar>
+
+            <DrawerLogo>
+                <img src={v.logo} alt="logo" />
+                <span>POS<b>.DTO2</b></span>
+            </DrawerLogo>
+
+            {regOk ? (
+                <>
+                <DrawerTitle>¡Listo! Te contactamos pronto 🎉</DrawerTitle>
+                <DrawerSub>Recibimos tu información. En poco tiempo uno de nuestros asesores se pondrá en contacto contigo para ayudarte a elegir el plan ideal.</DrawerSub>
+                <BtnIngresar type="button" disabled={false} onClick={cerrarRegistro} style={{ marginTop: "8px" }}>
+                    Cerrar
+                </BtnIngresar>
+                </>
+            ) : (
+                <>
+                <DrawerTitle>Empieza hoy mismo</DrawerTitle>
+                <DrawerSub>Déjanos tus datos y te asesoramos sin compromiso</DrawerSub>
+                <LoginForm onSubmit={handleRegistro}>
+                    <RegRow>
+                        <InputGroup>
+                            <InputLabel>Nombre *</InputLabel>
+                            <InputField type="text" placeholder="Tu nombre" value={regForm.nombre} onChange={e => setRegForm(f => ({...f, nombre: e.target.value}))} required />
+                        </InputGroup>
+                        <InputGroup>
+                            <InputLabel>Apellido *</InputLabel>
+                            <InputField type="text" placeholder="Tu apellido" value={regForm.apellido} onChange={e => setRegForm(f => ({...f, apellido: e.target.value}))} required />
+                        </InputGroup>
+                    </RegRow>
+                    <InputGroup>
+                        <InputLabel>Número de contacto *</InputLabel>
+                        <InputField type="tel" placeholder="Ej: 3001234567" value={regForm.telefono} onChange={e => setRegForm(f => ({...f, telefono: e.target.value}))} required />
+                    </InputGroup>
+                    <InputGroup>
+                        <InputLabel>Prefiero que me contacten por</InputLabel>
+                        <RegContactoRow>
+                            <ContactoOpt
+                                type="button"
+                                $active={regForm.contacto_preferido === "whatsapp"}
+                                onClick={() => setRegForm(f => ({...f, contacto_preferido: "whatsapp"}))}
+                            >
+                                <RiWhatsappLine /> WhatsApp
+                            </ContactoOpt>
+                            <ContactoOpt
+                                type="button"
+                                $active={regForm.contacto_preferido === "llamada"}
+                                onClick={() => setRegForm(f => ({...f, contacto_preferido: "llamada"}))}
+                            >
+                                <RiPhoneLine /> Llamada
+                            </ContactoOpt>
+                        </RegContactoRow>
+                    </InputGroup>
+                    <InputGroup>
+                        <InputLabel>¿Qué negocio tienes? *</InputLabel>
+                        <RegTextarea
+                            placeholder="Ej: Tienda de ropa, restaurante, distribuidora de papelería..."
+                            value={regForm.negocio}
+                            onChange={e => setRegForm(f => ({...f, negocio: e.target.value}))}
+                            rows={3}
+                            required
+                        />
+                    </InputGroup>
+                    {regError && <MsgError>{regError}</MsgError>}
+                    <BtnIngresar type="submit" disabled={regCargando || !regForm.nombre || !regForm.apellido || !regForm.telefono || !regForm.negocio}>
+                        {regCargando ? "Enviando..." : "Quiero que me contacten 🚀"}
+                    </BtnIngresar>
+                </LoginForm>
+                <DrawerFootNote>
+                    ¿Ya tienes cuenta? <span onClick={() => { cerrarRegistro(); abrirLogin(); }}>Inicia sesión aquí</span>
+                </DrawerFootNote>
+                </>
+            )}
+        </LoginDrawer>
 
         {/* ══ MODAL DE LOGIN ══ */}
         <Overlay $open={loginOpen} onClick={cerrarLogin} />
@@ -721,6 +825,36 @@ const BtnIngresar = styled.button`
 const DrawerFootNote = styled.p`
     font-size: 13px; text-align: center; color: rgba(255,255,255,0.35); margin: 0;
     span { color: #f88533; font-weight: 700; cursor: pointer; &:hover { text-decoration: underline; } }
+`;
+
+const RegRow = styled.div`
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    @media (max-width: 420px) { grid-template-columns: 1fr; }
+`;
+
+const RegContactoRow = styled.div`
+    display: flex; gap: 10px;
+`;
+
+const ContactoOpt = styled.button`
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 11px; border-radius: 12px; font-size: 13px; font-weight: 700;
+    font-family: "Poppins", sans-serif; cursor: pointer; transition: all 0.15s;
+    border: 2px solid ${({ $active }) => $active ? "#f88533" : "rgba(255,255,255,0.1)"};
+    background: ${({ $active }) => $active ? "rgba(248,133,51,0.15)" : "rgba(255,255,255,0.04)"};
+    color: ${({ $active }) => $active ? "#f88533" : "rgba(255,255,255,0.5)"};
+    &:hover { border-color: #f88533; color: #f88533; }
+`;
+
+const RegTextarea = styled.textarea`
+    width: 100%; padding: 12px 14px; border-radius: 12px;
+    border: 2px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: #fff; font-size: 15px; font-family: "Poppins", sans-serif;
+    outline: none; resize: none; box-sizing: border-box; line-height: 1.5;
+    transition: border-color 0.2s;
+    &:focus { border-color: #f88533; }
+    &::placeholder { color: rgba(255,255,255,0.25); }
 `;
 
 /* ── Hero ── */

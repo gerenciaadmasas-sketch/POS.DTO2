@@ -124,3 +124,6 @@ export * from './components/templates/LandingTemplate';
 export * from './components/templates/PlanesTemplate';
 export * from './pages/Finanzas';
 export * from './components/templates/FinanzasTemplate';
+export * from './pages/Prospectos';
+export * from './components/templates/ProspectosTemplate';
+export * from './supabase/crudProspectos';

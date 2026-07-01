@@ -14,7 +14,8 @@ import Swal from "sweetalert2";
 
 const LINKS_CAJERO     = ["/home", "/pos", "/inventario", "/reportes"];
 const LINKS_ADMIN      = ["/home", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo"];
-const LINKS_SUPERADMIN = ["/home", "/saas", "/reportes", "/finanzas"];
+const LINKS_SUPERADMIN = ["/home", "/saas", "/reportes", "/finanzas", "/prospectos"];
+const LINKS_COMERCIAL  = ["/home", "/prospectos"];
 
 export function Sidebar({ state, setState, onNavClick }) {
     const { cerrarSesion } = useAuthStore();
@@ -50,11 +51,14 @@ export function Sidebar({ state, setState, onNavClick }) {
     const tipo = datausuarios?.tipo;
     const esCajero     = tipo === "cajero";
     const esSuperAdmin = tipo === "superadmin";
+    const esComercial  = tipo === "comercial";
 
     const linksVisibles = esCajero
         ? LinksArray.filter(l => LINKS_CAJERO.includes(l.to))
         : esSuperAdmin
         ? LinksArray.filter(l => LINKS_SUPERADMIN.includes(l.to))
+        : esComercial
+        ? LinksArray.filter(l => LINKS_COMERCIAL.includes(l.to))
         : LinksArray.filter(l => LINKS_ADMIN.includes(l.to));
 
     return (

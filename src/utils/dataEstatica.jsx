@@ -43,6 +43,12 @@ export const LinksArray = [
     color: "#34d399",
   },
   {
+    label: "Prospectos",
+    icon: "solar:user-speak-bold-duotone",
+    to: "/prospectos",
+    color: "#818cf8",
+  },
+  {
     label: "Vender",
     icon: "solar:cart-large-2-bold-duotone",
     to: "/pos",
