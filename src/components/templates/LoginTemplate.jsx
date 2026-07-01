@@ -51,6 +51,7 @@ export function LoginTemplate() {
 
     return (
         <Pagina>
+            {/* ── Marketing desktop (columna izquierda) ── */}
             <Marketing>
                 <MktInner>
                     <MktLogo>
@@ -71,15 +72,37 @@ export function LoginTemplate() {
                 </MktInner>
             </Marketing>
 
+            {/* ── Zona login ── */}
             <LoginZona>
+
+                {/* ── Marketing móvil (solo visible en móvil, solo en pantalla CTA) ── */}
+                {etapa === "cta" && (
+                    <MktMobile>
+                        <MktMobileLogo>
+                            <img src={v.logo} alt="logo" />
+                            <span>POS<b>.DTO2</b></span>
+                        </MktMobileLogo>
+                        <MktMobileTagline>El punto de venta que impulsa tu negocio</MktMobileTagline>
+                        <MktMobileGrid>
+                            {features.map((f, i) => (
+                                <MktMobileFeature key={i}>
+                                    <MktIcon>{f.icon}</MktIcon>
+                                    <span>{f.texto}</span>
+                                </MktMobileFeature>
+                            ))}
+                        </MktMobileGrid>
+                        <MktBadge>✦ Publicado y en producción</MktBadge>
+                    </MktMobile>
+                )}
+
                 <LoginCard>
                     {etapa === "cta" ? (
                         <CtaPanel>
-                            <CtaLogo>
+                            <CtaLogoDesktop>
                                 <img src={v.logo} alt="logo" />
                                 <span>POS<b>.DTO2</b></span>
-                            </CtaLogo>
-                            <CtaTexto>Bienvenido al sistema de gestión</CtaTexto>
+                            </CtaLogoDesktop>
+                            <CtaTextoDesktop>Bienvenido al sistema de gestión</CtaTextoDesktop>
                             <BtnCta onClick={() => setEtapa("form")}>
                                 <BtnCtaTexto>
                                     <BtnCtaBadge>Inicia sesión</BtnCtaBadge>
@@ -268,6 +291,79 @@ const MktBadge = styled.div`
     animation: ${shimmer} 3s linear infinite;
 `;
 
+/* ── Marketing móvil ───────────────────────── */
+const MktMobile = styled.div`
+    display: none;
+
+    @media (max-width: 768px) {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        width: 100%;
+        background: linear-gradient(160deg, #0d1117 0%, #0f1923 55%, #111827 100%);
+        padding: 36px 24px 28px;
+        border-bottom: 1px solid rgba(248,133,51,0.18);
+        position: relative;
+        overflow: hidden;
+
+        &::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            right: -40px;
+            width: 220px;
+            height: 220px;
+            background: radial-gradient(circle, rgba(248,133,51,0.13) 0%, transparent 70%);
+            pointer-events: none;
+        }
+    }
+`;
+
+const MktMobileLogo = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    img {
+        width: 36px;
+        height: 36px;
+        object-fit: contain;
+    }
+    span {
+        font-size: 22px;
+        font-weight: 900;
+        color: #fff;
+        letter-spacing: -0.4px;
+        b { color: #f88533; }
+    }
+`;
+
+const MktMobileTagline = styled.p`
+    font-size: 15px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.88);
+    text-align: center;
+    margin: 0;
+    line-height: 1.4;
+`;
+
+const MktMobileGrid = styled.div`
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+`;
+
+const MktMobileFeature = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.78);
+    font-weight: 500;
+    line-height: 1.3;
+`;
+
 /* ── Zona de login (derecha) ───────────────── */
 const LoginZona = styled.div`
     width: 420px;
@@ -282,7 +378,10 @@ const LoginZona = styled.div`
     @media (max-width: 768px) {
         width: 100%;
         min-height: 100vh;
-        padding: 40px 20px 20px;
+        padding: 0 0 16px;
+        justify-content: flex-start;
+        align-items: stretch;
+        gap: 0;
     }
 `;
 
@@ -290,6 +389,11 @@ const LoginCard = styled.div`
     width: 100%;
     max-width: 380px;
     animation: ${fadeUp} 0.35s ease both;
+
+    @media (max-width: 768px) {
+        max-width: 100%;
+        padding: 28px 20px 20px;
+    }
 `;
 
 /* ── CTA Panel ─────────────────────────────── */
@@ -317,11 +421,17 @@ const CtaLogo = styled.div`
     }
 `;
 
-const CtaTexto = styled.p`
+const CtaLogoDesktop = styled(CtaLogo)`
+    @media (max-width: 768px) { display: none; }
+`;
+
+const CtaTextoDesktop = styled.p`
     text-align: center;
     font-size: 13px;
     color: ${({ theme }) => theme.colorSubtitle};
     margin: 0;
+
+    @media (max-width: 768px) { display: none; }
 `;
 
 const BtnCta = styled.button`

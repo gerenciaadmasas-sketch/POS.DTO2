@@ -750,11 +750,6 @@ const SearchInput = styled.input`
     flex: 1;
     min-width: 180px;
     max-width: 320px;
-
-    @media (max-width: 767px) {
-        max-width: 100%;
-        width: 100%;
-    }
     padding: 9px 14px;
     border: 1px solid ${({ theme }) => theme.color2};
     border-radius: 9px;
@@ -765,6 +760,16 @@ const SearchInput = styled.input`
     outline: none;
     &::placeholder { color: ${({ theme }) => theme.colorsubtitlecard}; }
     &:focus { border-color: #2563eb; }
+
+    @media (max-width: 767px) {
+        max-width: 100%;
+        width: 100%;
+        min-width: 0;
+        padding: 12px 14px;
+        font-size: 16px;
+        min-height: 48px;
+        border-radius: 12px;
+    }
 `;
 
 const FiltrosBtns = styled.div`
@@ -783,12 +788,20 @@ const FiltroBtn = styled.button`
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
+    white-space: nowrap;
     font-family: "Poppins", sans-serif;
     border: 1px solid ${({ $active, $color, theme }) => $active ? ($color ?? "#2563eb") : theme.color2};
     background: ${({ $active, $color }) => $active ? ($color ? `${$color}22` : "rgba(37,99,235,0.12)") : "transparent"};
     color: ${({ $active, $color, theme }) => $active ? ($color ?? "#2563eb") : theme.text};
     transition: all 0.15s;
     &:hover { opacity: 0.8; }
+
+    @media (max-width: 767px) {
+        padding: 10px 18px;
+        min-height: 44px;
+        font-size: 13px;
+        border-radius: 22px;
+    }
 `;
 
 /* ── Tabla ── */
@@ -813,6 +826,11 @@ const Th = styled.th`
     color: ${({ theme }) => theme.colorsubtitlecard};
     border-bottom: 1px solid ${({ theme }) => theme.color2};
     white-space: nowrap;
+
+    @media (max-width: 767px) {
+        padding: 10px 10px;
+        font-size: 11px;
+    }
     background: ${({ theme }) => theme.bgtotal};
 `;
 
@@ -822,6 +840,12 @@ const Td = styled.td`
     color: ${({ theme }) => theme.text};
     border-bottom: 1px solid ${({ theme }) => theme.color2};
     text-align: ${({ $center }) => $center ? "center" : "left"};
+
+    @media (max-width: 767px) {
+        padding: 10px 10px;
+        font-size: 12px;
+        white-space: nowrap;
+    }
 `;
 
 const TdVacio = styled.td`
@@ -883,9 +907,18 @@ const BtnIco = styled.button`
     border-radius: 6px;
     display: flex;
     align-items: center;
+    justify-content: center;
     transition: background 0.15s;
     &:hover { background: rgba(255,255,255,0.08); }
     &:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    @media (max-width: 767px) {
+        padding: 10px;
+        min-width: 42px;
+        min-height: 42px;
+        font-size: 18px;
+        border-radius: 10px;
+    }
 `;
 
 const InputStock = styled.input`
