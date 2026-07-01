@@ -1,238 +1,365 @@
-import { useState } from "react";
-import styled, { keyframes } from "styled-components";
+import { useState, useEffect, useRef } from "react";
+import styled, { keyframes, css } from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { v } from "../../styles/variables";
 import {
-    RiArrowLeftSLine, RiCheckLine, RiFlashlightLine, RiBuilding2Line,
-    RiRocketLine, RiShieldCheckLine, RiCustomerService2Line, RiStore2Line,
-    RiTeamLine, RiBarChartBoxLine, RiFileListLine, RiArchiveLine,
-    RiPrinterLine, RiSmartphoneLine, RiStarLine, RiWhatsappLine,
+    RiArrowLeftSLine, RiCheckLine, RiCloseLine,
+    RiFlashlightLine, RiFireLine, RiPlanetLine,
+    RiShieldCheckLine, RiCustomerService2Line,
+    RiRocketLine, RiWhatsappLine, RiStore2Line,
+    RiTeamLine, RiBarChartBoxLine, RiFileListLine,
+    RiArchiveLine, RiPrinterLine, RiStarLine,
+    RiSmartphoneLine, RiInfinityLine, RiVipCrownLine,
+    RiTimeLine, RiGroupLine,
 } from "react-icons/ri";
 
+/* ─────────────────────────────────────────
+   DATOS DE LOS PLANES
+───────────────────────────────────────── */
 const PLANES = [
     {
-        id: "starter",
-        nombre: "Starter",
+        id: "chispa",
+        nombre: "Chispa",
         emoji: "⚡",
-        sub: "Para negocios que están comenzando",
+        icon: <RiFlashlightLine />,
+        tagline: "El arranque perfecto",
+        sub: "Para tu primera tienda — simple, rápido y sin complicaciones.",
+        badge: "Ideal para comenzar",
         precio_mes: 49000,
         precio_ano: 39000,
-        color: "#6366f1",
+        color: "#818cf8",
+        colorAlt: "#6366f1",
         colorDark: "#4338ca",
-        shadow: "rgba(99,102,241,0.35)",
+        glow: "rgba(99,102,241,0.4)",
         popular: false,
         features: [
-            { icon: <RiStore2Line />,    texto: "1 almacén" },
-            { icon: <RiTeamLine />,      texto: "Hasta 2 usuarios" },
-            { icon: <RiFlashlightLine />,texto: "Punto de venta (POS)" },
-            { icon: <RiArchiveLine />,   texto: "Inventario básico" },
-            { icon: <RiBarChartBoxLine />,texto: "Reportes básicos" },
-            { icon: <RiWhatsappLine />,  texto: "Soporte por WhatsApp" },
+            { icon: <RiStore2Line />,       ok: true,  txt: "1 almacén" },
+            { icon: <RiTeamLine />,         ok: true,  txt: "Hasta 2 usuarios" },
+            { icon: <RiFlashlightLine />,   ok: true,  txt: "Punto de venta (POS)" },
+            { icon: <RiArchiveLine />,      ok: true,  txt: "Inventario básico" },
+            { icon: <RiBarChartBoxLine />,  ok: true,  txt: "Reportes básicos" },
+            { icon: <RiWhatsappLine />,     ok: true,  txt: "Soporte por WhatsApp" },
+            { icon: <RiFileListLine />,     ok: false, txt: "Kardex y trazabilidad" },
+            { icon: <RiGroupLine />,        ok: false, txt: "Multi-sucursal" },
         ],
-        noIncluye: ["Kardex y trazabilidad", "Arqueo de caja", "Multi-sucursal"],
     },
     {
-        id: "negocio",
-        nombre: "Negocio",
-        emoji: "🚀",
-        sub: "El favorito de nuestros clientes",
+        id: "fuego",
+        nombre: "Fuego",
+        emoji: "🔥",
+        icon: <RiFireLine />,
+        tagline: "El combustible de tu crecimiento",
+        sub: "Para negocios que ya saben lo que quieren y van por más.",
+        badge: "⭐ El más elegido",
         precio_mes: 129000,
         precio_ano: 99000,
         color: "#f88533",
-        colorDark: "#d4650a",
-        shadow: "rgba(248,133,51,0.4)",
+        colorAlt: "#f56a00",
+        colorDark: "#b45309",
+        glow: "rgba(248,133,51,0.5)",
         popular: true,
         features: [
-            { icon: <RiStore2Line />,    texto: "Hasta 3 almacenes" },
-            { icon: <RiTeamLine />,      texto: "Hasta 10 usuarios" },
-            { icon: <RiFlashlightLine />,texto: "POS + roles completos" },
-            { icon: <RiArchiveLine />,   texto: "Inventario avanzado" },
-            { icon: <RiFileListLine />,  texto: "Kardex y trazabilidad" },
-            { icon: <RiBarChartBoxLine />,texto: "Reportes avanzados" },
-            { icon: <RiBuilding2Line />, texto: "Multi-sucursal" },
-            { icon: <RiPrinterLine />,   texto: "Ticket personalizado" },
-            { icon: <RiShieldCheckLine />,texto: "Soporte prioritario" },
+            { icon: <RiStore2Line />,       ok: true,  txt: "Hasta 3 almacenes" },
+            { icon: <RiTeamLine />,         ok: true,  txt: "Hasta 10 usuarios" },
+            { icon: <RiFlashlightLine />,   ok: true,  txt: "POS con roles completos" },
+            { icon: <RiArchiveLine />,      ok: true,  txt: "Inventario avanzado" },
+            { icon: <RiFileListLine />,     ok: true,  txt: "Kardex y trazabilidad" },
+            { icon: <RiBarChartBoxLine />,  ok: true,  txt: "Reportes en tiempo real" },
+            { icon: <RiGroupLine />,        ok: true,  txt: "Multi-sucursal" },
+            { icon: <RiPrinterLine />,      ok: true,  txt: "Ticket personalizado" },
+            { icon: <RiShieldCheckLine />,  ok: true,  txt: "Soporte prioritario" },
         ],
-        noIncluye: [],
     },
     {
-        id: "empresarial",
-        nombre: "Empresarial",
-        emoji: "👑",
-        sub: "Para cadenas y grandes operaciones",
+        id: "cosmos",
+        nombre: "Cosmos",
+        emoji: "🌌",
+        icon: <RiPlanetLine />,
+        tagline: "Sin límites. Sin fronteras.",
+        sub: "Para cadenas y operaciones que piensan en grande — muy en grande.",
+        badge: "Potencia ilimitada",
         precio_mes: 249000,
         precio_ano: 199000,
-        color: "#10b981",
-        colorDark: "#059669",
-        shadow: "rgba(16,185,129,0.35)",
+        color: "#34d399",
+        colorAlt: "#10b981",
+        colorDark: "#065f46",
+        glow: "rgba(52,211,153,0.4)",
         popular: false,
         features: [
-            { icon: <RiStore2Line />,    texto: "Almacenes ilimitados" },
-            { icon: <RiTeamLine />,      texto: "Usuarios ilimitados" },
-            { icon: <RiFlashlightLine />,texto: "Todo del plan Negocio" },
-            { icon: <RiSmartphoneLine />,texto: "App móvil optimizada" },
-            { icon: <RiCustomerService2Line />, texto: "Soporte dedicado 24/7" },
-            { icon: <RiStarLine />,      texto: "Onboarding personalizado" },
-            { icon: <RiShieldCheckLine />,texto: "SLA garantizado" },
+            { icon: <RiInfinityLine />,             ok: true, txt: "Almacenes ilimitados" },
+            { icon: <RiInfinityLine />,             ok: true, txt: "Usuarios ilimitados" },
+            { icon: <RiFlashlightLine />,           ok: true, txt: "Todo del plan Fuego" },
+            { icon: <RiSmartphoneLine />,           ok: true, txt: "App móvil optimizada" },
+            { icon: <RiVipCrownLine />,             ok: true, txt: "Onboarding personalizado" },
+            { icon: <RiCustomerService2Line />,     ok: true, txt: "Soporte dedicado 24/7" },
+            { icon: <RiShieldCheckLine />,          ok: true, txt: "SLA garantizado 99.9%" },
+            { icon: <RiTimeLine />,                 ok: true, txt: "Respuesta en < 2 horas" },
         ],
-        noIncluye: [],
     },
+];
+
+const STATS = [
+    { val: "200+", label: "negocios activos" },
+    { val: "99.9%", label: "uptime garantizado" },
+    { val: "< 2min", label: "tiempo de activación" },
+    { val: "5★", label: "calificación promedio" },
 ];
 
 const formatCOP = (n) =>
     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n);
 
+/* ─────────────────────────────────────────
+   COMPONENTE PRINCIPAL
+───────────────────────────────────────── */
 export function PlanesTemplate() {
     const navigate = useNavigate();
     const [anual, setAnual] = useState(false);
+    const [visible, setVisible] = useState(false);
+    const heroRef = useRef(null);
+
+    useEffect(() => {
+        const t = setTimeout(() => setVisible(true), 80);
+        return () => clearTimeout(t);
+    }, []);
 
     return (
         <Pagina>
-            {/* ── Fondo decorativo ── */}
-            <BgGlow $pos="top-left" />
-            <BgGlow $pos="bottom-right" />
-            <BgGrid />
+            {/* ── Decoración de fondo ── */}
+            <BgOrb $x="-10%" $y="-8%"  $size="600px" $color="rgba(248,133,51,0.12)"  $dur="7s" />
+            <BgOrb $x="70%"  $y="10%"  $size="400px" $color="rgba(99,102,241,0.10)"  $dur="9s" $delay="1s" />
+            <BgOrb $x="20%"  $y="55%"  $size="350px" $color="rgba(52,211,153,0.08)"  $dur="11s" $delay="2s" />
+            <BgOrb $x="80%"  $y="75%"  $size="500px" $color="rgba(248,133,51,0.08)"  $dur="8s" $delay="0.5s" />
+            <BgLines />
 
             {/* ── Navbar ── */}
-            <Navbar>
+            <Navbar $visible={visible}>
                 <NavLogo onClick={() => navigate("/")}>
                     <img src={v.logo} alt="logo" />
                     <span>POS<b>.DTO2</b></span>
                 </NavLogo>
+
+                <NavCenter>
+                    {PLANES.map(p => (
+                        <NavDot key={p.id} $color={p.color}
+                            onClick={() => document.getElementById(p.id)?.scrollIntoView({ behavior: "smooth" })}>
+                            {p.emoji} {p.nombre}
+                        </NavDot>
+                    ))}
+                </NavCenter>
+
                 <BtnVolver onClick={() => navigate("/")}>
-                    <RiArrowLeftSLine size={18} /> Volver
+                    <RiArrowLeftSLine size={16} /> Volver
                 </BtnVolver>
             </Navbar>
 
             {/* ── Hero ── */}
-            <Hero>
-                <HeroBadge>✦ Planes y precios</HeroBadge>
+            <Hero ref={heroRef} $visible={visible}>
+                <HeroBadge>
+                    <HeroBadgeDot />
+                    Sistema de punto de venta SaaS para Colombia
+                </HeroBadge>
+
                 <HeroTitle>
-                    Elige el plan que<br />
-                    <GradientText>impulsa tu negocio</GradientText>
+                    Un plan para<br />
+                    <TitleGrad>cada historia</TitleGrad>
                 </HeroTitle>
+
                 <HeroSub>
-                    Sin costos ocultos. Sin contratos. Cancela cuando quieras.<br />
-                    Todos los planes incluyen actualizaciones gratuitas.
+                    Sin contratos, sin permanencia, sin letra pequeña.<br />
+                    Actívate hoy y empieza a vender en minutos.
                 </HeroSub>
 
-                {/* Toggle mensual / anual */}
-                <Toggle>
-                    <ToggleLabel $active={!anual} onClick={() => setAnual(false)}>Mensual</ToggleLabel>
-                    <ToggleSwitch onClick={() => setAnual(!anual)} $on={anual}>
-                        <ToggleCircle $on={anual} />
-                    </ToggleSwitch>
-                    <ToggleLabel $active={anual} onClick={() => setAnual(true)}>
-                        Anual <AhorroChip>Ahorra 20%</AhorroChip>
-                    </ToggleLabel>
-                </Toggle>
+                {/* Stats */}
+                <StatsBar>
+                    {STATS.map((s, i) => (
+                        <StatItem key={i}>
+                            <StatVal>{s.val}</StatVal>
+                            <StatLabel>{s.label}</StatLabel>
+                        </StatItem>
+                    ))}
+                </StatsBar>
+
+                {/* Toggle */}
+                <ToggleWrap>
+                    <ToggleOpt $active={!anual} onClick={() => setAnual(false)}>Mensual</ToggleOpt>
+                    <TogglePill onClick={() => setAnual(!anual)} $on={anual}>
+                        <ToggleThumb $on={anual} />
+                    </TogglePill>
+                    <ToggleOpt $active={anual} onClick={() => setAnual(true)}>
+                        Anual <AhorroBadge>−20%</AhorroBadge>
+                    </ToggleOpt>
+                </ToggleWrap>
             </Hero>
 
-            {/* ── Cards de planes ── */}
-            <CardsGrid>
-                {PLANES.map((plan) => (
-                    <PlanCard key={plan.id} $color={plan.color} $shadow={plan.shadow} $popular={plan.popular}>
-                        {plan.popular && <PopularBadge>⭐ Más popular</PopularBadge>}
+            {/* ── Cards ── */}
+            <CardsSection>
+                {PLANES.map((plan, idx) => (
+                    <PlanCard
+                        key={plan.id}
+                        id={plan.id}
+                        $color={plan.color}
+                        $glow={plan.glow}
+                        $popular={plan.popular}
+                        $delay={`${idx * 0.1}s`}
+                        $visible={visible}
+                    >
+                        {/* Borde animado para popular */}
+                        {plan.popular && <RotatingBorder $color={plan.color} $colorAlt={plan.colorAlt} />}
 
-                        <CardTop>
-                            <PlanEmoji>{plan.emoji}</PlanEmoji>
-                            <PlanNombre $color={plan.color}>{plan.nombre}</PlanNombre>
-                            <PlanSub>{plan.sub}</PlanSub>
-                        </CardTop>
+                        {plan.popular && <PopularStrip>⭐ Más elegido por nuestros clientes</PopularStrip>}
 
-                        <PrecioWrap>
-                            <Precio>
-                                <PrecioNum>{formatCOP(anual ? plan.precio_ano : plan.precio_mes)}</PrecioNum>
-                                <PrecioMes>/mes</PrecioMes>
-                            </Precio>
-                            {anual && (
-                                <PrecioAnualNote>Facturado anualmente · {formatCOP(plan.precio_ano * 12)}/año</PrecioAnualNote>
-                            )}
-                        </PrecioWrap>
+                        <CardInner>
+                            {/* Header del plan */}
+                            <PlanHeader>
+                                <EmojiWrap $color={plan.color} $glow={plan.glow}>{plan.emoji}</EmojiWrap>
+                                <PlanMeta>
+                                    <PlanNombre $color={plan.color}>{plan.nombre}</PlanNombre>
+                                    <PlanTagline>{plan.tagline}</PlanTagline>
+                                </PlanMeta>
+                            </PlanHeader>
 
-                        <BtnPlan $color={plan.color} $colorDark={plan.colorDark} $popular={plan.popular}
-                            onClick={() => navigate("/login")}>
-                            Comenzar ahora
-                        </BtnPlan>
+                            <PlanDesc>{plan.sub}</PlanDesc>
 
-                        <Divider />
+                            {/* Precio */}
+                            <PrecioBloque>
+                                <PrecioRow>
+                                    <PrecioNum $color={plan.color}>
+                                        {formatCOP(anual ? plan.precio_ano : plan.precio_mes)}
+                                    </PrecioNum>
+                                    <PrecioSufijo>/mes</PrecioSufijo>
+                                </PrecioRow>
+                                <PrecioNota>
+                                    {anual
+                                        ? `Facturado anualmente · ${formatCOP((anual ? plan.precio_ano : plan.precio_mes) * 12)}/año`
+                                        : "Facturado mensualmente · Cancela cuando quieras"}
+                                </PrecioNota>
+                            </PrecioBloque>
 
-                        <FeatureList>
-                            {plan.features.map((f, i) => (
-                                <FeatureItem key={i} $color={plan.color}>
-                                    <FeatureIcon $color={plan.color}>{f.icon}</FeatureIcon>
-                                    <span>{f.texto}</span>
-                                </FeatureItem>
-                            ))}
-                            {plan.noIncluye.map((f, i) => (
-                                <FeatureItem key={`no-${i}`} $disabled>
-                                    <FeatureIconNo><RiCheckLine /></FeatureIconNo>
-                                    <span>{f}</span>
-                                </FeatureItem>
-                            ))}
-                        </FeatureList>
+                            {/* CTA */}
+                            <BtnPlan
+                                $color={plan.color}
+                                $colorAlt={plan.colorAlt}
+                                $glow={plan.glow}
+                                $popular={plan.popular}
+                                onClick={() => navigate("/login")}
+                            >
+                                {plan.popular ? "Comenzar con Fuego 🔥" : `Elegir ${plan.nombre}`}
+                            </BtnPlan>
+
+                            <Divisor />
+
+                            {/* Features */}
+                            <FeatureList>
+                                {plan.features.map((f, i) => (
+                                    <FeatureRow key={i} $ok={f.ok}>
+                                        <FeatureIco $ok={f.ok} $color={plan.color}>
+                                            {f.ok ? <RiCheckLine /> : <RiCloseLine />}
+                                        </FeatureIco>
+                                        <span>{f.txt}</span>
+                                    </FeatureRow>
+                                ))}
+                            </FeatureList>
+                        </CardInner>
                     </PlanCard>
                 ))}
-            </CardsGrid>
+            </CardsSection>
 
-            {/* ── Garantía / Trust ── */}
-            <Trust>
-                <TrustItem>
-                    <TrustIcon><RiShieldCheckLine /></TrustIcon>
-                    <TrustTxt><b>Sin permanencia</b><br />Cancela en cualquier momento</TrustTxt>
-                </TrustItem>
-                <TrustItem>
-                    <TrustIcon><RiFlashlightLine /></TrustIcon>
-                    <TrustTxt><b>Activación inmediata</b><br />Listo para usar en minutos</TrustTxt>
-                </TrustItem>
-                <TrustItem>
-                    <TrustIcon><RiCustomerService2Line /></TrustIcon>
-                    <TrustTxt><b>Soporte real</b><br />Humanos reales, no bots</TrustTxt>
-                </TrustItem>
-                <TrustItem>
-                    <TrustIcon><RiRocketLine /></TrustIcon>
-                    <TrustTxt><b>Actualizaciones incluidas</b><br />Siempre la última versión</TrustTxt>
-                </TrustItem>
-            </Trust>
+            {/* ── Comparación visual ── */}
+            <CompareSection $visible={visible}>
+                <CompareTitulo>¿Por qué POS.DTO2?</CompareTitulo>
+                <CompareSub>Diseñado para negocios colombianos que quieren crecer sin complicaciones.</CompareSub>
+                <CompareGrid>
+                    {[
+                        { icon: <RiRocketLine />,           title: "Activación inmediata",     desc: "Tu negocio listo para vender en menos de 2 minutos desde que pagas." },
+                        { icon: <RiShieldCheckLine />,      title: "Datos 100% seguros",       desc: "Cifrado bancario, backups automáticos y acceso con roles estrictos." },
+                        { icon: <RiCustomerService2Line />, title: "Soporte real",              desc: "Personas reales que conocen tu negocio. Nada de bots ni formularios eternos." },
+                        { icon: <RiStarLine />,             title: "Sin letra pequeña",         desc: "El precio que ves es lo que pagas. Sin costos ocultos ni sorpresas al final del mes." },
+                    ].map((item, i) => (
+                        <CompareItem key={i}>
+                            <CompareIcon>{item.icon}</CompareIcon>
+                            <CompareItemTitle>{item.title}</CompareItemTitle>
+                            <CompareItemDesc>{item.desc}</CompareItemDesc>
+                        </CompareItem>
+                    ))}
+                </CompareGrid>
+            </CompareSection>
 
-            {/* ── CTA final ── */}
-            <CtaFinal>
-                <CtaTitle>¿Tienes dudas? Hablemos.</CtaTitle>
-                <CtaSub>Escríbenos por WhatsApp y te ayudamos a elegir el plan ideal para tu negocio.</CtaSub>
-                <BtnWhatsapp
-                    as="a"
-                    href="https://wa.me/573118303017"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <RiWhatsappLine size={22} /> Chatear por WhatsApp
-                </BtnWhatsapp>
+            {/* ── Pregunta frecuente ── */}
+            <FaqSection $visible={visible}>
+                <CompareTitulo>Preguntas frecuentes</CompareTitulo>
+                {[
+                    { q: "¿Puedo cambiar de plan después?", a: "Sí, en cualquier momento. Sube o baja de plan sin perder ningún dato y el cambio se aplica de inmediato." },
+                    { q: "¿Qué pasa si cancelo?", a: "Puedes cancelar en cualquier momento desde tu perfil. Seguirás usando el sistema hasta el final del período pagado, luego se desactiva." },
+                    { q: "¿Necesito instalar algo?", a: "No. POS.DTO2 funciona completamente desde el navegador — en computador, tablet o celular. Sin instalaciones, sin actualizaciones manuales." },
+                    { q: "¿Mis datos están seguros en la nube?", a: "Sí. Toda la información está cifrada y almacenada en servidores seguros con backups automáticos cada 24 horas." },
+                ].map((faq, i) => (
+                    <FaqItem key={i}>
+                        <FaqQ>{faq.q}</FaqQ>
+                        <FaqA>{faq.a}</FaqA>
+                    </FaqItem>
+                ))}
+            </FaqSection>
+
+            {/* ── CTA Final ── */}
+            <CtaFinal $visible={visible}>
+                <CtaGlow />
+                <CtaEmoji>👋</CtaEmoji>
+                <CtaTitulo>¿Tienes dudas? Te ayudamos.</CtaTitulo>
+                <CtaDesc>
+                    Escríbenos y en minutos te contamos cuál plan se adapta mejor a tu negocio —
+                    sin presión, sin ventas agresivas, solo la información que necesitas.
+                </CtaDesc>
+                <CtaBtns>
+                    <BtnWA as="a" href="https://wa.me/573118303017" target="_blank" rel="noopener noreferrer">
+                        <RiWhatsappLine size={20} /> Hablar por WhatsApp
+                    </BtnWA>
+                    <BtnLogin onClick={() => navigate("/login")}>
+                        Probar gratis ahora →
+                    </BtnLogin>
+                </CtaBtns>
             </CtaFinal>
 
             {/* ── Footer ── */}
-            <PageFooter>
-                <span>© {new Date().getFullYear()} POS.DTO2 — ADMA BI</span>
-                <span>Todos los derechos reservados</span>
-            </PageFooter>
+            <PlanFooter>
+                <FooterLogo onClick={() => navigate("/")}>
+                    <img src={v.logo} alt="logo" />
+                    <span>POS<b>.DTO2</b></span>
+                </FooterLogo>
+                <FooterTexto>© {new Date().getFullYear()} ADMA BI · Todos los derechos reservados</FooterTexto>
+                <FooterTexto>Medellín, Colombia 🇨🇴</FooterTexto>
+            </PlanFooter>
         </Pagina>
     );
 }
 
-/* ── Animaciones ── */
-const fadeUp = keyframes`
-    from { opacity: 0; transform: translateY(24px); }
+/* ═══════════════════════════════════════
+   ANIMACIONES
+═══════════════════════════════════════ */
+const floatOrb = keyframes`
+    0%, 100% { transform: translate(0, 0)   scale(1); }
+    33%       { transform: translate(30px, -20px) scale(1.08); }
+    66%       { transform: translate(-20px, 15px) scale(0.95); }
+`;
+
+const fadeSlideUp = keyframes`
+    from { opacity: 0; transform: translateY(32px); }
     to   { opacity: 1; transform: translateY(0); }
 `;
 
-const gradientShift = keyframes`
+const gradAnim = keyframes`
     0%   { background-position: 0% 50%; }
     50%  { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
 `;
 
-const floatGlow = keyframes`
-    0%, 100% { transform: scale(1);   opacity: 0.55; }
-    50%       { transform: scale(1.12); opacity: 0.75; }
+const rotateFull = keyframes`
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+`;
+
+const pulse = keyframes`
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.7; transform: scale(0.94); }
 `;
 
 const shimmer = keyframes`
@@ -240,487 +367,580 @@ const shimmer = keyframes`
     100% { background-position:  200% center; }
 `;
 
-/* ── Layout ── */
+const blink = keyframes`
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+`;
+
+/* ═══════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════ */
 const Pagina = styled.div`
     min-height: 100vh;
-    background: #080d14;
+    background: #07090f;
     color: #fff;
     display: flex;
     flex-direction: column;
     align-items: center;
     position: relative;
     overflow-x: hidden;
-    padding-bottom: 60px;
     font-family: "Poppins", sans-serif;
 `;
 
-/* ── Fondo decorativo ── */
-const BgGlow = styled.div`
+/* ── Orbs de fondo ── */
+const BgOrb = styled.div`
     position: fixed;
+    left: ${({ $x }) => $x};
+    top:  ${({ $y }) => $y};
+    width:  ${({ $size }) => $size};
+    height: ${({ $size }) => $size};
+    border-radius: 50%;
+    background: ${({ $color }) => $color};
+    filter: blur(80px);
     pointer-events: none;
     z-index: 0;
-
-    ${({ $pos }) => $pos === "top-left" ? `
-        top: -160px; left: -120px;
-        width: 520px; height: 520px;
-        background: radial-gradient(circle, rgba(248,133,51,0.18) 0%, transparent 70%);
-        animation: ${floatGlow} 6s ease-in-out infinite;
-    ` : `
-        bottom: -120px; right: -100px;
-        width: 440px; height: 440px;
-        background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
-        animation: ${floatGlow} 8s ease-in-out infinite reverse;
-    `}
+    animation: ${floatOrb} ${({ $dur }) => $dur} ease-in-out infinite;
+    animation-delay: ${({ $delay }) => $delay ?? "0s"};
 `;
 
-const BgGrid = styled.div`
+const BgLines = styled.div`
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 0;
     background-image:
-        linear-gradient(rgba(248,133,51,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(248,133,51,0.04) 1px, transparent 1px);
-    background-size: 48px 48px;
+        linear-gradient(rgba(248,133,51,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(248,133,51,0.035) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at 50% 40%, black 30%, transparent 80%);
 `;
 
 /* ── Navbar ── */
 const Navbar = styled.nav`
     position: relative;
-    z-index: 10;
+    z-index: 20;
     width: 100%;
-    max-width: 1100px;
+    max-width: 1140px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 24px 32px;
+    padding: 22px 32px;
+    opacity: ${({ $visible }) => $visible ? 1 : 0};
+    transform: ${({ $visible }) => $visible ? "none" : "translateY(-16px)"};
+    transition: opacity 0.5s ease, transform 0.5s ease;
 
-    @media (max-width: 767px) { padding: 20px 20px; }
+    @media (max-width: 767px) { padding: 18px 18px; }
 `;
 
 const NavLogo = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: none;
-    border: none;
+    display: flex; align-items: center; gap: 10px;
+    background: none; border: none; cursor: pointer;
+    img { width: 34px; height: 34px; object-fit: contain; }
+    span { font-size: 18px; font-weight: 900; color: #fff; letter-spacing: -0.3px; b { color: #f88533; } }
+`;
+
+const NavCenter = styled.div`
+    display: flex; gap: 6px;
+
+    @media (max-width: 767px) { display: none; }
+`;
+
+const NavDot = styled.button`
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.55);
+    font-size: 12px; font-weight: 700;
+    font-family: "Poppins", sans-serif;
+    padding: 6px 14px;
+    border-radius: 999px;
     cursor: pointer;
-    img { width: 36px; height: 36px; object-fit: contain; }
-    span {
-        font-size: 20px;
-        font-weight: 900;
-        color: #fff;
-        letter-spacing: -0.4px;
-        b { color: #f88533; }
-    }
+    transition: all 0.18s;
+    &:hover { background: ${({ $color }) => `${$color}22`}; border-color: ${({ $color }) => $color}66; color: ${({ $color }) => $color}; }
 `;
 
 const BtnVolver = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    display: flex; align-items: center; gap: 6px;
     padding: 9px 18px 9px 12px;
     border-radius: 999px;
-    border: 1.5px solid rgba(255,255,255,0.12);
-    background: rgba(255,255,255,0.05);
-    color: rgba(255,255,255,0.7);
-    font-size: 13px;
-    font-weight: 700;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.6);
+    font-size: 13px; font-weight: 700;
     font-family: "Poppins", sans-serif;
     cursor: pointer;
     backdrop-filter: blur(8px);
-    transition: all 0.18s ease;
+    transition: all 0.18s;
     &:hover { border-color: #f88533; color: #f88533; background: rgba(248,133,51,0.08); }
 `;
 
 /* ── Hero ── */
 const Hero = styled.section`
-    position: relative;
-    z-index: 1;
+    position: relative; z-index: 1;
     text-align: center;
-    padding: 40px 24px 56px;
-    max-width: 700px;
-    animation: ${fadeUp} 0.5s ease both;
+    padding: 32px 24px 60px;
+    max-width: 780px;
+    opacity: ${({ $visible }) => $visible ? 1 : 0};
+    transform: ${({ $visible }) => $visible ? "none" : "translateY(24px)"};
+    transition: opacity 0.6s 0.1s ease, transform 0.6s 0.1s ease;
 
-    @media (max-width: 767px) { padding: 24px 20px 40px; }
+    @media (max-width: 767px) { padding: 20px 20px 44px; }
 `;
 
 const HeroBadge = styled.div`
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 16px;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 18px;
     border-radius: 999px;
-    border: 1px solid rgba(248,133,51,0.35);
-    background: rgba(248,133,51,0.08);
+    border: 1px solid rgba(248,133,51,0.3);
+    background: rgba(248,133,51,0.07);
     color: #f88533;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    margin-bottom: 20px;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 0.3px;
+    margin-bottom: 24px;
     text-transform: uppercase;
 `;
 
-const HeroTitle = styled.h1`
-    font-size: clamp(32px, 5vw, 52px);
-    font-weight: 900;
-    line-height: 1.15;
-    margin: 0 0 16px;
-    letter-spacing: -0.5px;
+const HeroBadgeDot = styled.div`
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #f88533;
+    animation: ${blink} 1.8s ease-in-out infinite;
 `;
 
-const GradientText = styled.span`
-    background: linear-gradient(90deg, #f88533, #f56a00, #fbbf24, #f88533);
+const HeroTitle = styled.h1`
+    font-size: clamp(38px, 6vw, 64px);
+    font-weight: 900;
+    line-height: 1.1;
+    margin: 0 0 18px;
+    letter-spacing: -1px;
+`;
+
+const TitleGrad = styled.span`
+    background: linear-gradient(90deg, #f88533 0%, #fbbf24 40%, #f56a00 70%, #f88533 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    animation: ${gradientShift} 3s ease infinite;
+    animation: ${gradAnim} 3.5s ease infinite;
 `;
 
 const HeroSub = styled.p`
-    font-size: 15px;
-    color: rgba(255,255,255,0.5);
-    line-height: 1.7;
-    margin: 0 0 32px;
+    font-size: 16px;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.75;
+    margin: 0 0 36px;
+
+    @media (max-width: 767px) { font-size: 14px; }
 `;
 
-/* ── Toggle ── */
-const Toggle = styled.div`
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
+/* Stats */
+const StatsBar = styled.div`
+    display: flex; gap: 0;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(12px);
+    overflow: hidden;
+    margin-bottom: 32px;
+
+    @media (max-width: 767px) {
+        display: grid; grid-template-columns: 1fr 1fr;
+    }
 `;
 
-const ToggleLabel = styled.span`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    color: ${({ $active }) => $active ? "#fff" : "rgba(255,255,255,0.38)"};
-    transition: color 0.2s;
+const StatItem = styled.div`
+    flex: 1;
+    padding: 16px 20px;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+    border-right: 1px solid rgba(255,255,255,0.06);
+    &:last-child { border-right: none; }
 `;
 
-const ToggleSwitch = styled.div`
-    width: 48px;
-    height: 26px;
+const StatVal = styled.span`
+    font-size: 20px; font-weight: 900;
+    background: linear-gradient(90deg, #f88533, #fbbf24);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+`;
+
+const StatLabel = styled.span`
+    font-size: 11px; color: rgba(255,255,255,0.38); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.4px;
+`;
+
+/* Toggle */
+const ToggleWrap = styled.div`
+    display: inline-flex; align-items: center; gap: 14px;
+`;
+
+const ToggleOpt = styled.span`
+    display: flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    color: ${({ $active }) => $active ? "#fff" : "rgba(255,255,255,0.3)"};
+    transition: color 0.22s;
+`;
+
+const TogglePill = styled.div`
+    width: 52px; height: 28px;
     border-radius: 999px;
-    background: ${({ $on }) => $on ? "#f88533" : "rgba(255,255,255,0.15)"};
-    position: relative;
-    cursor: pointer;
-    transition: background 0.25s ease;
-    border: 1.5px solid ${({ $on }) => $on ? "#f56a00" : "rgba(255,255,255,0.2)"};
+    background: ${({ $on }) => $on ? "linear-gradient(90deg, #f88533, #f56a00)" : "rgba(255,255,255,0.1)"};
+    border: 1.5px solid ${({ $on }) => $on ? "#f56a0088" : "rgba(255,255,255,0.15)"};
+    position: relative; cursor: pointer;
+    transition: background 0.28s, border-color 0.28s;
 `;
 
-const ToggleCircle = styled.div`
-    position: absolute;
-    top: 2px;
-    left: ${({ $on }) => $on ? "22px" : "2px"};
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: #fff;
-    transition: left 0.25s cubic-bezier(0.4,0,0.2,1);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+const ToggleThumb = styled.div`
+    position: absolute; top: 3px;
+    left: ${({ $on }) => $on ? "24px" : "3px"};
+    width: 18px; height: 18px;
+    border-radius: 50%; background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    transition: left 0.28s cubic-bezier(0.4,0,0.2,1);
 `;
 
-const AhorroChip = styled.span`
+const AhorroBadge = styled.span`
     background: linear-gradient(90deg, #10b981, #059669);
-    color: #fff;
-    font-size: 10px;
-    font-weight: 800;
-    padding: 2px 8px;
-    border-radius: 999px;
-    letter-spacing: 0.2px;
+    color: #fff; font-size: 10px; font-weight: 800;
+    padding: 2px 8px; border-radius: 999px;
 `;
 
-/* ── Grid de cards ── */
-const CardsGrid = styled.div`
-    position: relative;
-    z-index: 1;
+/* ── Cards ── */
+const CardsSection = styled.div`
+    position: relative; z-index: 1;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
-    width: 100%;
-    max-width: 1060px;
+    gap: 28px;
+    width: 100%; max-width: 1100px;
     padding: 0 24px;
-    animation: ${fadeUp} 0.5s 0.1s ease both;
 
-    @media (max-width: 900px) { grid-template-columns: 1fr; max-width: 440px; }
-    @media (max-width: 767px) { padding: 0 16px; gap: 16px; }
+    @media (max-width: 960px) { grid-template-columns: 1fr; max-width: 460px; padding: 0 16px; gap: 20px; }
 `;
 
 const PlanCard = styled.div`
     position: relative;
-    border-radius: 24px;
-    padding: 32px 28px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    background: ${({ $popular }) => $popular
-        ? "linear-gradient(160deg, #1a1000 0%, #140800 100%)"
-        : "rgba(255,255,255,0.03)"};
-    border: ${({ $popular, $color }) => $popular
-        ? `2px solid ${$color}88`
-        : "1px solid rgba(255,255,255,0.08)"};
-    box-shadow: ${({ $popular, $shadow }) => $popular
-        ? `0 0 40px ${$shadow}, 0 20px 60px rgba(0,0,0,0.4)`
-        : "0 4px 24px rgba(0,0,0,0.3)"};
-    backdrop-filter: blur(16px);
-    transition: transform 0.22s ease, box-shadow 0.22s ease;
+    border-radius: 28px;
+    overflow: hidden;
+    opacity: ${({ $visible }) => $visible ? 1 : 0};
+    transform: ${({ $visible }) => $visible ? "translateY(0)" : "translateY(32px)"};
+    transition: opacity 0.6s ${({ $delay }) => $delay} ease, transform 0.6s ${({ $delay }) => $delay} ease,
+                box-shadow 0.25s ease;
 
-    ${({ $popular, $shadow }) => $popular && `
-        transform: scale(1.03);
-        @media (max-width: 900px) { transform: none; }
+    ${({ $popular, $color, $glow }) => $popular ? css`
+        background: linear-gradient(160deg, #130d00 0%, #0d0800 100%);
+        box-shadow: 0 0 60px ${$glow}, 0 24px 64px rgba(0,0,0,0.6);
+        transform: ${({ $visible }) => $visible ? "scale(1.03)" : "translateY(32px) scale(1.03)"};
+        &:hover { box-shadow: 0 0 80px ${$glow}, 0 32px 80px rgba(0,0,0,0.7); transform: scale(1.04) translateY(-4px); }
+        @media (max-width: 960px) { transform: none; &:hover { transform: translateY(-4px); } }
+    ` : css`
+        background: rgba(255,255,255,0.025);
+        border: 1px solid rgba(255,255,255,0.07);
+        box-shadow: 0 4px 32px rgba(0,0,0,0.4);
+        &:hover {
+            box-shadow: 0 8px 48px ${$glow}, 0 20px 56px rgba(0,0,0,0.5);
+            border-color: ${$color}44;
+            transform: translateY(-6px);
+        }
     `}
+`;
 
-    &:hover {
-        transform: translateY(-6px) ${({ $popular }) => $popular ? "scale(1.03)" : ""};
-        box-shadow: ${({ $shadow }) => `0 12px 48px ${$shadow}, 0 24px 64px rgba(0,0,0,0.45)`};
-        @media (max-width: 900px) { transform: translateY(-4px); }
+/* Borde giratorio solo en la card popular */
+const RotatingBorder = styled.div`
+    position: absolute; inset: -2px;
+    border-radius: 30px;
+    background: conic-gradient(from 0deg, ${({ $color }) => $color}, ${({ $colorAlt }) => $colorAlt}, #fbbf24, ${({ $color }) => $color});
+    z-index: 0;
+    animation: ${rotateFull} 4s linear infinite;
+
+    &::after {
+        content: '';
+        position: absolute; inset: 2px;
+        border-radius: 28px;
+        background: #130d00;
     }
 `;
 
-const PopularBadge = styled.div`
-    position: absolute;
-    top: -14px;
-    left: 50%;
-    transform: translateX(-50%);
+const PopularStrip = styled.div`
+    position: relative; z-index: 2;
     background: linear-gradient(90deg, #f88533, #f56a00, #fbbf24, #f88533);
     background-size: 200% auto;
     animation: ${shimmer} 2.5s linear infinite;
     color: #fff;
-    font-size: 12px;
-    font-weight: 800;
-    padding: 4px 18px;
-    border-radius: 999px;
-    white-space: nowrap;
+    text-align: center;
+    font-size: 12px; font-weight: 800;
+    padding: 8px 16px;
     letter-spacing: 0.3px;
-    box-shadow: 0 4px 16px rgba(248,133,51,0.5);
 `;
 
-const CardTop = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+const CardInner = styled.div`
+    position: relative; z-index: 2;
+    padding: 28px 26px 26px;
+    display: flex; flex-direction: column; gap: 18px;
+    backdrop-filter: blur(4px);
 `;
 
-const PlanEmoji = styled.div`
-    font-size: 40px;
-    line-height: 1;
-    margin-bottom: 4px;
+const PlanHeader = styled.div`
+    display: flex; align-items: center; gap: 14px;
+`;
+
+const EmojiWrap = styled.div`
+    width: 52px; height: 52px;
+    border-radius: 16px;
+    background: ${({ $color }) => `${$color}18`};
+    border: 1.5px solid ${({ $color }) => `${$color}33`};
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    box-shadow: 0 0 20px ${({ $glow }) => $glow};
+    flex-shrink: 0;
+    animation: ${pulse} 3s ease-in-out infinite;
+`;
+
+const PlanMeta = styled.div`
+    display: flex; flex-direction: column; gap: 2px;
 `;
 
 const PlanNombre = styled.h3`
-    font-size: 22px;
-    font-weight: 900;
-    margin: 0;
-    color: ${({ $color }) => $color};
+    font-size: 22px; font-weight: 900;
+    margin: 0; color: ${({ $color }) => $color};
     letter-spacing: -0.3px;
 `;
 
-const PlanSub = styled.p`
-    font-size: 13px;
-    color: rgba(255,255,255,0.45);
-    margin: 0;
-    line-height: 1.4;
+const PlanTagline = styled.span`
+    font-size: 12px; font-weight: 600;
+    color: rgba(255,255,255,0.4);
+    text-transform: uppercase; letter-spacing: 0.4px;
 `;
 
-const PrecioWrap = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+const PlanDesc = styled.p`
+    font-size: 13.5px; color: rgba(255,255,255,0.5);
+    margin: 0; line-height: 1.6;
 `;
 
-const Precio = styled.div`
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
+const PrecioBloque = styled.div`
+    display: flex; flex-direction: column; gap: 4px;
+`;
+
+const PrecioRow = styled.div`
+    display: flex; align-items: baseline; gap: 6px;
 `;
 
 const PrecioNum = styled.span`
-    font-size: 30px;
-    font-weight: 900;
-    color: #fff;
+    font-size: 28px; font-weight: 900;
+    color: ${({ $color }) => $color};
     letter-spacing: -0.5px;
+    transition: color 0.3s;
 `;
 
-const PrecioMes = styled.span`
-    font-size: 14px;
-    color: rgba(255,255,255,0.4);
-    font-weight: 600;
+const PrecioSufijo = styled.span`
+    font-size: 14px; color: rgba(255,255,255,0.3); font-weight: 600;
 `;
 
-const PrecioAnualNote = styled.p`
-    font-size: 11px;
-    color: rgba(255,255,255,0.35);
-    margin: 0;
+const PrecioNota = styled.p`
+    font-size: 11px; color: rgba(255,255,255,0.25); margin: 0;
 `;
 
 const BtnPlan = styled.button`
-    width: 100%;
-    padding: 15px;
+    width: 100%; padding: 15px 20px;
     border-radius: 14px;
-    border: 2px solid ${({ $colorDark }) => $colorDark};
-    background: ${({ $color }) => $color};
+    border: 2px solid ${({ $colorAlt }) => `${$colorAlt}88`};
+    background: ${({ $color, $colorAlt }) => `linear-gradient(135deg, ${$color} 0%, ${$colorAlt} 100%)`};
     color: #fff;
-    font-size: 15px;
-    font-weight: 800;
+    font-size: 15px; font-weight: 800;
     font-family: "Poppins", sans-serif;
-    cursor: pointer;
-    letter-spacing: 0.3px;
-    box-shadow: ${({ $color }) => `0 6px 20px ${$color}55, 4px 4px 0 ${$color}88`};
+    cursor: pointer; letter-spacing: 0.2px;
+    box-shadow: ${({ $glow }) => `0 6px 24px ${$glow}, 4px 4px 0 rgba(0,0,0,0.3)`};
     transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
-    &:hover  { filter: brightness(1.12); transform: translateY(-2px); }
-    &:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 ${({ $colorDark }) => $colorDark}; }
+    &:hover  { filter: brightness(1.14); transform: translateY(-2px); box-shadow: ${({ $glow }) => `0 10px 32px ${$glow}`}; }
+    &:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.4); }
 `;
 
-const Divider = styled.div`
-    height: 1px;
-    background: rgba(255,255,255,0.08);
+const Divisor = styled.div`
+    height: 1px; background: rgba(255,255,255,0.07);
 `;
 
 const FeatureList = styled.ul`
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    flex: 1;
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-direction: column; gap: 10px;
 `;
 
-const FeatureItem = styled.li`
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 13px;
-    font-weight: 500;
-    color: ${({ $disabled }) => $disabled ? "rgba(255,255,255,0.22)" : "rgba(255,255,255,0.82)"};
-    text-decoration: ${({ $disabled }) => $disabled ? "line-through" : "none"};
+const FeatureRow = styled.li`
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 500;
+    color: ${({ $ok }) => $ok ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.2)"};
+    text-decoration: ${({ $ok }) => $ok ? "none" : "line-through"};
 `;
 
-const FeatureIcon = styled.span`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px; height: 26px;
-    border-radius: 7px;
-    background: ${({ $color }) => `${$color}22`};
-    color: ${({ $color }) => $color};
-    font-size: 15px;
-    flex-shrink: 0;
+const FeatureIco = styled.span`
+    display: flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 6px;
+    font-size: 14px; flex-shrink: 0;
+    background: ${({ $ok, $color }) => $ok ? `${$color}20` : "rgba(255,255,255,0.04)"};
+    color: ${({ $ok, $color }) => $ok ? $color : "rgba(255,255,255,0.18)"};
 `;
 
-const FeatureIconNo = styled(FeatureIcon)`
-    background: rgba(255,255,255,0.05);
-    color: rgba(255,255,255,0.2);
+/* ── Sección comparación ── */
+const CompareSection = styled.section`
+    position: relative; z-index: 1;
+    width: 100%; max-width: 1100px;
+    padding: 80px 24px 0;
+    text-align: center;
+    opacity: ${({ $visible }) => $visible ? 1 : 0};
+    transform: ${({ $visible }) => $visible ? "none" : "translateY(24px)"};
+    transition: opacity 0.6s 0.3s ease, transform 0.6s 0.3s ease;
+
+    @media (max-width: 767px) { padding: 60px 16px 0; }
 `;
 
-/* ── Trust section ── */
-const Trust = styled.section`
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
-    width: 100%;
-    max-width: 1060px;
-    padding: 56px 24px 0;
-    animation: ${fadeUp} 0.5s 0.2s ease both;
-
-    @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
-    @media (max-width: 767px) { padding: 40px 16px 0; gap: 12px; }
+const CompareTitulo = styled.h2`
+    font-size: clamp(22px, 3.5vw, 36px); font-weight: 900;
+    margin: 0 0 12px; letter-spacing: -0.4px;
 `;
 
-const TrustItem = styled.div`
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 20px;
-    border-radius: 16px;
+const CompareSub = styled.p`
+    font-size: 15px; color: rgba(255,255,255,0.4);
+    margin: 0 0 40px; line-height: 1.65;
+`;
+
+const CompareGrid = styled.div`
+    display: grid; grid-template-columns: repeat(4,1fr); gap: 16px;
+    @media (max-width: 900px) { grid-template-columns: repeat(2,1fr); }
+    @media (max-width: 520px) { grid-template-columns: 1fr; }
+`;
+
+const CompareItem = styled.div`
+    padding: 24px 20px; border-radius: 20px;
     background: rgba(255,255,255,0.03);
     border: 1px solid rgba(255,255,255,0.07);
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px);
+    display: flex; flex-direction: column; gap: 10px;
+    text-align: left;
+    transition: border-color 0.2s, background 0.2s;
+    &:hover { border-color: rgba(248,133,51,0.3); background: rgba(248,133,51,0.04); }
 `;
 
-const TrustIcon = styled.span`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px; height: 40px;
-    border-radius: 10px;
+const CompareIcon = styled.span`
+    display: flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; border-radius: 12px;
     background: rgba(248,133,51,0.12);
-    color: #f88533;
-    font-size: 20px;
-    flex-shrink: 0;
+    color: #f88533; font-size: 22px;
 `;
 
-const TrustTxt = styled.p`
-    margin: 0;
-    font-size: 13px;
-    color: rgba(255,255,255,0.6);
-    line-height: 1.55;
-    b { color: #fff; display: block; font-size: 14px; margin-bottom: 2px; }
+const CompareItemTitle = styled.h4`
+    font-size: 15px; font-weight: 800; margin: 0; color: #fff;
 `;
 
-/* ── CTA final ── */
-const CtaFinal = styled.section`
-    position: relative;
-    z-index: 1;
-    text-align: center;
+const CompareItemDesc = styled.p`
+    font-size: 13px; color: rgba(255,255,255,0.42); margin: 0; line-height: 1.6;
+`;
+
+/* ── FAQ ── */
+const FaqSection = styled.section`
+    position: relative; z-index: 1;
+    width: 100%; max-width: 760px;
     padding: 72px 24px 0;
-    max-width: 600px;
-    animation: ${fadeUp} 0.5s 0.3s ease both;
+    text-align: center;
+    opacity: ${({ $visible }) => $visible ? 1 : 0};
+    transform: ${({ $visible }) => $visible ? "none" : "translateY(24px)"};
+    transition: opacity 0.6s 0.4s ease, transform 0.6s 0.4s ease;
 
-    @media (max-width: 767px) { padding: 56px 20px 0; }
+    ${CompareTitulo} { margin-bottom: 32px; }
+    @media (max-width: 767px) { padding: 56px 16px 0; }
 `;
 
-const CtaTitle = styled.h2`
-    font-size: clamp(24px, 4vw, 36px);
-    font-weight: 900;
-    margin: 0 0 12px;
-    letter-spacing: -0.4px;
-`;
-
-const CtaSub = styled.p`
-    font-size: 15px;
-    color: rgba(255,255,255,0.5);
-    margin: 0 0 28px;
-    line-height: 1.6;
-`;
-
-const BtnWhatsapp = styled.button`
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 16px 32px;
+const FaqItem = styled.div`
+    text-align: left; padding: 20px 24px;
     border-radius: 16px;
-    border: 2px solid #16a34a;
-    background: #16a34a;
-    color: #fff;
-    font-size: 16px;
-    font-weight: 800;
-    font-family: "Poppins", sans-serif;
-    cursor: pointer;
-    text-decoration: none;
-    box-shadow: 0 6px 24px rgba(22,163,74,0.4), 4px 4px 0 #15803d;
-    transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 12px;
+    transition: border-color 0.2s;
+    &:hover { border-color: rgba(248,133,51,0.25); }
+`;
+
+const FaqQ = styled.p`
+    font-size: 14px; font-weight: 800; color: #fff; margin: 0 0 6px;
+`;
+
+const FaqA = styled.p`
+    font-size: 13px; color: rgba(255,255,255,0.45); margin: 0; line-height: 1.65;
+`;
+
+/* ── CTA Final ── */
+const CtaFinal = styled.section`
+    position: relative; z-index: 1;
+    text-align: center;
+    padding: 80px 24px 0;
+    max-width: 640px;
+    opacity: ${({ $visible }) => $visible ? 1 : 0};
+    transform: ${({ $visible }) => $visible ? "none" : "translateY(24px)"};
+    transition: opacity 0.6s 0.5s ease, transform 0.6s 0.5s ease;
+
+    @media (max-width: 767px) { padding: 60px 20px 0; }
+`;
+
+const CtaGlow = styled.div`
+    position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+    width: 400px; height: 200px;
+    background: radial-gradient(ellipse, rgba(248,133,51,0.18) 0%, transparent 70%);
+    pointer-events: none; z-index: -1;
+`;
+
+const CtaEmoji = styled.div`
+    font-size: 52px; line-height: 1; margin-bottom: 16px;
+    animation: ${pulse} 2.8s ease-in-out infinite;
+`;
+
+const CtaTitulo = styled.h2`
+    font-size: clamp(26px, 4vw, 42px); font-weight: 900;
+    margin: 0 0 14px; letter-spacing: -0.5px;
+`;
+
+const CtaDesc = styled.p`
+    font-size: 15px; color: rgba(255,255,255,0.45);
+    margin: 0 0 36px; line-height: 1.7;
+`;
+
+const CtaBtns = styled.div`
+    display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+`;
+
+const BtnWA = styled.button`
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 15px 28px; border-radius: 14px;
+    border: 2px solid #16a34a88;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff; font-size: 15px; font-weight: 800;
+    font-family: "Poppins", sans-serif; cursor: pointer; text-decoration: none;
+    box-shadow: 0 6px 24px rgba(22,163,74,0.4), 4px 4px 0 #14532d;
+    transition: transform 0.15s, filter 0.15s;
     &:hover  { filter: brightness(1.12); transform: translateY(-2px); }
-    &:active { transform: translate(2px,2px); box-shadow: 2px 2px 0 #15803d; }
+    &:active { transform: translate(2px,2px); }
+`;
+
+const BtnLogin = styled.button`
+    padding: 15px 28px; border-radius: 14px;
+    border: 2px solid rgba(248,133,51,0.5);
+    background: rgba(248,133,51,0.08);
+    color: #f88533; font-size: 15px; font-weight: 800;
+    font-family: "Poppins", sans-serif; cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: all 0.18s;
+    &:hover { background: rgba(248,133,51,0.15); border-color: #f88533; transform: translateY(-2px); }
 `;
 
 /* ── Footer ── */
-const PageFooter = styled.footer`
-    position: relative;
-    z-index: 1;
-    display: flex;
-    gap: 24px;
-    justify-content: center;
-    flex-wrap: wrap;
-    padding: 56px 24px 0;
-    font-size: 12px;
-    color: rgba(255,255,255,0.25);
+const PlanFooter = styled.footer`
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 72px 24px 40px;
+`;
+
+const FooterLogo = styled.button`
+    display: flex; align-items: center; gap: 8px;
+    background: none; border: none; cursor: pointer; margin-bottom: 4px;
+    img { width: 28px; height: 28px; object-fit: contain; }
+    span { font-size: 16px; font-weight: 900; color: rgba(255,255,255,0.4); b { color: #f8853355; } }
+`;
+
+const FooterTexto = styled.span`
+    font-size: 12px; color: rgba(255,255,255,0.2);
 `;
