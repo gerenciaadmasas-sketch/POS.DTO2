@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import styled, { keyframes } from "styled-components";
 import { useAuthStore } from "../../store/AuthStore";
 import { Footer } from "../organismos/Footer";
@@ -17,6 +18,7 @@ const features = [
 
 export function LoginTemplate() {
     const { loginEmail } = useAuthStore();
+    const navigate = useNavigate();
     const [etapa, setEtapa] = useState("cta");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -110,6 +112,13 @@ export function LoginTemplate() {
                                 </BtnCtaTexto>
                                 <BtnCtaEmoji>👑</BtnCtaEmoji>
                             </BtnCta>
+                            <BtnPlanes onClick={() => navigate("/planes")}>
+                                <BtnCtaTexto>
+                                    <BtnPlanesBadge>Ver planes</BtnPlanesBadge>
+                                    <BtnCtaDesc>Elige el plan ideal para tu negocio</BtnCtaDesc>
+                                </BtnCtaTexto>
+                                <BtnCtaEmoji>🚀</BtnCtaEmoji>
+                            </BtnPlanes>
                         </CtaPanel>
                     ) : (
                         <FormPanel>
@@ -485,6 +494,23 @@ const BtnCtaEmoji = styled.span`
     font-size: 48px;
     line-height: 1;
     filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+`;
+
+const BtnPlanes = styled(BtnCta)`
+    background: #1D4ED8;
+    border-color: rgba(96,165,250,0.55);
+    box-shadow: 0 4px 20px rgba(29,78,216,0.28), 4px 4px 0 #1E3A8A;
+
+    &:hover {
+        box-shadow: 0 8px 28px rgba(29,78,216,0.4), 4px 4px 0 #1E3A8A;
+    }
+    &:active {
+        box-shadow: 2px 2px 0 #1E3A8A;
+    }
+`;
+
+const BtnPlanesBadge = styled(BtnCtaBadge)`
+    background: rgba(255,255,255,0.18);
 `;
 
 /* ── Form Panel ────────────────────────────── */
