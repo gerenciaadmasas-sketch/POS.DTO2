@@ -428,19 +428,21 @@ const Form = styled.form`
 
 const InputField = styled.input`
     width: 100%;
-    padding: 13px 16px;
+    padding: 15px 18px;
     border-radius: 12px;
     border: 2px solid ${({ theme }) => theme.color2};
     background: ${({ theme }) => theme.bgcards};
     color: ${({ theme }) => theme.text};
-    font-size: 15px;
+    font-size: 16px;
     font-family: "Poppins", sans-serif;
     outline: none;
     box-sizing: border-box;
     transition: border-color 0.2s;
+    min-height: 52px;
     &:focus { border-color: #f88533; }
     &::placeholder { color: ${({ theme }) => theme.colorSubtitle}; }
     &::-ms-reveal { filter: invert(1); }
+    @media (min-width: 768px) { padding: 13px 16px; font-size: 15px; min-height: auto; }
 `;
 
 const MsgError = styled.p`
@@ -457,12 +459,13 @@ const MsgError = styled.p`
 
 const BtnIngresar = styled.button`
     width: 100%;
-    padding: 14px;
+    padding: 16px;
+    min-height: 54px;
     border-radius: 14px;
     border: 2px solid ${({ disabled }) => disabled ? "#9ca3af" : "#B56B12"};
     background: ${({ disabled }) => disabled ? "#9ca3af" : "#E8891A"};
     color: #fff;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
     cursor: ${({ disabled }) => disabled ? "not-allowed" : "pointer"};
     letter-spacing: 0.5px;
@@ -472,4 +475,5 @@ const BtnIngresar = styled.button`
     &:active {
         ${({ disabled }) => !disabled && "box-shadow: 2px 2px 0 #B56B12; transform: translate(2px,2px);"}
     }
+    @media (min-width: 768px) { padding: 14px; font-size: 15px; min-height: auto; }
 `;

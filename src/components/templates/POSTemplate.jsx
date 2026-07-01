@@ -1128,19 +1128,32 @@ const FilaInfo = styled.div`
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 20px;
+    padding: 8px 12px;
+    gap: 8px;
     .usuario {
-        display: flex; align-items: center; gap: 10px;
+        display: flex; align-items: center; gap: 8px;
         .avatar { font-size: 26px; }
         .info { display: flex; flex-direction: column; }
-        .nombre { font-weight: 700; font-size: 14px; }
-        .rol { font-size: 12px; opacity: 0.7; }
+        .nombre { font-weight: 700; font-size: 13px; }
+        .rol { font-size: 11px; opacity: 0.7; }
     }
-    .empresa { font-weight: 700; font-size: 15px; }
+    .empresa {
+        font-weight: 700; font-size: 13px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        max-width: 120px;
+        @media (min-width: 768px) { font-size: 15px; max-width: none; }
+    }
     .reloj {
         display: flex; flex-direction: column; align-items: flex-end;
-        .hora { font-weight: 700; font-size: 15px; display: flex; align-items: center; gap: 6px; }
-        .fecha { font-size: 11px; opacity: 0.7; text-transform: capitalize; }
+        .hora { font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 4px; }
+        .fecha { font-size: 10px; opacity: 0.7; text-transform: capitalize; display: none;
+            @media (min-width: 768px) { display: block; font-size: 11px; }
+        }
+    }
+    @media (min-width: 768px) {
+        padding: 8px 20px;
+        .usuario { gap: 10px; .nombre { font-size: 14px; } .rol { font-size: 12px; } }
+        .reloj .hora { font-size: 15px; gap: 6px; }
     }
 `;
 
@@ -1297,7 +1310,7 @@ const BadgeIva = styled.span`
 `;
 
 const BtnCantidad = styled.button`
-    width: 30px; height: 30px; border-radius: 8px;
+    width: 44px; height: 44px; border-radius: 8px;
     border: 2px solid #4f46e5;
     background: ${({ theme }) => theme.bgtotal};
     color: #4f46e5;
@@ -1305,17 +1318,21 @@ const BtnCantidad = styled.button`
     display: flex; align-items: center; justify-content: center;
     box-shadow: 3px 3px #3730a3;
     transition: box-shadow 0.1s, transform 0.1s;
+    flex-shrink: 0;
     &:active { box-shadow: 1px 1px #3730a3; transform: translate(2px, 2px); }
+    @media (min-width: 768px) { width: 32px; height: 32px; font-size: 16px; }
 `;
 
 const BtnTrash = styled.button`
     background: #fff; border: 2px solid #b71c1c; color: #f44336;
     font-size: 18px; cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    width: 30px; height: 30px; border-radius: 8px;
+    width: 44px; height: 44px; border-radius: 8px;
     box-shadow: 3px 3px #b71c1c;
     transition: box-shadow 0.1s, transform 0.1s;
+    flex-shrink: 0;
     &:active { box-shadow: 1px 1px #b71c1c; transform: translate(2px, 2px); }
+    @media (min-width: 768px) { width: 32px; height: 32px; font-size: 16px; }
 `;
 
 const Derecha = styled.div`
