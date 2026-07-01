@@ -19,8 +19,8 @@ export const useCategoriasStore = create((set, get) => ({
     selectCategoria: (p) => {
         set({ categoriasItemSelect: p })
     },
-    insertarCategorias: async (p, file) => {
-        await InsertarCategorias(p, file);
+    insertarCategorias: async (p) => {
+        await InsertarCategorias(p);
         const { mostrarCategorias, parametros } = get();
         await mostrarCategorias(parametros);
     },
@@ -29,8 +29,8 @@ export const useCategoriasStore = create((set, get) => ({
         const { mostrarCategorias, parametros } = get();
         await mostrarCategorias(parametros);
     },
-    editarCategoria: async (p, fileold, filenew) => {
-        await EditarCategoria(p, fileold, filenew);
+    editarCategoria: async (p) => {
+        await EditarCategoria(p);
         const { mostrarCategorias, parametros } = get();
         await mostrarCategorias(parametros);
     },

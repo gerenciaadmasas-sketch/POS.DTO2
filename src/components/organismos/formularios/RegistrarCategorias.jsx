@@ -53,7 +53,7 @@ export function RegistrarCategorias({
         _color: currentColor,
         _id: dataSelect.id,
       };
-      await editarCategoria(p, dataSelect.icono, []);
+      await editarCategoria(p);
     } else {
       const p = {
         _nombre: ConvertirCapitalize(data.descripcion),
@@ -61,7 +61,7 @@ export function RegistrarCategorias({
         _icono: "-",
         _id_empresa: dataempresa.id,
       };
-      await insertarCategorias(p, []);
+      await insertarCategorias(p);
     }
   }
 
