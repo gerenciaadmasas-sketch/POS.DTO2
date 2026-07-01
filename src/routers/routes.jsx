@@ -55,9 +55,9 @@ export function Myroutes() {
   return (
     <Routes>
       {/* ── Rutas públicas (sin autenticación) ── */}
-      <Route path="/"       element={user ? <Navigate to="/home" replace /> : <Landing />} />
+      <Route path="/"       element={user ? <Navigate to="/home" replace /> : <Planes />} />
+      <Route path="/planes" element={<Navigate to="/" replace />} />
       <Route path="/login"  element={user ? <Navigate to="/home" replace /> : <Login />} />
-      <Route path="/planes" element={<Planes />} />
 
       {/* ── Rutas protegidas ── */}
       <Route element={<ProtectedRoute user={user} redirectTo="/" />}>

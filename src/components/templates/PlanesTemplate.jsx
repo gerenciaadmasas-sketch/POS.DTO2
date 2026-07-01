@@ -191,8 +191,13 @@ export function PlanesTemplate() {
                 return;
             }
             await loginEmail({ email: resultado.email, password });
-        } catch {
-            setErrorMsg("Contraseña incorrecta. Intenta de nuevo.");
+        } catch (err) {
+            const msg = err?.message ?? "";
+            if (msg.includes("Invalid login") || msg.includes("invalid_credentials") || msg.includes("Wrong")) {
+                setErrorMsg("Contraseña incorrecta. Intenta de nuevo.");
+            } else {
+                setErrorMsg("Error al iniciar sesión. Verifica tu conexión e intenta de nuevo.");
+            }
         } finally {
             setCargando(false);
         }

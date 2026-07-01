@@ -12,6 +12,6 @@ export const useAuthStore = create((set) => ({
         await supabase.auth.signOut();
         localStorage.clear();
         sessionStorage.clear();
-        window.location.href = "/login";
+        window.location.href = "/";
     },
 }));
