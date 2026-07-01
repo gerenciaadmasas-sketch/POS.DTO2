@@ -2,18 +2,19 @@ import { toastError } from "../utils/toast";
 import { supabase } from "../index";
 const tabla = "categorias";
 
-export async function InsertarCategorias(p, file) {
+export async function InsertarCategorias(p, file, iconoUrl) {
     const { error, data } = await supabase.rpc("insertarcategorias", p);
     if (error) {
         toastError(error.message, "Categorías › Insertar");
         throw new Error(error.message);
     }
-    const img = file.size;
-    if (img != undefined) {
-        const nuevo_id = data;
+    const nuevo_id = data;
+    if (iconoUrl) {
+        // URL de logo de almacén ya existente — guardar directo sin re-subir
+        await EditarIconoCategorias({ icono: iconoUrl, id: nuevo_id });
+    } else if (file?.size != null) {
         const urlimagen = await subirImagen(nuevo_id, file);
-        const piconoeditar = { icono: urlimagen.publicUrl, id: nuevo_id };
-        await EditarIconoCategorias(piconoeditar);
+        await EditarIconoCategorias({ icono: urlimagen.publicUrl, id: nuevo_id });
     }
 }
 
@@ -71,19 +72,20 @@ export async function EliminarCategoria(p) {
     }
 }
 
-export async function EditarCategoria(p, fileold, filenew) {
+export async function EditarCategoria(p, fileold, filenew, iconoUrl) {
     const { error } = await supabase.rpc("editarcategorias", p);
     if (error) {
         toastError(error.message, "Categorías › Editar");
         throw new Error(error.message);
     }
-    if (filenew != "-" && filenew.size != undefined) {
+    if (iconoUrl) {
+        await EditarIconoCategorias({ icono: iconoUrl, id: p._id });
+    } else if (filenew?.size != null) {
         if (fileold != "-") {
-            await EditarIconoCategorias(p._id, filenew);
+            await EditarIconoStorage(p._id, filenew);
         } else {
-            const dataImagen = await subirImagen(p._id);
-            const piconoeditar = { icono: dataImagen.publicUrl, id: p._id };
-            await EditarIconoCategorias(piconoeditar);
+            const dataImagen = await subirImagen(p._id, filenew);
+            await EditarIconoCategorias({ icono: dataImagen.publicUrl, id: p._id });
         }
     }
 }

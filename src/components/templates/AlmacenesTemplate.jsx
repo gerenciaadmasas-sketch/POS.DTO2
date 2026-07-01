@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import styled from "styled-components";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useEmpresaStore } from "../../store/EmpresaStore";
 import { useSucursalesStore } from "../../store/SucursalesStore";
 import { useAlmacenesConfigStore } from "../../store/AlmacenesConfigStore";
-import { RiEditLine, RiDeleteBin2Line, RiCheckLine, RiCloseLine } from "react-icons/ri";
+import { SubirLogoAlmacen } from "../../supabase/crudAlmacenesConfig";
+import { RiEditLine, RiDeleteBin2Line, RiCheckLine, RiCloseLine, RiImageAddLine, RiStoreLine } from "react-icons/ri";
 import { toastExito } from "../../utils/toast";
 
 export function AlmacenesTemplate() {
@@ -12,10 +13,17 @@ export function AlmacenesTemplate() {
     const { dataSucursales, mostrarSucursales } = useSucursalesStore();
     const { dataAlmacenes, mostrarAlmacenes, insertarAlmacen, editarAlmacen, eliminarAlmacen } = useAlmacenesConfigStore();
 
-    const [editandoId, setEditandoId]   = useState(null);
-    const [editValor,  setEditValor]    = useState("");
+    const [editandoId,  setEditandoId]  = useState(null);
+    const [editValor,   setEditValor]   = useState("");
+    const [editFile,    setEditFile]    = useState(null);
+    const [editPreview, setEditPreview] = useState(null);
     const [agregandoId, setAgregandoId] = useState(null);
     const [nuevoNombre, setNuevoNombre] = useState("");
+    const [nuevoFile,   setNuevoFile]   = useState(null);
+    const [nuevoPreview,setNuevoPreview]= useState(null);
+
+    const editFileRef  = useRef(null);
+    const nuevoFileRef = useRef(null);
 
     useQuery({
         queryKey: ["sucursales-alm", dataempresa?.id],
@@ -32,13 +40,34 @@ export function AlmacenesTemplate() {
     });
 
     const mutInsert = useMutation({
-        mutationFn: (p) => insertarAlmacen(p),
-        onSuccess: () => { toastExito("Almacén agregado", "Almacenes"); setAgregandoId(null); setNuevoNombre(""); },
+        mutationFn: async (p) => {
+            const alm = await insertarAlmacen(p);
+            if (nuevoFile && alm?.id) {
+                await SubirLogoAlmacen({ id: alm.id, id_empresa: dataempresa.id, file: nuevoFile });
+                await mostrarAlmacenes({ id_empresa: dataempresa.id });
+            }
+            return alm;
+        },
+        onSuccess: () => {
+            toastExito("Almacén agregado", "Almacenes");
+            setAgregandoId(null); setNuevoNombre(""); setNuevoFile(null); setNuevoPreview(null);
+        },
     });
+
     const mutEdit = useMutation({
-        mutationFn: (p) => editarAlmacen(p),
-        onSuccess: () => { toastExito("Almacén actualizado", "Almacenes"); setEditandoId(null); },
+        mutationFn: async (p) => {
+            await editarAlmacen(p);
+            if (editFile) {
+                await SubirLogoAlmacen({ id: p.id, id_empresa: dataempresa.id, file: editFile });
+                await mostrarAlmacenes({ id_empresa: dataempresa.id });
+            }
+        },
+        onSuccess: () => {
+            toastExito("Almacén actualizado", "Almacenes");
+            setEditandoId(null); setEditFile(null); setEditPreview(null);
+        },
     });
+
     const mutDelete = useMutation({
         mutationFn: (p) => eliminarAlmacen(p),
         onSuccess: () => toastExito("Almacén eliminado", "Almacenes"),
@@ -46,8 +75,31 @@ export function AlmacenesTemplate() {
 
     const deEstaSucursal = (id) => dataAlmacenes.filter(a => a.id_sucursal === id);
 
-    const confirmarEdit   = (a) => { if (editValor.trim()) mutEdit.mutate({ id: a.id, nombre: editValor.trim() }); else setEditandoId(null); };
-    const confirmarNuevo  = (s) => { if (nuevoNombre.trim()) mutInsert.mutate({ id_empresa: dataempresa.id, id_sucursal: s.id, nombre: nuevoNombre.trim() }); else setAgregandoId(null); };
+    const confirmarEdit  = (a) => {
+        if (editValor.trim() || editFile) mutEdit.mutate({ id: a.id, id_empresa: a.id_empresa, nombre: editValor.trim() || a.nombre });
+        else setEditandoId(null);
+    };
+    const confirmarNuevo = (s) => {
+        if (nuevoNombre.trim()) mutInsert.mutate({ id_empresa: dataempresa.id, id_sucursal: s.id, nombre: nuevoNombre.trim(), icono: "-" });
+        else setAgregandoId(null);
+    };
+
+    function pickEditFile(e) {
+        const f = e.target.files?.[0];
+        if (!f) return;
+        setEditFile(f);
+        const r = new FileReader();
+        r.onload = () => setEditPreview(r.result);
+        r.readAsDataURL(f);
+    }
+    function pickNuevoFile(e) {
+        const f = e.target.files?.[0];
+        if (!f) return;
+        setNuevoFile(f);
+        const r = new FileReader();
+        r.onload = () => setNuevoPreview(r.result);
+        r.readAsDataURL(f);
+    }
 
     return (
         <Page>
@@ -70,21 +122,36 @@ export function AlmacenesTemplate() {
                                     <FilaAlmacen key={alm.id}>
                                         {editandoId === alm.id ? (
                                             <EditRow>
+                                                <LogoBtn
+                                                    type="button"
+                                                    title="Cambiar logo"
+                                                    onClick={() => editFileRef.current?.click()}
+                                                >
+                                                    {editPreview || (alm.icono && alm.icono !== "-")
+                                                        ? <LogoImg src={editPreview || alm.icono} />
+                                                        : <RiImageAddLine />}
+                                                </LogoBtn>
+                                                <input type="file" accept="image/*" ref={editFileRef} style={{ display: "none" }} onChange={pickEditFile} />
                                                 <InputEdit
                                                     autoFocus
                                                     value={editValor}
                                                     onChange={e => setEditValor(e.target.value)}
-                                                    onKeyDown={e => { if (e.key === "Enter") confirmarEdit(alm); if (e.key === "Escape") setEditandoId(null); }}
+                                                    onKeyDown={e => { if (e.key === "Enter") confirmarEdit(alm); if (e.key === "Escape") { setEditandoId(null); setEditFile(null); setEditPreview(null); } }}
                                                 />
                                                 <BtnIco $verde onClick={() => confirmarEdit(alm)}><RiCheckLine /></BtnIco>
-                                                <BtnIco onClick={() => setEditandoId(null)}><RiCloseLine /></BtnIco>
+                                                <BtnIco onClick={() => { setEditandoId(null); setEditFile(null); setEditPreview(null); }}><RiCloseLine /></BtnIco>
                                             </EditRow>
                                         ) : (
                                             <>
-                                                <AlmNombre>{alm.nombre}</AlmNombre>
+                                                <InfoRow>
+                                                    {alm.icono && alm.icono !== "-"
+                                                        ? <LogoThumb src={alm.icono} />
+                                                        : <LogoPlaceholder><RiStoreLine /></LogoPlaceholder>}
+                                                    <AlmNombre>{alm.nombre}</AlmNombre>
+                                                </InfoRow>
                                                 <FilaAcciones>
-                                                    <BtnIco onClick={() => { setEditandoId(alm.id); setEditValor(alm.nombre); }}><RiEditLine /></BtnIco>
-                                                    <BtnIco $rojo onClick={() => mutDelete.mutate({ id: alm.id })}><RiDeleteBin2Line /></BtnIco>
+                                                    <BtnIco onClick={() => { setEditandoId(alm.id); setEditValor(alm.nombre); setEditFile(null); setEditPreview(null); }}><RiEditLine /></BtnIco>
+                                                    <BtnIco $rojo onClick={() => mutDelete.mutate({ id: alm.id, id_empresa: alm.id_empresa })}><RiDeleteBin2Line /></BtnIco>
                                                 </FilaAcciones>
                                             </>
                                         )}
@@ -93,15 +160,23 @@ export function AlmacenesTemplate() {
 
                                 {agregandoId === sucursal.id ? (
                                     <FilaInput>
+                                        <LogoBtn
+                                            type="button"
+                                            title="Agregar logo"
+                                            onClick={() => nuevoFileRef.current?.click()}
+                                        >
+                                            {nuevoPreview ? <LogoImg src={nuevoPreview} /> : <RiImageAddLine />}
+                                        </LogoBtn>
+                                        <input type="file" accept="image/*" ref={nuevoFileRef} style={{ display: "none" }} onChange={pickNuevoFile} />
                                         <InputNuevo
                                             autoFocus
                                             placeholder="Nombre del almacén..."
                                             value={nuevoNombre}
                                             onChange={e => setNuevoNombre(e.target.value)}
-                                            onKeyDown={e => { if (e.key === "Enter") confirmarNuevo(sucursal); if (e.key === "Escape") { setAgregandoId(null); setNuevoNombre(""); } }}
+                                            onKeyDown={e => { if (e.key === "Enter") confirmarNuevo(sucursal); if (e.key === "Escape") { setAgregandoId(null); setNuevoNombre(""); setNuevoFile(null); setNuevoPreview(null); } }}
                                         />
                                         <BtnIco $verde onClick={() => confirmarNuevo(sucursal)}><RiCheckLine /></BtnIco>
-                                        <BtnIco onClick={() => { setAgregandoId(null); setNuevoNombre(""); }}><RiCloseLine /></BtnIco>
+                                        <BtnIco onClick={() => { setAgregandoId(null); setNuevoNombre(""); setNuevoFile(null); setNuevoPreview(null); }}><RiCloseLine /></BtnIco>
                                     </FilaInput>
                                 ) : (
                                     <BtnAgregar onClick={() => { setAgregandoId(sucursal.id); setNuevoNombre(""); }}>
@@ -197,15 +272,72 @@ const FilaAlmacen = styled.div`
     background: ${({ theme }) => theme.bgtotal};
 `;
 
+const InfoRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+`;
+
+const LogoThumb = styled.img`
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1.5px solid rgba(255,255,255,0.12);
+`;
+
+const LogoPlaceholder = styled.div`
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    border: 1.5px dashed ${({ theme }) => theme.color2};
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    svg { font-size: 14px; color: ${({ theme }) => theme.colorsubtitlecard}; }
+`;
+
+const LogoBtn = styled.button`
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1.5px dashed #6366f1;
+    background: rgba(99,102,241,0.08);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+    padding: 0;
+    transition: border-color 0.15s, background 0.15s;
+    svg { font-size: 15px; color: #818cf8; }
+    &:hover { background: rgba(99,102,241,0.18); }
+`;
+
+const LogoImg = styled.img`
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+`;
+
 const AlmNombre = styled.span`
     font-size: 13px;
     font-weight: 700;
     color: ${({ theme }) => theme.text};
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 `;
 
 const FilaAcciones = styled.div`display: flex; gap: 2px;`;
 
-const EditRow  = styled.div`display: flex; flex: 1; align-items: center; gap: 6px;`;
+const EditRow   = styled.div`display: flex; flex: 1; align-items: center; gap: 6px;`;
 const FilaInput = styled.div`display: flex; align-items: center; gap: 6px;`;
 
 const BtnIco = styled.button`

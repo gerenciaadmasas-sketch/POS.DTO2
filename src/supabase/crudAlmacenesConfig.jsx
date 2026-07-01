@@ -2,6 +2,19 @@ import { toastError } from "../utils/toast";
 import { supabase } from "../index";
 const tabla = "almacenes";
 
+export async function SubirLogoAlmacen({ id, id_empresa, file }) {
+    const ruta = `almacen/${id}`;
+    const { error: uploadError } = await supabase.storage
+        .from("imagenes")
+        .upload(ruta, file, { cacheControl: "0", upsert: true });
+    if (uploadError) { toastError(uploadError.message, "Almacenes › Logo"); return null; }
+    const { data: urlData } = await supabase.storage.from("imagenes").getPublicUrl(ruta);
+    const { error } = await supabase.from(tabla).update({ icono: urlData.publicUrl })
+        .eq("id", id).eq("id_empresa", id_empresa);
+    if (error) { toastError(error.message, "Almacenes › Logo URL"); return null; }
+    return urlData.publicUrl;
+}
+
 export async function MostrarTodosAlmacenes() {
     const { data, error } = await supabase.from(tabla).select().order("created_at", { ascending: true });
     if (error) { toastError(error.message, "Almacenes › Mostrar todos"); return []; }

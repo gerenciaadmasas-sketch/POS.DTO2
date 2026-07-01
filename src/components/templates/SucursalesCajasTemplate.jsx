@@ -4,8 +4,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaStore } from "../../store/EmpresaStore";
 import { useUsuariosStore } from "../../store/UsuariosStore";
 import { MostrarSucursales, InsertarSucursal, EditarSucursal, EliminarSucursal } from "../../supabase/crudSucursales";
-import { MostrarAlmacenesPorEmpresa, InsertarAlmacen, EditarAlmacen, EliminarAlmacen } from "../../supabase/crudAlmacenesConfig";
-import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine } from "react-icons/ri";
+import { MostrarAlmacenesPorEmpresa, InsertarAlmacen, EditarAlmacen, EliminarAlmacen, SubirLogoAlmacen } from "../../supabase/crudAlmacenesConfig";
+import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine, RiImageAddLine, RiStoreLine } from "react-icons/ri";
+import { useRef } from "react";
 import { toastExito, confirmar } from "../../utils/toast";
 
 export function SucursalesCajasTemplate() {
@@ -25,6 +26,9 @@ export function SucursalesCajasTemplate() {
     const [nombreAlm, setNombreAlm]   = useState("");
     const [metaAlm, setMetaAlm]       = useState("");
     const [almParaSuc, setAlmParaSuc] = useState(null);
+    const [logoFile,    setLogoFile]    = useState(null);
+    const [logoPreview, setLogoPreview] = useState(null);
+    const logoRef = useRef(null);
 
     const { data: sucursales = [] } = useQuery({
         queryKey: ["sucursales-config", id_empresa],
@@ -60,11 +64,18 @@ export function SucursalesCajasTemplate() {
 
     // ── Almacenes mutations ──
     const mutCrearAlm = useMutation({
-        mutationFn: () => InsertarAlmacen({ id_sucursal: almParaSuc, id_empresa, nombre: nombreAlm, meta_ventas: Number(metaAlm) || 0 }),
+        mutationFn: async () => {
+            const alm = await InsertarAlmacen({ id_sucursal: almParaSuc, id_empresa, nombre: nombreAlm, meta_ventas: Number(metaAlm) || 0 });
+            if (logoFile && alm?.id) await SubirLogoAlmacen({ id: alm.id, id_empresa, file: logoFile });
+            return alm;
+        },
         onSuccess: () => { toastExito("Almacén creado"); invalidar(); cerrarModalAlm(); },
     });
     const mutEditarAlm = useMutation({
-        mutationFn: () => EditarAlmacen({ id: editAlm.id, id_empresa: editAlm.id_empresa, nombre: nombreAlm, meta_ventas: Number(metaAlm) || 0 }),
+        mutationFn: async () => {
+            await EditarAlmacen({ id: editAlm.id, id_empresa: editAlm.id_empresa, nombre: nombreAlm, meta_ventas: Number(metaAlm) || 0 });
+            if (logoFile) await SubirLogoAlmacen({ id: editAlm.id, id_empresa: editAlm.id_empresa, file: logoFile });
+        },
         onSuccess: () => { toastExito("Almacén actualizado"); invalidar(); cerrarModalAlm(); },
     });
     const mutEliminarAlm = useMutation({
@@ -77,9 +88,18 @@ export function SucursalesCajasTemplate() {
     function abrirEditarSuc(s) { setNombreSuc(s.razon_social ?? ""); setDirSuc(s.direccion ?? ""); setEditSuc(s); setModalSuc(true); }
     function cerrarModalSuc() { setModalSuc(false); setEditSuc(null); }
 
-    function abrirNuevoAlm(idSuc) { setNombreAlm(""); setMetaAlm(""); setEditAlm(null); setAlmParaSuc(idSuc); setModalAlm(true); }
-    function abrirEditarAlm(a) { setNombreAlm(a.nombre ?? ""); setMetaAlm(String(a.meta_ventas ?? "")); setEditAlm(a); setModalAlm(true); }
-    function cerrarModalAlm() { setModalAlm(false); setEditAlm(null); }
+    function abrirNuevoAlm(idSuc) { setNombreAlm(""); setMetaAlm(""); setEditAlm(null); setAlmParaSuc(idSuc); setLogoFile(null); setLogoPreview(null); setModalAlm(true); }
+    function abrirEditarAlm(a) { setNombreAlm(a.nombre ?? ""); setMetaAlm(String(a.meta_ventas ?? "")); setEditAlm(a); setLogoFile(null); setLogoPreview(a.icono && a.icono !== "-" ? a.icono : null); setModalAlm(true); }
+    function cerrarModalAlm() { setModalAlm(false); setEditAlm(null); setLogoFile(null); setLogoPreview(null); }
+
+    function pickLogoFile(e) {
+        const f = e.target.files?.[0];
+        if (!f) return;
+        setLogoFile(f);
+        const r = new FileReader();
+        r.onload = () => setLogoPreview(r.result);
+        r.readAsDataURL(f);
+    }
 
     function handleGuardarSuc(e) {
         e.preventDefault();
@@ -134,6 +154,9 @@ export function SucursalesCajasTemplate() {
                             <AlmacenesLista>
                                 {almsDeEsta.map(alm => (
                                     <AlmItem key={alm.id}>
+                                        {alm.icono && alm.icono !== "-"
+                                            ? <AlmLogo src={alm.icono} alt={alm.nombre} />
+                                            : <AlmLogoPlaceholder><RiStoreLine /></AlmLogoPlaceholder>}
                                         <AlmInfo>
                                             <AlmNombre>{alm.nombre}</AlmNombre>
                                             <AlmFecha>
@@ -196,6 +219,14 @@ export function SucursalesCajasTemplate() {
                             <BtnCerrar onClick={cerrarModalAlm}><RiCloseLine /></BtnCerrar>
                         </ModalHeader>
                         <ModalForm onSubmit={handleGuardarAlm}>
+                            <LogoZona onClick={() => logoRef.current?.click()} type="button">
+                                {logoPreview
+                                    ? <LogoImg src={logoPreview} alt="logo" />
+                                    : <LogoPlaceholder><RiStoreLine /><span>logo del almacén<br/><em>opcional</em></span></LogoPlaceholder>}
+                                <LogoEditBadge><RiImageAddLine /></LogoEditBadge>
+                            </LogoZona>
+                            <input type="file" accept="image/*" ref={logoRef} style={{ display: "none" }} onChange={pickLogoFile} />
+
                             <Campo>
                                 <label>Nombre del almacén</label>
                                 <Input value={nombreAlm} onChange={e => setNombreAlm(e.target.value)} placeholder="Ej: Bodega principal" required />
@@ -303,7 +334,7 @@ const AlmacenesLista = styled.div`
 `;
 
 const AlmItem = styled.div`
-    display: flex; align-items: center; justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
     padding: 10px 14px;
     background: ${({ theme }) => theme.bgtotal};
     border: 1px solid ${({ theme }) => theme.color2};
@@ -382,4 +413,78 @@ const BtnGuardar = styled.button`
     color: #fff; font-size: 14px; font-weight: 700;
     cursor: pointer; font-family: "Poppins", sans-serif;
     &:disabled { opacity: 0.5; cursor: not-allowed; }
+`;
+
+const LogoZona = styled.button`
+    position: relative;
+    width: 100%;
+    height: 110px;
+    border-radius: 14px;
+    border: 2px dashed ${({ theme }) => theme.color2};
+    background: ${({ theme }) => theme.bgtotal};
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s;
+    &:hover { border-color: #f88533; }
+`;
+
+const LogoImg = styled.img`
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+`;
+
+const LogoPlaceholder = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: ${({ theme }) => theme.colorsubtitlecard};
+    svg { font-size: 28px; }
+    span {
+        font-size: 12px;
+        font-weight: 600;
+        font-family: "Poppins", sans-serif;
+        text-align: center;
+        em { font-style: normal; font-size: 10px; opacity: 0.6; }
+    }
+`;
+
+const LogoEditBadge = styled.div`
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(248,133,51,0.9);
+    border-radius: 8px;
+    padding: 4px 6px;
+    display: flex;
+    align-items: center;
+    svg { font-size: 14px; color: #fff; }
+`;
+
+const AlmLogo = styled.img`
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1.5px solid rgba(255,255,255,0.1);
+    margin-right: 4px;
+`;
+
+const AlmLogoPlaceholder = styled.div`
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1.5px dashed ${({ theme }) => theme.color2};
+    background: rgba(255,255,255,0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 4px;
+    svg { font-size: 16px; color: ${({ theme }) => theme.colorsubtitlecard}; }
 `;
