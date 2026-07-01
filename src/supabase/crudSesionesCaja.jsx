@@ -38,6 +38,7 @@ export async function CerrarSesionCaja(p) {
             hora_cierre:    new Date().toISOString(),
         })
         .eq("id", p.id)
+        .eq("id_empresa", p.id_empresa)
         .select()
         .maybeSingle();
     if (error) { toastError(error.message, "Caja › Cierre"); return null; }
@@ -74,12 +75,14 @@ export async function ObtenerTotalesVentasTurno({ id_empresa, id_almacen, desde 
     return { total, efectivo, cantidad: rows.length };
 }
 
-export async function ListarSesionesCaja({ id_empresa, desde, hasta, page = 1, pageSize = 20 }) {
+export async function ListarSesionesCaja({ id_empresa, id_sucursal, id_usuario, desde, hasta, page = 1, pageSize = 20 }) {
     let q = supabase
         .from(tabla)
         .select("*", { count: "exact" })
         .eq("id_empresa", id_empresa)
         .order("created_at", { ascending: false });
+    if (id_sucursal) q = q.eq("id_sucursal", id_sucursal);
+    if (id_usuario)  q = q.eq("id_usuario",  id_usuario);
     if (desde) q = q.gte("created_at", `${desde}T00:00:00`);
     if (hasta) q = q.lte("created_at", `${hasta}T23:59:59`);
     q = q.range((page - 1) * pageSize, page * pageSize - 1);

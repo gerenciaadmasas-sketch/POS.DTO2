@@ -24,18 +24,20 @@ export async function InsertarSucursal({ id_empresa, razon_social, direccion }) 
     if (error) { toastError(error.message, "Sucursales › Insertar"); throw error; }
 }
 
-export async function EditarSucursal({ id, razon_social, direccion }) {
+export async function EditarSucursal({ id, id_empresa, razon_social, direccion }) {
     const { error } = await supabase
         .from(tabla)
         .update({ razon_social, direccion })
-        .eq("id", id);
+        .eq("id", id)
+        .eq("id_empresa", id_empresa);
     if (error) { toastError(error.message, "Sucursales › Editar"); throw error; }
 }
 
-export async function EliminarSucursal({ id }) {
+export async function EliminarSucursal({ id, id_empresa }) {
     const { error } = await supabase
         .from(tabla)
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq("id_empresa", id_empresa);
     if (error) { toastError(error.message, "Sucursales › Eliminar"); throw error; }
 }

@@ -33,8 +33,8 @@ export async function BuscarClientes(p) {
 }
 
 export async function EditarCliente(p) {
-    const { id, ...campos } = p;
-    const { error } = await supabase.from(tabla).update(campos).eq("id", id);
+    const { id, id_empresa, ...campos } = p;
+    const { error } = await supabase.from(tabla).update(campos).eq("id", id).eq("id_empresa", id_empresa);
     if (error) {
         toastError(error.message, "Clientes › Editar");
         throw new Error(error.message);

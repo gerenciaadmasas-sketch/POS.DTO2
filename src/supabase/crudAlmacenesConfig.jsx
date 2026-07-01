@@ -25,13 +25,13 @@ export async function InsertarAlmacen(p) {
 }
 
 export async function EditarAlmacen(p) {
-    const { id, ...campos } = p;
-    const { data, error } = await supabase.from(tabla).update(campos).eq("id", id).select();
+    const { id, id_empresa, ...campos } = p;
+    const { data, error } = await supabase.from(tabla).update(campos).eq("id", id).eq("id_empresa", id_empresa).select();
     if (error) { toastError(error.message, "Almacenes › Editar"); throw new Error(error.message); }
     return data?.[0];
 }
 
 export async function EliminarAlmacen(p) {
-    const { error } = await supabase.from(tabla).delete().eq("id", p.id);
+    const { error } = await supabase.from(tabla).delete().eq("id", p.id).eq("id_empresa", p.id_empresa);
     if (error) { toastError(error.message, "Almacenes › Eliminar"); throw new Error(error.message); }
 }

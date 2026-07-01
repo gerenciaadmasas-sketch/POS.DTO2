@@ -18,7 +18,9 @@
       "Bash(node -e \"const pkg = require\\('./node_modules/lottie-react/package.json'\\); console.log\\('lottie-react version:', pkg.version, '| main:', pkg.main, '| module:', pkg.module\\)\")",
       "Bash(node -e \"require\\('lottie-react'\\); console.log\\('OK'\\)\")",
       "mcp__claude_ai_Supabase__list_tables",
-      "mcp__claude_ai_Supabase__execute_sql"
+      "mcp__claude_ai_Supabase__execute_sql",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit -m 'fix: ocultar PAGA CON hasta que haya productos en el carrito *)"
     ]
   }
 }

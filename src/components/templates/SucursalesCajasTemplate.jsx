@@ -50,11 +50,11 @@ export function SucursalesCajasTemplate() {
         onSuccess: () => { toastExito("Sucursal creada"); invalidar(); cerrarModalSuc(); },
     });
     const mutEditarSuc = useMutation({
-        mutationFn: () => EditarSucursal({ id: editSuc.id, razon_social: nombreSuc, direccion: dirSuc }),
+        mutationFn: () => EditarSucursal({ id: editSuc.id, id_empresa: editSuc.id_empresa, razon_social: nombreSuc, direccion: dirSuc }),
         onSuccess: () => { toastExito("Sucursal actualizada"); invalidar(); cerrarModalSuc(); },
     });
     const mutEliminarSuc = useMutation({
-        mutationFn: (id) => EliminarSucursal({ id }),
+        mutationFn: (suc) => EliminarSucursal({ id: suc.id, id_empresa: suc.id_empresa }),
         onSuccess: () => { toastExito("Sucursal eliminada"); invalidar(); },
     });
 
@@ -64,11 +64,11 @@ export function SucursalesCajasTemplate() {
         onSuccess: () => { toastExito("Almacén creado"); invalidar(); cerrarModalAlm(); },
     });
     const mutEditarAlm = useMutation({
-        mutationFn: () => EditarAlmacen({ id: editAlm.id, nombre: nombreAlm, meta_ventas: Number(metaAlm) || 0 }),
+        mutationFn: () => EditarAlmacen({ id: editAlm.id, id_empresa: editAlm.id_empresa, nombre: nombreAlm, meta_ventas: Number(metaAlm) || 0 }),
         onSuccess: () => { toastExito("Almacén actualizado"); invalidar(); cerrarModalAlm(); },
     });
     const mutEliminarAlm = useMutation({
-        mutationFn: (id) => EliminarAlmacen({ id }),
+        mutationFn: (alm) => EliminarAlmacen({ id: alm.id, id_empresa: alm.id_empresa }),
         onSuccess: () => { toastExito("Almacén eliminado"); invalidar(); },
     });
 
@@ -123,7 +123,7 @@ export function SucursalesCajasTemplate() {
                                             <BtnIco $rojo onClick={() => confirmar({
                                                 titulo: "¿Eliminar sucursal?",
                                                 texto: `Se eliminará "${suc.razon_social}" y todos sus almacenes.`,
-                                                onConfirmar: () => mutEliminarSuc.mutate(suc.id),
+                                                onConfirmar: () => mutEliminarSuc.mutate(suc),
                                             })}><RiDeleteBin2Line /></BtnIco>
                                         </SucActions>
                                     </SucHeader>
@@ -147,7 +147,7 @@ export function SucursalesCajasTemplate() {
                                             <BtnIco $rojo onClick={() => confirmar({
                                                 titulo: "¿Eliminar almacén?",
                                                 texto: `Se eliminará "${alm.nombre}" y todo su inventario.`,
-                                                onConfirmar: () => mutEliminarAlm.mutate(alm.id),
+                                                onConfirmar: () => mutEliminarAlm.mutate(alm),
                                             })}><RiDeleteBin2Line /></BtnIco>
                                         </AlmActions>
                                     </AlmItem>

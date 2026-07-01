@@ -3,6 +3,7 @@ import { Almacenes, Categorias, Clientes, Configuraciones, Empresa, Home, Invent
 import { UsuariosConfig } from "../pages/UsuariosConfig";
 import { MiPerfil } from "../pages/MiPerfil";
 import { Arqueo } from "../pages/Arqueo";
+import { Impresoras } from "../pages/Impresoras";
 import { useQuery } from "@tanstack/react-query";
 import { Spinner1 } from "../components/moleculas/Spinner1";
 import { MostrarEmpresaPorId } from "../supabase/crudEmpresa";
@@ -71,6 +72,7 @@ export function Myroutes() {
         <Route path="/configuracion/usuarios" element={<UsuariosConfig />} />
         <Route path="/perfil" element={<MiPerfil />} />
         <Route path="/arqueo" element={<Arqueo />} />
+        <Route path="/configuracion/impresoras" element={<Impresoras />} />
         <Route path="/pos" element={<POS />} />
         <Route path="/saas" element={<Saas />} />
         <Route path="/configuracion/planes" element={<PlanesConfig />} />

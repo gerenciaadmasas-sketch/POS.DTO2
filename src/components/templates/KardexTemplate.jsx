@@ -11,9 +11,10 @@ import { MostrarInventarioPorAlmacen, AjustarStock } from "../../supabase/crudAl
 import { MostrarTodasEmpresas } from "../../supabase/crudEmpresa";
 import { MostrarTodasSucursales } from "../../supabase/crudSucursales";
 import { MostrarTodosAlmacenes } from "../../supabase/crudAlmacenesConfig";
-import { RiStore2Line, RiAddLine, RiCloseLine, RiArrowUpLine, RiArrowDownLine, RiEqualizerLine, RiCalendarLine, RiFilterOffLine, RiArrowDownSLine } from "react-icons/ri";
+import { RiStore2Line, RiAddLine, RiCloseLine, RiArrowUpLine, RiArrowDownLine, RiEqualizerLine, RiCalendarLine, RiFilterOffLine, RiArrowDownSLine, RiLockPasswordLine, RiEyeLine, RiEyeOffLine } from "react-icons/ri";
 import { FaBuilding } from "react-icons/fa";
-import { toastExito } from "../../utils/toast";
+import { toastExito, toastError } from "../../utils/toast";
+import { VerificarPasswordAdmin } from "../../supabase/crudAuth";
 
 const formatCOP = (n) =>
     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n ?? 0);
@@ -43,8 +44,14 @@ export function KardexTemplate() {
     const { datausuarios }   = useUsuariosStore();
     const queryClient = useQueryClient();
 
-    const esSuperAdmin = datausuarios?.tipo === "superadmin";
-    const id_empresa   = dataempresa?.id;
+    const esSuperAdmin  = datausuarios?.tipo === "superadmin";
+    const esSupervisor  = datausuarios?.tipo === "supervisor";
+    const esCajero      = datausuarios?.tipo === "cajero";
+    const id_empresa    = dataempresa?.id;
+
+    // Restricciones de visibilidad por rol
+    const idSucursalUsuario = datausuarios?.id_sucursal ?? null;
+    const idAlmacenUsuario  = datausuarios?.id_almacen  ?? null;
 
     /* ── Queries usuario normal ── */
     useQuery({
@@ -84,13 +91,19 @@ export function KardexTemplate() {
     });
 
     /* ── Estado local ── */
-    const [almacenActivo,       setAlmacenActivo]       = useState(null);
+    const [almacenActivo,       setAlmacenActivo]       = useState(
+        esCajero ? idAlmacenUsuario : null
+    );
     const [empresasExpandidas,  setEmpresasExpandidas]  = useState(new Set());
     const [filtroTipo,          setFiltroTipo]          = useState("todos");
     const [desde,               setDesde]               = useState("");
     const [hasta,               setHasta]               = useState("");
     const [page,                setPage]                = useState(0);
     const [modalAbierto,        setModalAbierto]        = useState(false);
+    const [modalPassword,       setModalPassword]       = useState(false);
+    const [passwordInput,       setPasswordInput]       = useState("");
+    const [verPassword,         setVerPassword]         = useState(false);
+    const [verificando,         setVerificando]         = useState(false);
     const [formTipo,            setFormTipo]            = useState("entrada");
     const [formProducto,        setFormProducto]        = useState(null);
     const [formCantidad,        setFormCantidad]        = useState("");
@@ -113,12 +126,24 @@ export function KardexTemplate() {
         });
     }
 
-    /* ── Datos agrupados ── */
+    /* ── Datos agrupados filtrados por rol ── */
     const grupos = useMemo(() => {
-        return (dataSucursales ?? [])
-            .map(s => ({ ...s, almacenes: (dataAlmacenes ?? []).filter(a => a.id_sucursal === s.id) }))
+        let sucursales = dataSucursales ?? [];
+        let almacenes  = dataAlmacenes  ?? [];
+
+        if (esSupervisor) {
+            sucursales = sucursales.filter(s => s.id === idSucursalUsuario);
+            almacenes  = almacenes.filter(a => a.id_sucursal === idSucursalUsuario);
+        } else if (esCajero) {
+            almacenes  = almacenes.filter(a => a.id === idAlmacenUsuario);
+            const sucIds = new Set(almacenes.map(a => a.id_sucursal));
+            sucursales = sucursales.filter(s => sucIds.has(s.id));
+        }
+
+        return sucursales
+            .map(s => ({ ...s, almacenes: almacenes.filter(a => a.id_sucursal === s.id) }))
             .filter(s => s.almacenes.length > 0);
-    }, [dataSucursales, dataAlmacenes]);
+    }, [dataSucursales, dataAlmacenes, esSupervisor, esCajero, idSucursalUsuario, idAlmacenUsuario]);
 
     const empresaGrupos = useMemo(() => {
         return todasEmpresas.map(emp => ({
@@ -136,7 +161,9 @@ export function KardexTemplate() {
     const listAlmacenes  = esSuperAdmin ? todosAlmacenes  : (dataAlmacenes  ?? []);
     const listSucursales = esSuperAdmin ? todasSucursales : (dataSucursales ?? []);
 
-    const almacenId   = almacenActivo ?? (esSuperAdmin ? null : (dataAlmacenes?.[0]?.id ?? null));
+    const almacenId = esCajero
+        ? idAlmacenUsuario
+        : (almacenActivo ?? (esSuperAdmin ? null : (grupos[0]?.almacenes[0]?.id ?? null)));
     const almacenObj  = listAlmacenes.find(a => a.id === almacenId);
     const sucursalObj = listSucursales.find(s => s.id === almacenObj?.id_sucursal);
     const empresaObj  = esSuperAdmin
@@ -235,9 +262,20 @@ export function KardexTemplate() {
         <Layout>
             {/* ── Panel izquierdo ── */}
             <PanelAlmacenes>
-                <PanelTitulo>{esSuperAdmin ? "Clientes" : "Almacenes"}</PanelTitulo>
+                <PanelTitulo>
+                    {esSuperAdmin ? "Clientes" : esCajero ? "Mi almacén" : "Almacenes"}
+                </PanelTitulo>
 
-                {esSuperAdmin ? (
+                {esCajero ? (
+                    <AlmacenItem $activo={true} $color={colorAlmacen} style={{ cursor: "default" }}>
+                        <AlmacenDot $color={colorAlmacen} />
+                        <AlmacenInfo>
+                            <span className="nombre">{almacenObj?.nombre ?? "—"}</span>
+                            <span className="sucursal">{sucursalObj?.nombre ?? "—"}</span>
+                        </AlmacenInfo>
+                        <Chevron>›</Chevron>
+                    </AlmacenItem>
+                ) : esSuperAdmin ? (
                     empresaGrupos.length === 0 ? (
                         <SinAlmacenes>Cargando clientes...</SinAlmacenes>
                     ) : empresaGrupos.map(emp => {
@@ -327,14 +365,31 @@ export function KardexTemplate() {
                                 {empresaObj.razon_social}
                             </EmpresaTag>
                         )}
+                        {esSupervisor && sucursalObj && (
+                            <EmpresaTag style={{ color: "#10b981" }}>
+                                <RiStore2Line />
+                                {sucursalObj.nombre}
+                            </EmpresaTag>
+                        )}
+                        {esCajero && (
+                            <EmpresaTag style={{ color: "#60a5fa" }}>
+                                <RiStore2Line />
+                                Solo lectura · Tu almacén
+                            </EmpresaTag>
+                        )}
                         <AlmacenNombre>
                             {almacenObj?.nombre ?? (esSuperAdmin ? "Selecciona un cliente y almacén" : "Selecciona un almacén")}
                         </AlmacenNombre>
                     </HeaderLeft>
-                    <BtnNuevo onClick={() => setModalAbierto(true)} disabled={!almacenId}>
-                        <RiAddLine style={{ fontSize: 18 }} />
-                        Nuevo movimiento
-                    </BtnNuevo>
+                    {!esCajero && (
+                        <BtnNuevo
+                            onClick={() => esSupervisor ? setModalPassword(true) : setModalAbierto(true)}
+                            disabled={!almacenId}
+                        >
+                            <RiAddLine style={{ fontSize: 18 }} />
+                            Nuevo movimiento
+                        </BtnNuevo>
+                    )}
                 </AlmacenHeader>
 
                 {/* Filtros */}
@@ -427,6 +482,83 @@ export function KardexTemplate() {
                     </Paginacion>
                 </TablaCard>
             </Contenido>
+
+            {/* ── Modal autorización superadmin ── */}
+            {modalPassword && (
+                <Overlay onClick={() => { setModalPassword(false); setPasswordInput(""); }}>
+                    <Modal onClick={e => e.stopPropagation()} style={{ maxWidth: 400 }}>
+                        <ModalHeader>
+                            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <RiLockPasswordLine style={{ color: "#f88533" }} />
+                                Autorización requerida
+                            </span>
+                            <BtnCerrarModal onClick={() => { setModalPassword(false); setPasswordInput(""); }}>
+                                <RiCloseLine />
+                            </BtnCerrarModal>
+                        </ModalHeader>
+                        <ModalBody>
+                            <AuthInfo>
+                                <RiLockPasswordLine style={{ color: "#f88533", flexShrink: 0, fontSize: 18 }} />
+                                <span>
+                                    Para registrar movimientos en <strong>{almacenObj?.nombre ?? "este almacén"}</strong> se requiere autorización. Ingresa la contraseña del <strong>administrador</strong>.
+                                </span>
+                            </AuthInfo>
+                            <Campo>
+                                <label>Contraseña del administrador</label>
+                                <PasswordWrap>
+                                    <Input
+                                        type={verPassword ? "text" : "password"}
+                                        placeholder="Contraseña..."
+                                        value={passwordInput}
+                                        onChange={e => setPasswordInput(e.target.value)}
+                                        onKeyDown={async e => {
+                                            if (e.key === "Enter") {
+                                                e.preventDefault();
+                                                if (!passwordInput || verificando) return;
+                                                setVerificando(true);
+                                                const res = await VerificarPasswordAdmin({ id_empresa: empresaObj?.id, password: passwordInput });
+                                                setVerificando(false);
+                                                if (res.ok) {
+                                                    setModalPassword(false);
+                                                    setPasswordInput("");
+                                                    setModalAbierto(true);
+                                                } else {
+                                                    toastError(res.error, "Autorización");
+                                                }
+                                            }
+                                        }}
+                                        autoFocus
+                                        style={{ paddingRight: 40 }}
+                                    />
+                                    <BtnVerPass onClick={() => setVerPassword(v => !v)} type="button" tabIndex={-1}>
+                                        {verPassword ? <RiEyeOffLine /> : <RiEyeLine />}
+                                    </BtnVerPass>
+                                </PasswordWrap>
+                            </Campo>
+                        </ModalBody>
+                        <ModalFooter>
+                            <BtnCancelar onClick={() => { setModalPassword(false); setPasswordInput(""); }}>Cancelar</BtnCancelar>
+                            <BtnGuardar
+                                disabled={!passwordInput || verificando}
+                                onClick={async () => {
+                                    setVerificando(true);
+                                    const res = await VerificarPasswordAdmin({ id_empresa: empresaObj?.id, password: passwordInput });
+                                    setVerificando(false);
+                                    if (res.ok) {
+                                        setModalPassword(false);
+                                        setPasswordInput("");
+                                        setModalAbierto(true);
+                                    } else {
+                                        toastError(res.error, "Autorización");
+                                    }
+                                }}
+                            >
+                                {verificando ? "Verificando..." : "Confirmar"}
+                            </BtnGuardar>
+                        </ModalFooter>
+                    </Modal>
+                </Overlay>
+            )}
 
             {/* ── Modal nuevo movimiento ── */}
             {modalAbierto && (
@@ -864,6 +996,30 @@ const BtnCancelar = styled.button`
     border: 1px solid ${({ theme }) => theme.color2};
     background: transparent; color: ${({ theme }) => theme.text};
     font-size: 13px; font-weight: 700; cursor: pointer; font-family: "Poppins", sans-serif;
+`;
+
+const AuthInfo = styled.div`
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px; border-radius: 10px;
+    background: rgba(248,133,51,0.07);
+    border: 1px solid rgba(248,133,51,0.2);
+    font-size: 13px; color: ${({ theme }) => theme.colorsubtitlecard};
+    line-height: 1.5;
+    strong { color: ${({ theme }) => theme.text}; }
+    svg { font-size: 16px; margin-top: 2px; }
+`;
+
+const PasswordWrap = styled.div`
+    position: relative;
+    input { width: 100%; box-sizing: border-box; }
+`;
+
+const BtnVerPass = styled.button`
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; padding: 4px;
+    font-size: 16px; color: ${({ theme }) => theme.colorsubtitlecard};
+    display: flex; align-items: center;
+    &:hover { color: ${({ theme }) => theme.text}; }
 `;
 const BtnGuardar = styled.button`
     flex: 2; padding: 11px; border-radius: 10px;

@@ -373,6 +373,7 @@ export function POSTemplate() {
 
             await CerrarSesionCaja({
                 id:             sesionActiva.id,
+                id_empresa:     dataempresa?.id,
                 total_ventas:   total,
                 total_efectivo: efectivo,
                 saldo_esperado: saldoEsperado,

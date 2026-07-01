@@ -14,7 +14,7 @@ import { FaArrowsAltV } from "react-icons/fa";
 export function TablaProductos({ data, SetopenRegistro, setdataSelect, setAccion }) {
     if (data == null) return;
     const { datausuarios } = useUsuariosStore();
-    const esAdmin = datausuarios?.tipo === "administrador";
+    const esAdmin = datausuarios?.tipo === "administrador" || datausuarios?.tipo === "superadmin";
     const [columnFilters, setColumnFilters] = useState([]);
     const { eliminarProducto } = useProductosStore();
 

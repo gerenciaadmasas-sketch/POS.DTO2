@@ -119,3 +119,5 @@ export * from './pages/PlanesConfig';
 export * from './supabase/crudVersion';
 export * from './components/templates/VersionTemplate';
 export * from './pages/Version';
+export * from './pages/Impresoras';
+export * from './components/templates/ImpresorasTemplate';
