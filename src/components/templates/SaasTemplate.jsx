@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MostrarSuscripciones, InsertarSuscripcion, EditarSuscripcion, EliminarSuscripcion, RegistrarPago, MostrarPagosCliente, EximirPago, ReactivarCuenta } from "../../supabase/crudSuscripciones";
 import { MostrarConfigPlanes } from "../../supabase/crudConfigPlanes";
-import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine, RiShieldLine, RiPercentLine, RiCalendarLine, RiRefreshLine, RiShieldCheckLine } from "react-icons/ri";
+import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine, RiShieldLine, RiPercentLine, RiCalendarLine, RiRefreshLine, RiShieldCheckLine, RiArrowDownSLine } from "react-icons/ri";
 import { Icon } from "@iconify/react";
 import { toastExito, confirmar } from "../../utils/toast";
 import ConfettiExplosion from "react-confetti-explosion";
@@ -48,6 +48,17 @@ export function SaasTemplate() {
     const [editando, setEditando] = useState(null);
     const [historialId, setHistorialId] = useState(null);
     const [confeti, setConfeti] = useState(false);
+    const [dropActividad, setDropActividad] = useState(false);
+    const dropActividadRef = useRef(null);
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (dropActividadRef.current && !dropActividadRef.current.contains(e.target))
+                setDropActividad(false);
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
 
     const { data: pagosHistorial = [] } = useQuery({
         queryKey: ["pagos-historial", historialId],
@@ -497,9 +508,30 @@ export function SaasTemplate() {
                             )}
                             <Campo>
                                 <label>Actividad económica</label>
-                                <Select value={form.actividad_economica} onChange={e => setForm({ ...form, actividad_economica: e.target.value })}>
-                                    {ACTIVIDADES.map(a => <option key={a.key} value={a.key}>{a.label}</option>)}
-                                </Select>
+                                <DropWrap ref={dropActividadRef}>
+                                    <SelectorBtn
+                                        type="button"
+                                        $activo={dropActividad}
+                                        onClick={() => setDropActividad(v => !v)}
+                                    >
+                                        <span>{ACTIVIDADES.find(a => a.key === form.actividad_economica)?.label ?? "Selecciona..."}</span>
+                                        <RiArrowDownSLine className={`chevron ${dropActividad ? "abierto" : ""}`} />
+                                    </SelectorBtn>
+                                    {dropActividad && (
+                                        <DropMenu>
+                                            {ACTIVIDADES.map(a => (
+                                                <DropItem
+                                                    key={a.key}
+                                                    type="button"
+                                                    $activo={form.actividad_economica === a.key}
+                                                    onClick={() => { setForm({ ...form, actividad_economica: a.key }); setDropActividad(false); }}
+                                                >
+                                                    {a.label}
+                                                </DropItem>
+                                            ))}
+                                        </DropMenu>
+                                    )}
+                                </DropWrap>
                             </Campo>
 
                             {/* ── Controles de retención (solo al editar) ── */}
@@ -850,12 +882,40 @@ const Input = styled.input`
     &:focus { border-color: #f88533; }
 `;
 
-const Select = styled.select`
-    padding: 10px 14px; border-radius: 10px;
-    border: 1.5px solid ${({ theme }) => theme.color2};
+const slideDown = keyframes`from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}`;
+
+const DropWrap = styled.div`position: relative; width: 100%;`;
+
+const SelectorBtn = styled.button`
+    width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 10px 14px; border-radius: 10px; cursor: pointer;
+    border: 1.5px solid ${({ $activo, theme }) => $activo ? "#f88533" : theme.color2};
     background: ${({ theme }) => theme.bgtotal}; color: ${({ theme }) => theme.text};
-    font-size: 13px; font-family: "Poppins", sans-serif; outline: none; text-transform: capitalize;
-    &:focus { border-color: #f88533; }
+    font-size: 13px; font-weight: 600; font-family: "Poppins", sans-serif;
+    transition: border-color 0.15s;
+    &:hover { border-color: #f88533; }
+    .chevron { font-size: 18px; color: #f88533; transition: transform 0.2s; flex-shrink: 0; }
+    .chevron.abierto { transform: rotate(180deg); }
+`;
+
+const DropMenu = styled.div`
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 400;
+    background: ${({ theme }) => theme.bgcards};
+    border: 1px solid ${({ theme }) => theme.color2};
+    border-radius: 12px; padding: 6px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+    animation: ${slideDown} 0.16s ease;
+    max-height: 240px; overflow-y: auto;
+`;
+
+const DropItem = styled.button`
+    width: 100%; text-align: left; padding: 9px 12px; border-radius: 8px;
+    border: none; cursor: pointer; font-size: 13px; font-weight: 600;
+    font-family: "Poppins", sans-serif;
+    background: ${({ $activo }) => $activo ? "rgba(248,133,51,0.12)" : "transparent"};
+    color: ${({ $activo, theme }) => $activo ? "#f88533" : theme.text};
+    transition: background 0.12s;
+    &:hover { background: rgba(248,133,51,0.08); }
 `;
 
 const Textarea = styled.textarea`
