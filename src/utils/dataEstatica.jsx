@@ -32,7 +32,7 @@ export const LinksArray = [
     to: "/home",
   },
   {
-    label: "Clientes",
+    label: "Saas",
     icon: "solar:users-group-rounded-bold-duotone",
     to: "/saas",
   },
@@ -43,7 +43,7 @@ export const LinksArray = [
     color: "#34d399",
   },
   {
-    label: "Prospectos",
+    label: "Leads",
     icon: "solar:user-speak-bold-duotone",
     to: "/prospectos",
     color: "#818cf8",
@@ -64,7 +64,7 @@ export const LinksArray = [
     to: "/kardex",
   },
   {
-    label: "Reportes",
+    label: "Clientes",
     icon: "solar:chart-square-bold-duotone",
     to: "/reportes",
   },
