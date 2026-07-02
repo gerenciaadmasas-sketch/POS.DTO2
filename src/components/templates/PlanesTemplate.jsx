@@ -1758,8 +1758,8 @@ const PagoExito = styled.div`
     text-align: center; position: relative;
 `;
 const ConfettiCenter = styled.div`
-    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-    pointer-events: none; z-index: 10;
+    position: fixed; top: 30%; left: 50%; transform: translateX(-50%);
+    pointer-events: none; z-index: 9999;
 `;
 const CheckCircle = styled.div`
     width: 80px; height: 80px; border-radius: 50%;
