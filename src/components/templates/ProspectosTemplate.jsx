@@ -70,7 +70,7 @@ export function ProspectosTemplate() {
         <Wrap>
             <Header>
                 <HeaderLeft>
-                    <Title>Prospectos</Title>
+                    <Title>Leads</Title>
                     <Sub>Panel comercial · gestión de leads</Sub>
                 </HeaderLeft>
             </Header>
@@ -123,7 +123,7 @@ export function ProspectosTemplate() {
             ) : lista.length === 0 ? (
                 <Empty>
                     <RiUserAddLine size={40} style={{ opacity: 0.3 }} />
-                    <span>Aún no hay prospectos{filtro !== "todos" ? " con este estado" : ""}.</span>
+                    <span>Aún no hay leads{filtro !== "todos" ? " con este estado" : ""}.</span>
                 </Empty>
             ) : (
                 <TableWrap>
