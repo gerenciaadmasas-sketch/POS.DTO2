@@ -16,32 +16,40 @@ const ROL_STYLE = {
 };
 
 const ACCESOS_SUPERADMIN = [
-    { key: "saas",    icon: "solar:users-group-rounded-bold-duotone", label: "Clientes",     to: "/saas",          accent: "#f88533", big: true  },
-    { key: "report",  icon: "solar:chart-square-bold-duotone",   label: "Reportes",       to: "/reportes",      accent: "#60a5fa", big: false },
-    { key: "config",  icon: "solar:settings-bold-duotone",       label: "Configuración",  to: "/configuracion", accent: "#a78bfa", big: false },
+    { key: "saas",       icon: "solar:users-group-rounded-bold-duotone",  label: "Saas",       to: "/saas",       accent: "#f88533", big: true  },
+    { key: "reportes",   icon: "solar:chart-square-bold-duotone",         label: "Clientes",   to: "/reportes",   accent: "#60a5fa", big: false },
+    { key: "finanzas",   icon: "solar:dollar-minimalistic-bold-duotone",  label: "Finanzas",   to: "/finanzas",   accent: "#34d399", big: false },
+    { key: "prospectos", icon: "solar:user-speak-bold-duotone",           label: "Leads",      to: "/prospectos", accent: "#818cf8", big: false },
+    { key: "perfil",     icon: "solar:user-bold-duotone",                 label: "Mi Perfil",  to: "/perfil",     accent: "#60a5fa", big: false },
 ];
 
 const ACCESOS_ADMIN = [
-    { key: "pos",     icon: "solar:cart-large-2-bold-duotone",   label: "Punto de venta", to: "/pos",           accent: "#f88533", big: true  },
-    { key: "inv",     icon: "solar:box-bold-duotone",            label: "Inventario",     to: "/inventario",    accent: "#4ade80", big: false },
-    { key: "report",  icon: "solar:chart-square-bold-duotone",   label: "Reportes",       to: "/reportes",      accent: "#60a5fa", big: false },
-    { key: "kardex",  icon: "solar:clipboard-list-bold-duotone", label: "Kardex",         to: "/kardex",        accent: "#f59e0b", big: false },
-    { key: "arqueo",  icon: "solar:wallet-money-bold-duotone",   label: "Arqueo",         to: "/arqueo",        accent: "#ec4899", big: false },
-    { key: "config",  icon: "solar:settings-bold-duotone",       label: "Configuración",  to: "/configuracion", accent: "#a78bfa", big: false },
+    { key: "pos",        icon: "solar:cart-large-2-bold-duotone",         label: "Vender",     to: "/pos",        accent: "#f88533", big: true  },
+    { key: "inv",        icon: "solar:box-bold-duotone",                  label: "Inventario", to: "/inventario", accent: "#4ade80", big: false },
+    { key: "reportes",   icon: "solar:chart-square-bold-duotone",         label: "Clientes",   to: "/reportes",   accent: "#60a5fa", big: false },
+    { key: "kardex",     icon: "solar:clipboard-list-bold-duotone",       label: "Kardex",     to: "/kardex",     accent: "#f59e0b", big: false },
+    { key: "arqueo",     icon: "solar:wallet-money-bold-duotone",         label: "Arqueo",     to: "/arqueo",     accent: "#ec4899", big: false },
+    { key: "perfil",     icon: "solar:user-bold-duotone",                 label: "Mi Perfil",  to: "/perfil",     accent: "#60a5fa", big: false },
 ];
 
 const ACCESOS_SUPERVISOR = [
-    { key: "inv",     icon: "solar:box-bold-duotone",            label: "Inventario",     to: "/inventario",    accent: "#4ade80", big: true  },
-    { key: "report",  icon: "solar:chart-square-bold-duotone",   label: "Reportes",       to: "/reportes",      accent: "#60a5fa", big: false },
-    { key: "kardex",  icon: "solar:clipboard-list-bold-duotone", label: "Kardex",         to: "/kardex",        accent: "#f59e0b", big: false },
-    { key: "arqueo",  icon: "solar:wallet-money-bold-duotone",   label: "Arqueo",         to: "/arqueo",        accent: "#ec4899", big: false },
-    { key: "config",  icon: "solar:settings-bold-duotone",       label: "Configuración",  to: "/configuracion", accent: "#a78bfa", big: false },
+    { key: "pos",        icon: "solar:cart-large-2-bold-duotone",         label: "Vender",     to: "/pos",        accent: "#f88533", big: true  },
+    { key: "inv",        icon: "solar:box-bold-duotone",                  label: "Inventario", to: "/inventario", accent: "#4ade80", big: false },
+    { key: "reportes",   icon: "solar:chart-square-bold-duotone",         label: "Clientes",   to: "/reportes",   accent: "#60a5fa", big: false },
+    { key: "kardex",     icon: "solar:clipboard-list-bold-duotone",       label: "Kardex",     to: "/kardex",     accent: "#f59e0b", big: false },
+    { key: "arqueo",     icon: "solar:wallet-money-bold-duotone",         label: "Arqueo",     to: "/arqueo",     accent: "#ec4899", big: false },
+    { key: "perfil",     icon: "solar:user-bold-duotone",                 label: "Mi Perfil",  to: "/perfil",     accent: "#60a5fa", big: false },
 ];
 
 const ACCESOS_CAJERO = [
-    { key: "pos",     icon: "solar:cart-large-2-bold-duotone",   label: "Punto de venta", to: "/pos",           accent: "#f88533", big: true  },
-    { key: "inv",     icon: "solar:box-bold-duotone",            label: "Inventario",     to: "/inventario",    accent: "#4ade80", big: false },
-    { key: "report",  icon: "solar:chart-square-bold-duotone",   label: "Reportes",       to: "/reportes",      accent: "#60a5fa", big: false },
+    { key: "pos",        icon: "solar:cart-large-2-bold-duotone",         label: "Vender",     to: "/pos",        accent: "#f88533", big: true  },
+    { key: "inv",        icon: "solar:box-bold-duotone",                  label: "Inventario", to: "/inventario", accent: "#4ade80", big: false },
+    { key: "reportes",   icon: "solar:chart-square-bold-duotone",         label: "Clientes",   to: "/reportes",   accent: "#60a5fa", big: false },
+];
+
+const ACCESOS_COMERCIAL = [
+    { key: "prospectos", icon: "solar:user-speak-bold-duotone",           label: "Leads",      to: "/prospectos", accent: "#818cf8", big: true  },
+    { key: "perfil",     icon: "solar:user-bold-duotone",                 label: "Mi Perfil",  to: "/perfil",     accent: "#60a5fa", big: false },
 ];
 
 export function HomeTemplates() {
@@ -75,9 +83,10 @@ export function HomeTemplates() {
         ? sucursal?.razon_social ?? "Sin sucursal"
         : dataempresa?.razon_social ?? "Empresa";
 
-    const accesos = tipo === "cajero" ? ACCESOS_CAJERO
-                  : tipo === "supervisor" ? ACCESOS_SUPERVISOR
-                  : tipo === "superadmin" ? ACCESOS_SUPERADMIN
+    const accesos = tipo === "cajero"     ? ACCESOS_CAJERO
+                  : tipo === "supervisor"  ? ACCESOS_SUPERVISOR
+                  : tipo === "superadmin"  ? ACCESOS_SUPERADMIN
+                  : tipo === "comercial"   ? ACCESOS_COMERCIAL
                   : ACCESOS_ADMIN;
 
     const fecha = new Date().toLocaleDateString("es-CO", {
@@ -86,6 +95,11 @@ export function HomeTemplates() {
 
     return (
         <Page>
+            <BgOrb $x="-10%" $y="-8%"  $size="600px" $color="rgba(248,133,51,0.12)"  $dur="7s" />
+            <BgOrb $x="70%"  $y="10%"  $size="400px" $color="rgba(99,102,241,0.10)"  $dur="9s"  $delay="1s" />
+            <BgOrb $x="20%"  $y="55%"  $size="350px" $color="rgba(52,211,153,0.08)"  $dur="11s" $delay="2s" />
+            <BgOrb $x="80%"  $y="75%"  $size="500px" $color="rgba(248,133,51,0.08)"  $dur="8s"  $delay="0.5s" />
+            <BgLines />
             <Inner>
                 {/* ── Header ── */}
                 <HeaderSection>
@@ -130,6 +144,12 @@ const fadeUp = keyframes`
     to   { opacity: 1; transform: none; }
 `;
 
+const floatOrb = keyframes`
+    0%, 100% { transform: translate(0, 0)   scale(1); }
+    33%       { transform: translate(30px, -20px) scale(1.08); }
+    66%       { transform: translate(-20px, 15px) scale(0.95); }
+`;
+
 const glowPulse = keyframes`
     0%, 100% { box-shadow: 0 0 12px var(--glow); }
     50%      { box-shadow: 0 0 24px var(--glow); }
@@ -138,16 +158,44 @@ const glowPulse = keyframes`
 /* ── Layout ── */
 const Page = styled.div`
     min-height: 100vh;
-    background: ${({ theme }) => theme.bgtotal};
+    background: #07090f;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 40px 24px;
+    position: relative;
+    overflow: hidden;
 
     @media (max-width: 767px) { padding: 78px 16px 24px; align-items: flex-start; }
 `;
 
+const BgOrb = styled.div`
+    position: fixed;
+    left:   ${({ $x }) => $x};
+    top:    ${({ $y }) => $y};
+    width:  ${({ $size }) => $size};
+    height: ${({ $size }) => $size};
+    border-radius: 50%;
+    background: ${({ $color }) => $color};
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+    animation: ${floatOrb} ${({ $dur }) => $dur} ease-in-out infinite;
+    animation-delay: ${({ $delay }) => $delay ?? "0s"};
+`;
+
+const BgLines = styled.div`
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+        linear-gradient(rgba(248,133,51,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(248,133,51,0.03) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at 50% 40%, black 30%, transparent 80%);
+`;
+
 const Inner = styled.div`
+    position: relative;
+    z-index: 1;
     width: 100%;
     max-width: 580px;
     display: flex;
@@ -166,7 +214,7 @@ const HeaderSection = styled.div`
 const Fecha = styled.div`
     font-size: 11px;
     font-weight: 600;
-    color: ${({ theme }) => theme.colorsubtitlecard};
+    color: rgba(255,255,255,0.4);
     text-transform: capitalize;
     letter-spacing: 0.5px;
 `;
@@ -174,7 +222,7 @@ const Fecha = styled.div`
 const Saludo = styled.h1`
     font-size: clamp(28px, 5vw, 40px);
     font-weight: 900;
-    color: ${({ theme }) => theme.text};
+    color: #fff;
     margin: 0;
     line-height: 1.15;
 `;
@@ -208,7 +256,7 @@ const RolBadge = styled.span`
 const Contexto = styled.span`
     font-size: 13px;
     font-weight: 600;
-    color: ${({ theme }) => theme.colorsubtitlecard};
+    color: rgba(255,255,255,0.4);
 `;
 
 /* ── Bento Grid ── */
@@ -235,8 +283,8 @@ const BentoCard = styled.button`
     justify-content: space-between;
     padding: 18px;
     border-radius: 18px;
-    border: 1px solid ${({ theme }) => theme.color2};
-    background: ${({ theme }) => theme.bgcards};
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
     cursor: pointer;
     overflow: hidden;
     font-family: "Poppins", sans-serif;
@@ -272,7 +320,7 @@ const BentoIcon = styled.div`
 const BentoLabel = styled.span`
     font-size: 13px;
     font-weight: 700;
-    color: ${({ theme }) => theme.text};
+    color: #fff;
 `;
 
 const BentoArrow = styled.span`
@@ -280,7 +328,7 @@ const BentoArrow = styled.span`
     bottom: 16px;
     right: 18px;
     font-size: 20px;
-    color: ${({ theme }) => theme.colorsubtitlecard};
+    color: rgba(255,255,255,0.3);
     opacity: 0;
     transform: translateX(-4px);
     transition: opacity 0.2s, transform 0.2s;

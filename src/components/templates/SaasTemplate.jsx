@@ -3,7 +3,7 @@ import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MostrarSuscripciones, InsertarSuscripcion, EditarSuscripcion, EliminarSuscripcion, RegistrarPago, MostrarPagosCliente } from "../../supabase/crudSuscripciones";
 import { MostrarConfigPlanes } from "../../supabase/crudConfigPlanes";
-import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine } from "react-icons/ri";
+import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine, RiShieldLine, RiPercentLine, RiCalendarLine } from "react-icons/ri";
 import { Icon } from "@iconify/react";
 import { toastExito, confirmar } from "../../utils/toast";
 import ConfettiExplosion from "react-confetti-explosion";
@@ -22,6 +22,12 @@ const PLANES = [
     { key: "mensual",    label: "Mensual",    meses: 1 },
     { key: "bimestral",  label: "Bimestral",  meses: 2 },
     { key: "trimestral", label: "Trimestral", meses: 3 },
+];
+
+const TIPOS_PLAN = [
+    { key: "chispa", label: "⚡ Chispa — 1 almacén, 2 usuarios" },
+    { key: "fuego",  label: "🔥 Fuego  — 3 almacenes, 10 usuarios" },
+    { key: "cosmos", label: "🌌 Cosmos — Ilimitado" },
 ];
 
 const ACTIVIDADES = [
@@ -51,9 +57,10 @@ export function SaasTemplate() {
 
     const [form, setForm] = useState({
         nombre_cliente: "", apellido_cliente: "", cedula_cliente: "",
-        plan: "mensual", valor_mensual: "",
-        costo_implementacion: "", estado: "al_dia", fecha_proximo_pago: "", notas: "",
+        plan: "mensual", tipo_plan: "chispa", valor_mensual: "",
+        estado: "al_dia", fecha_proximo_pago: "", notas: "",
         actividad_economica: "retail_ropa",
+        gracia_hasta: "", descuento_pct: 0,
     });
 
     const { data: suscripciones = [], isFetching } = useQuery({
@@ -65,11 +72,6 @@ export function SaasTemplate() {
         queryKey: ["config-planes"],
         queryFn: MostrarConfigPlanes,
     });
-
-    function onCambioPlan(plan) {
-        const precio = preciosPlanes.find(p => p.plan === plan)?.precio ?? 0;
-        setForm(f => ({ ...f, plan, valor_mensual: String(precio) }));
-    }
 
     const invalidar = () => queryClient.invalidateQueries({ queryKey: ["suscripciones"] });
 
@@ -109,8 +111,9 @@ export function SaasTemplate() {
                 apellido_cliente: form.apellido_cliente,
                 cedula_cliente: form.cedula_cliente,
                 plan: form.plan,
+                tipo_plan: form.tipo_plan,
                 valor_mensual: Number(form.valor_mensual) || 0,
-                costo_implementacion: Number(form.costo_implementacion) || 0,
+                costo_implementacion: 0,
                 fecha_proximo_pago: proximoPago.toISOString().split("T")[0],
                 notas: form.notas,
                 actividad_economica: form.actividad_economica,
@@ -128,12 +131,14 @@ export function SaasTemplate() {
             id: editando.id,
             nombre_cliente: form.nombre_cliente,
             plan: form.plan,
+            tipo_plan: form.tipo_plan,
             valor_mensual: Number(form.valor_mensual) || 0,
-            costo_implementacion: Number(form.costo_implementacion) || 0,
             estado: form.estado,
             fecha_proximo_pago: form.fecha_proximo_pago || null,
             notas: form.notas,
             actividad_economica: form.actividad_economica,
+            gracia_hasta: form.gracia_hasta || null,
+            descuento_pct: Number(form.descuento_pct) || 0,
         }),
         onSuccess: () => { toastExito("Cliente actualizado"); invalidar(); cerrar(); },
     });
@@ -143,9 +148,12 @@ export function SaasTemplate() {
         onSuccess: () => { toastExito("Cliente eliminado"); invalidar(); },
     });
 
+    function getPrecioTier(tier) {
+        return String(preciosPlanes.find(p => p.tier === tier)?.precio_base ?? 0);
+    }
+
     function abrirNuevo() {
-        const precioDefault = preciosPlanes.find(p => p.plan === "mensual")?.precio ?? 0;
-        setForm({ nombre_cliente: "", apellido_cliente: "", cedula_cliente: "", plan: "mensual", valor_mensual: String(precioDefault), costo_implementacion: "", estado: "al_dia", fecha_proximo_pago: "", notas: "", actividad_economica: "retail_ropa" });
+        setForm({ nombre_cliente: "", apellido_cliente: "", cedula_cliente: "", plan: "mensual", tipo_plan: "chispa", valor_mensual: getPrecioTier("chispa"), estado: "al_dia", fecha_proximo_pago: "", notas: "", actividad_economica: "retail_ropa", gracia_hasta: "", descuento_pct: 0 });
         setEditando(null);
         setModal(true);
     }
@@ -156,12 +164,14 @@ export function SaasTemplate() {
             apellido_cliente: s.apellido_cliente ?? "",
             cedula_cliente: s.cedula_cliente ?? "",
             plan: s.plan ?? "mensual",
+            tipo_plan: s.tipo_plan ?? "chispa",
             valor_mensual: String(s.valor_mensual ?? ""),
-            costo_implementacion: String(s.costo_implementacion ?? ""),
             estado: s.estado ?? "al_dia",
             fecha_proximo_pago: s.fecha_proximo_pago ?? "",
             notas: s.notas ?? "",
             actividad_economica: s.actividad_economica ?? "retail_ropa",
+            gracia_hasta: s.gracia_hasta ?? "",
+            descuento_pct: s.descuento_pct ?? 0,
         });
         setEditando(s);
         setModal(true);
@@ -176,7 +186,6 @@ export function SaasTemplate() {
 
     // Stats
     const totalMensual = suscripciones.reduce((s, c) => s + (Number(c.valor_mensual) || 0), 0);
-    const totalImplementacion = suscripciones.reduce((s, c) => s + (Number(c.costo_implementacion) || 0), 0);
     const alDia = suscripciones.filter(c => estadoAuto(c) === "al_dia").length;
     const proximos = suscripciones.filter(c => estadoAuto(c) === "proximo").length;
     const enMora = suscripciones.filter(c => estadoAuto(c) === "mora").length;
@@ -211,10 +220,10 @@ export function SaasTemplate() {
                     </StatInfo>
                 </StatCard>
                 <StatCard>
-                    <Icon icon="solar:hand-money-bold-duotone" style={{ fontSize: 28, color: "#f59e0b" }} />
+                    <Icon icon="solar:graph-up-bold-duotone" style={{ fontSize: 28, color: "#f59e0b" }} />
                     <StatInfo>
-                        <StatLabel>Implementaciones</StatLabel>
-                        <StatVal>{formatCOP(totalImplementacion)}</StatVal>
+                        <StatLabel>Planes activos</StatLabel>
+                        <StatVal>{suscripciones.filter(s => estadoAuto(s) !== "cancelado").length}</StatVal>
                     </StatInfo>
                 </StatCard>
                 <StatCard>
@@ -297,15 +306,17 @@ export function SaasTemplate() {
                                 </InfoFila>
                                 <InfoFila>
                                     <InfoLabel>Plan</InfoLabel>
-                                    <InfoVal>{PLANES.find(p => p.key === s.plan)?.label ?? s.plan}</InfoVal>
+                                    <InfoVal>
+                                        {PLANES.find(p => p.key === s.plan)?.label ?? s.plan}
+                                        {" · "}
+                                        <TipoPlanPill $tipo={s.tipo_plan}>
+                                            {TIPOS_PLAN.find(t => t.key === s.tipo_plan)?.label.split("—")[0].trim() ?? s.tipo_plan}
+                                        </TipoPlanPill>
+                                    </InfoVal>
                                 </InfoFila>
                                 <InfoFila>
                                     <InfoLabel>Mensualidad</InfoLabel>
                                     <InfoVal $green>{formatCOP(s.valor_mensual)}</InfoVal>
-                                </InfoFila>
-                                <InfoFila>
-                                    <InfoLabel>Implementación</InfoLabel>
-                                    <InfoVal>{formatCOP(s.costo_implementacion)}</InfoVal>
                                 </InfoFila>
                                 {s.fecha_proximo_pago && (
                                     <InfoFila>
@@ -442,34 +453,61 @@ export function SaasTemplate() {
                                     <Input value={form.cedula_cliente} onChange={e => setForm({ ...form, cedula_cliente: e.target.value })} placeholder="Número de cédula" required />
                                 </Campo>
                             )}
-                            <FilaDos>
-                                <Campo>
-                                    <label>Actividad económica</label>
-                                    <Select value={form.actividad_economica} onChange={e => setForm({ ...form, actividad_economica: e.target.value })}>
-                                        {ACTIVIDADES.map(a => <option key={a.key} value={a.key}>{a.label}</option>)}
-                                    </Select>
-                                </Campo>
-                                <Campo>
-                                    <label>Plan de pago</label>
-                                    <Select value={form.plan} onChange={e => onCambioPlan(e.target.value)}>
-                                        {PLANES.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
-                                    </Select>
-                                </Campo>
-                            </FilaDos>
+                            <Campo>
+                                <label>Actividad económica</label>
+                                <Select value={form.actividad_economica} onChange={e => setForm({ ...form, actividad_economica: e.target.value })}>
+                                    {ACTIVIDADES.map(a => <option key={a.key} value={a.key}>{a.label}</option>)}
+                                </Select>
+                            </Campo>
+
+                            {/* ── Controles de retención (solo al editar) ── */}
+                            {editando && (
+                                <RetencionBox>
+                                    <RetencionTitulo>
+                                        <RiShieldLine /> Retención de cliente
+                                    </RetencionTitulo>
+                                    <FilaDos>
+                                        <Campo>
+                                            <label><RiCalendarLine style={{ verticalAlign: "middle" }} /> Gracia hasta (eximir mora)</label>
+                                            <Input type="date" value={form.gracia_hasta} onChange={e => setForm({ ...form, gracia_hasta: e.target.value })} />
+                                        </Campo>
+                                        <Campo>
+                                            <label><RiPercentLine style={{ verticalAlign: "middle" }} /> Descuento ({form.descuento_pct}%)</label>
+                                            <Input
+                                                type="range" min={0} max={100} step={5}
+                                                value={form.descuento_pct}
+                                                onChange={e => setForm({ ...form, descuento_pct: Number(e.target.value) })}
+                                                style={{ padding: "10px 0", cursor: "pointer" }}
+                                            />
+                                            {form.descuento_pct > 0 && (
+                                                <span style={{ fontSize: 12, color: "#4ade80", fontWeight: 700 }}>
+                                                    Nuevo valor: {formatCOP(Math.round((Number(form.valor_mensual) || 0) * (1 - form.descuento_pct / 100)))} /mes
+                                                </span>
+                                            )}
+                                        </Campo>
+                                    </FilaDos>
+                                </RetencionBox>
+                            )}
                             <FilaDos>
                                 <Campo>
                                     <label>Valor mensual</label>
                                     <InputReadonly>{formatCOP(Number(form.valor_mensual) || 0)}</InputReadonly>
                                 </Campo>
                                 <Campo>
-                                    <label>Costo implementación</label>
-                                    <Input
-                                        type="text"
-                                        inputMode="numeric"
-                                        value={form.costo_implementacion ? formatCOP(Number(form.costo_implementacion)) : ""}
-                                        onChange={e => setForm({ ...form, costo_implementacion: e.target.value.replace(/\D/g, "") })}
-                                        placeholder="$ 0"
-                                    />
+                                    <label>Etiqueta del plan</label>
+                                    <PlanBadgeWrap>
+                                        {TIPOS_PLAN.map(t => (
+                                            <PlanBadge
+                                                key={t.key}
+                                                type="button"
+                                                data-tipo={t.key}
+                                                $activo={form.tipo_plan === t.key}
+                                                onClick={() => setForm({ ...form, tipo_plan: t.key, valor_mensual: getPrecioTier(t.key) })}
+                                            >
+                                                {t.label.split("—")[0].trim()}
+                                            </PlanBadge>
+                                        ))}
+                                    </PlanBadgeWrap>
                                 </Campo>
                             </FilaDos>
                             {editando && (
@@ -785,3 +823,80 @@ const BtnGuardar = styled.button`
     font-family: "Poppins", sans-serif;
     &:disabled { opacity: 0.5; cursor: not-allowed; }
 `;
+
+/* ── Retención ── */
+const RetencionBox = styled.div`
+    background: rgba(129,140,248,0.06);
+    border: 1px solid rgba(129,140,248,0.2);
+    border-radius: 14px;
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 14px;
+`;
+
+const RetencionTitulo = styled.div`
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 800;
+    color: #a5b4fc;
+    font-family: "Poppins", sans-serif;
+    svg { font-size: 16px; }
+`;
+
+/* ── Plan badges selector ── */
+const PlanBadgeWrap = styled.div`
+    display: flex; gap: 8px; flex-wrap: wrap; padding: 4px 0;
+`;
+
+const PLAN_COLORS = {
+    chispa: { bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.5)", text: "#fbbf24",  activeBg: "rgba(251,191,36,0.25)" },
+    fuego:  { bg: "rgba(248,133,51,0.12)", border: "rgba(248,133,51,0.5)", text: "#f88533",  activeBg: "rgba(248,133,51,0.25)" },
+    cosmos: { bg: "rgba(129,140,248,0.12)", border: "rgba(129,140,248,0.5)", text: "#818cf8", activeBg: "rgba(129,140,248,0.25)" },
+};
+
+const PlanBadge = styled.button`
+    padding: 8px 14px; border-radius: 20px; cursor: pointer;
+    font-size: 12px; font-weight: 800; font-family: "Poppins", sans-serif;
+    transition: all 0.15s;
+    ${({ $activo, $tipo: _ }) => {
+        /* can't use $tipo here yet, use prop directly */
+        return "";
+    }}
+    background:    ${({ $activo, children: _ }) => $activo ? "transparent" : "transparent"};
+    border: 2px solid transparent;
+    color: rgba(255,255,255,0.4);
+
+    /* Set per-plan colors via data attr on parent — simpler to apply inline styles in JSX */
+    &[data-tipo="chispa"] {
+        border-color: ${({ $activo }) => $activo ? "rgba(251,191,36,0.8)" : "rgba(251,191,36,0.25)"};
+        background:   ${({ $activo }) => $activo ? "rgba(251,191,36,0.2)"  : "transparent"};
+        color:        ${({ $activo }) => $activo ? "#fbbf24" : "rgba(251,191,36,0.5)"};
+    }
+    &[data-tipo="fuego"] {
+        border-color: ${({ $activo }) => $activo ? "rgba(248,133,51,0.8)" : "rgba(248,133,51,0.25)"};
+        background:   ${({ $activo }) => $activo ? "rgba(248,133,51,0.2)"  : "transparent"};
+        color:        ${({ $activo }) => $activo ? "#f88533" : "rgba(248,133,51,0.5)"};
+    }
+    &[data-tipo="cosmos"] {
+        border-color: ${({ $activo }) => $activo ? "rgba(129,140,248,0.8)" : "rgba(129,140,248,0.25)"};
+        background:   ${({ $activo }) => $activo ? "rgba(129,140,248,0.2)"  : "transparent"};
+        color:        ${({ $activo }) => $activo ? "#818cf8" : "rgba(129,140,248,0.5)"};
+    }
+    &:hover { filter: brightness(1.2); }
+`;
+
+/* ── Tipo plan pill en tarjeta ── */
+const TIPO_COLORS = {
+    chispa: { color: "#fbbf24", bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.3)" },
+    fuego:  { color: "#f88533", bg: "rgba(248,133,51,0.12)",  border: "rgba(248,133,51,0.3)"  },
+    cosmos: { color: "#818cf8", bg: "rgba(129,140,248,0.12)", border: "rgba(129,140,248,0.3)" },
+};
+
+const TipoPlanPill = styled.span`
+    display: inline-flex; align-items: center;
+    padding: 2px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 800;
+    color:        ${({ $tipo }) => TIPO_COLORS[$tipo]?.color  ?? "#fff"};
+    background:   ${({ $tipo }) => TIPO_COLORS[$tipo]?.bg     ?? "transparent"};
+    border: 1px solid ${({ $tipo }) => TIPO_COLORS[$tipo]?.border ?? "transparent"};
+    font-family: "Poppins", sans-serif;
+`;
+

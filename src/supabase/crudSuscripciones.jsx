@@ -83,6 +83,7 @@ export async function InsertarSuscripcion(p) {
         apellido_cliente: apellido,
         cedula_cliente: p.cedula_cliente ?? "",
         plan: p.plan,
+        tipo_plan: p.tipo_plan ?? "chispa",
         valor_mensual: p.valor_mensual,
         costo_implementacion: p.costo_implementacion,
         estado: "al_dia",

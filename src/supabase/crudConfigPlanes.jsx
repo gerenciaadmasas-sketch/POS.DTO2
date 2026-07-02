@@ -10,10 +10,18 @@ export async function MostrarConfigPlanes() {
     return data ?? [];
 }
 
-export async function EditarPrecioPlan({ id, precio }) {
+export async function EditarPrecioTier({ id, precio_base }) {
     const { error } = await supabase
         .from("config_planes")
-        .update({ precio })
+        .update({ precio_base: Number(precio_base) || 0 })
         .eq("id", id);
     if (error) { toastError(error.message, "Planes › Editar"); throw error; }
+}
+
+// Fórmulas de precio según ciclo de facturación
+export function calcularPrecios(precio_base) {
+    const mensual    = precio_base;
+    const bimestral  = Math.round((precio_base * 2 * 0.95) / 1000) * 1000;   // 5% off
+    const trimestral = Math.round((precio_base * 3 * 0.90) / 1000) * 1000;   // 10% off
+    return { mensual, bimestral, trimestral };
 }
