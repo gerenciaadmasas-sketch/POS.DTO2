@@ -488,28 +488,22 @@ export function SaasTemplate() {
                                     </FilaDos>
                                 </RetencionBox>
                             )}
-                            <FilaDos>
-                                <Campo>
-                                    <label>Valor mensual</label>
-                                    <InputReadonly>{formatCOP(Number(form.valor_mensual) || 0)}</InputReadonly>
-                                </Campo>
-                                <Campo>
-                                    <label>Etiqueta del plan</label>
-                                    <PlanBadgeWrap>
-                                        {TIPOS_PLAN.map(t => (
-                                            <PlanBadge
-                                                key={t.key}
-                                                type="button"
-                                                data-tipo={t.key}
-                                                $activo={form.tipo_plan === t.key}
-                                                onClick={() => setForm({ ...form, tipo_plan: t.key, valor_mensual: getPrecioTier(t.key) })}
-                                            >
-                                                {t.label.split("—")[0].trim()}
-                                            </PlanBadge>
-                                        ))}
-                                    </PlanBadgeWrap>
-                                </Campo>
-                            </FilaDos>
+                            <Campo>
+                                <label>Etiqueta del plan</label>
+                                <PlanBadgeWrap>
+                                    {TIPOS_PLAN.map(t => (
+                                        <PlanBadge
+                                            key={t.key}
+                                            type="button"
+                                            data-tipo={t.key}
+                                            $activo={form.tipo_plan === t.key}
+                                            onClick={() => setForm({ ...form, tipo_plan: t.key, valor_mensual: getPrecioTier(t.key) })}
+                                        >
+                                            {t.label.split("—")[0].trim()}
+                                        </PlanBadge>
+                                    ))}
+                                </PlanBadgeWrap>
+                            </Campo>
                             {editando && (
                                 <Campo>
                                     <label>Fecha próximo pago</label>

@@ -1,6 +1,6 @@
 import { keyframes } from "styled-components";
 
 export const blurin = keyframes`
-    0%  { filter: blur(12px); opacity: 0; }
-    100%{ filter: blur(0);    opacity: 1; }
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
 `;
