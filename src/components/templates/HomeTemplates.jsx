@@ -95,11 +95,6 @@ export function HomeTemplates() {
 
     return (
         <Page>
-            <BgOrb $x="-10%" $y="-8%"  $size="600px" $color="rgba(248,133,51,0.12)"  $dur="7s" />
-            <BgOrb $x="70%"  $y="10%"  $size="400px" $color="rgba(99,102,241,0.10)"  $dur="9s"  $delay="1s" />
-            <BgOrb $x="20%"  $y="55%"  $size="350px" $color="rgba(52,211,153,0.08)"  $dur="11s" $delay="2s" />
-            <BgOrb $x="80%"  $y="75%"  $size="500px" $color="rgba(248,133,51,0.08)"  $dur="8s"  $delay="0.5s" />
-            <BgLines />
             <Inner>
                 {/* ── Header ── */}
                 <HeaderSection>
@@ -144,12 +139,6 @@ const fadeUp = keyframes`
     to   { opacity: 1; transform: none; }
 `;
 
-const floatOrb = keyframes`
-    0%, 100% { transform: translate(0, 0)   scale(1); }
-    33%       { transform: translate(30px, -20px) scale(1.08); }
-    66%       { transform: translate(-20px, 15px) scale(0.95); }
-`;
-
 const glowPulse = keyframes`
     0%, 100% { box-shadow: 0 0 12px var(--glow); }
     50%      { box-shadow: 0 0 24px var(--glow); }
@@ -158,39 +147,12 @@ const glowPulse = keyframes`
 /* ── Layout ── */
 const Page = styled.div`
     min-height: 100vh;
-    background: #07090f;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 40px 24px;
-    position: relative;
-    overflow: hidden;
 
     @media (max-width: 767px) { padding: 78px 16px 24px; align-items: flex-start; }
-`;
-
-const BgOrb = styled.div`
-    position: fixed;
-    left:   ${({ $x }) => $x};
-    top:    ${({ $y }) => $y};
-    width:  ${({ $size }) => $size};
-    height: ${({ $size }) => $size};
-    border-radius: 50%;
-    background: ${({ $color }) => $color};
-    filter: blur(80px);
-    pointer-events: none;
-    z-index: 0;
-    animation: ${floatOrb} ${({ $dur }) => $dur} ease-in-out infinite;
-    animation-delay: ${({ $delay }) => $delay ?? "0s"};
-`;
-
-const BgLines = styled.div`
-    position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    background-image:
-        linear-gradient(rgba(248,133,51,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(248,133,51,0.03) 1px, transparent 1px);
-    background-size: 56px 56px;
-    mask-image: radial-gradient(ellipse at 50% 40%, black 30%, transparent 80%);
 `;
 
 const Inner = styled.div`

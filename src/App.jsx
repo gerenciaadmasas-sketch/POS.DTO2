@@ -21,6 +21,12 @@ function App() {
       <AuthContextProvider>
         <GlobalStyles />
         {!isLoginRoute ? (
+          <>
+          <BgOrb $x="-5%"  $y="-5%"  $c="rgba(248,133,51,0.10)" $s="700px" $dur="9s"  />
+          <BgOrb $x="65%"  $y="12%"  $c="rgba(99,102,241,0.08)" $s="500px" $dur="11s" $delay="2s" />
+          <BgOrb $x="25%"  $y="62%"  $c="rgba(52,211,153,0.06)" $s="450px" $dur="13s" $delay="4s" />
+          <BgOrb $x="82%"  $y="72%"  $c="rgba(248,133,51,0.07)" $s="400px" $dur="8s"  $delay="1s" />
+          <BgLines />
           <Container className={sidebarOpen ? "active" : ""}>
             <section className="contentSidebar">
               <Sidebar
@@ -43,6 +49,7 @@ function App() {
               <MobileOverlay onClick={() => setSidebarOpen(false)} />
             )}
           </Container>
+          </>
         ) : (
           <Myroutes />
         )}
@@ -140,6 +147,37 @@ const MobileOverlay = styled.div`
   @media ${Device.tablet} {
     display: none;
   }
+`;
+
+/* ── Global background ── */
+const floatOrb = keyframes`
+    0%, 100% { transform: translate(0, 0)   scale(1); }
+    33%       { transform: translate(30px, -20px) scale(1.08); }
+    66%       { transform: translate(-20px, 15px) scale(0.95); }
+`;
+
+const BgOrb = styled.div`
+    position: fixed;
+    left:   ${({ $x }) => $x};
+    top:    ${({ $y }) => $y};
+    width:  ${({ $s }) => $s};
+    height: ${({ $s }) => $s};
+    border-radius: 50%;
+    background: ${({ $c }) => $c};
+    filter: blur(90px);
+    pointer-events: none;
+    z-index: 0;
+    animation: ${floatOrb} ${({ $dur }) => $dur} ease-in-out infinite;
+    animation-delay: ${({ $delay }) => $delay ?? "0s"};
+`;
+
+const BgLines = styled.div`
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+        linear-gradient(rgba(248,133,51,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(248,133,51,0.03) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at 50% 40%, black 30%, transparent 80%);
 `;
 
 export default App;

@@ -56,13 +56,13 @@ export const Light = {
 ───────────────────────────────────────────────────────────── */
 export const Dark = {
   /* Fondos — capas con profundidad real */
-  bgtotal:      "#0E1C2A",      /* página: azul marino profundo        */
-  bgcards:      "#162436",      /* cards: una capa arriba              */
-  bgtgderecha:  "#1C2E42",      /* área secundaria                     */
-  bg:           "#162436",
-  bg2:          "#0E1C2A",
-  bg3:          "#1C2E42",
-  bg4:          "#253D56",
+  bgtotal:      "#07090f",      /* página: negro profundo futurista    */
+  bgcards:      "#0f1520",      /* cards: una capa arriba              */
+  bgtgderecha:  "#111827",      /* área secundaria                     */
+  bg:           "#0f1520",
+  bg2:          "#07090f",
+  bg3:          "#111827",
+  bg4:          "#1a2233",
   bg5:          "#84d8ff",
   bg6:          "rgba(132,216,255,0.08)",
   bgAlpha:      "rgba(255,255,255,0.04)",
@@ -87,8 +87,8 @@ export const Dark = {
   navHeight: "5rem",
 
   /* Misc */
-  body:         "#0E1C2A",
-  bodyRgba:     "14,28,42",
+  body:         "#07090f",
+  bodyRgba:     "7,9,15",
   textRgba:     "216,232,245",
   carouselColor:"#9955ff",
   whiteBg:      "#f59674",

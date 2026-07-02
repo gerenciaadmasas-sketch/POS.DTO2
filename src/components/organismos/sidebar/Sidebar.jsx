@@ -1,5 +1,4 @@
 import styled, { keyframes } from "styled-components";
-import { ToggleTema } from "../ToggleTema";
 import { LinksArray, SecondarylinksArray } from "../../../utils/dataEstatica";
 import { v } from "../../../styles/variables";
 import { NavLink } from "react-router-dom";
@@ -126,9 +125,6 @@ export function Sidebar({ state, setState, onNavClick }) {
                 </BtnSalir>
             </Nav>
 
-            <Bottom>
-                <ToggleTema />
-            </Bottom>
         </Wrap>
     );
 }
@@ -368,9 +364,3 @@ const BtnSalir = styled.button`
     &:hover { background: rgba(248, 113, 113, 0.12); color: #f87171; }
 `;
 
-const Bottom = styled.div`
-    display: flex;
-    justify-content: center;
-    padding-top: 10px;
-    border-top: 1px solid ${({ theme }) => theme.color2};
-`;
