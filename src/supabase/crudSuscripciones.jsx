@@ -27,7 +27,7 @@ export async function InsertarSuscripcion(p) {
         usuario = `${usuarioBase}${intento}`;
     }
 
-    const password = p.cedula_cliente ?? "123456";
+    const password = p.cedula_cliente || "123456";
     const nombreEmpresa = `${nombre} ${apellido}`.trim();
 
     // 1. Crear empresa aislada (tenant)

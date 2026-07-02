@@ -328,7 +328,9 @@ export function SaasTemplate() {
                                         </InfoFila>
                                         <InfoFila>
                                             <InfoLabel>Contraseña</InfoLabel>
-                                            <InfoVal style={{ fontFamily: "monospace" }}>{s.password_admin}</InfoVal>
+                                            <InfoVal style={{ fontFamily: "monospace" }}>
+                                                {s.password_admin || <span style={{ color: "rgba(255,255,255,0.3)", fontStyle: "italic", fontFamily: "inherit" }}>No registrada</span>}
+                                            </InfoVal>
                                         </InfoFila>
                                     </CredencialesBox>
                                 )}

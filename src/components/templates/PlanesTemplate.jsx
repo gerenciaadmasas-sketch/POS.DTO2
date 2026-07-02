@@ -5,6 +5,7 @@ import { v } from "../../styles/variables";
 import { useAuthStore } from "../../store/AuthStore";
 import { ObtenerEmailPorUsuario } from "../../supabase/crudUsuarios";
 import { CrearProspecto } from "../../supabase/crudProspectos";
+import ConfettiExplosion from "react-confetti-explosion";
 import {
     RiArrowLeftSLine, RiCheckLine, RiCloseLine,
     RiFlashlightLine, RiFireLine, RiPlanetLine,
@@ -14,7 +15,8 @@ import {
     RiArchiveLine, RiPrinterLine, RiStarLine,
     RiSmartphoneLine, RiInfinityLine, RiVipCrownLine,
     RiTimeLine, RiGroupLine, RiEyeLine, RiEyeOffLine,
-    RiPhoneLine,
+    RiPhoneLine, RiLockLine, RiCheckboxCircleFill,
+    RiShieldLine, RiMailLine,
 } from "react-icons/ri";
 
 /* ─────────────────────────────────────────
@@ -102,6 +104,12 @@ const PLANES = [
     },
 ];
 
+const PROCESS_MSGS = [
+    "Validando tu información...",
+    "Conectando de forma segura...",
+    "Preparando tu panel de control...",
+];
+
 const STATS = [
     { val: "200+", label: "negocios activos" },
     { val: "99.9%", label: "uptime garantizado" },
@@ -129,8 +137,32 @@ export function PlanesTemplate() {
     const [regOk, setRegOk]               = useState(false);
     const [regError, setRegError]         = useState("");
 
+    /* ── Estado de pasarela de pago ── */
+    const [pagoOpen, setPagoOpen]       = useState(false);
+    const [planPago, setPlanPago]       = useState(null);
+    const [pasoPago, setPasoPago]       = useState("datos"); // datos | procesando | exito
+    const [pagoForm, setPagoForm]       = useState({ nombre: "", apellido: "", email: "", empresa: "", telefono: "" });
+    const [pagoMsgIdx, setPagoMsgIdx]   = useState(0);
+
     const abrirRegistro  = () => { setRegistroOpen(true); setRegOk(false); setRegError(""); setRegForm({ nombre: "", apellido: "", telefono: "", contacto_preferido: "whatsapp", negocio: "" }); };
     const cerrarRegistro = () => { setRegistroOpen(false); setRegOk(false); };
+
+    const abrirPago = (plan) => {
+        setPlanPago(plan);
+        setPasoPago("datos");
+        setPagoForm({ nombre: "", apellido: "", email: "", empresa: "", telefono: "" });
+        setPagoMsgIdx(0);
+        setPagoOpen(true);
+    };
+    const cerrarPago = () => { setPagoOpen(false); };
+    const handlePago = (e) => {
+        e.preventDefault();
+        setPasoPago("procesando");
+        setPagoMsgIdx(0);
+        // ─── WOMPI (pendiente): crear link de pago y redirigir ───
+        // const link = await crearPagoWompi({ plan: planPago.id, precio, email: pagoForm.email })
+        // window.location.href = link;
+    };
 
     const handleRegistro = async (e) => {
         e.preventDefault();
@@ -165,9 +197,23 @@ export function PlanesTemplate() {
     }, [loginOpen]);
 
     useEffect(() => {
-        document.body.style.overflow = loginOpen ? "hidden" : "";
+        document.body.style.overflow = (loginOpen || registroOpen || pagoOpen) ? "hidden" : "";
         return () => { document.body.style.overflow = ""; };
-    }, [loginOpen]);
+    }, [loginOpen, registroOpen, pagoOpen]);
+
+    /* procesando → exito después de 3s */
+    useEffect(() => {
+        if (pasoPago !== "procesando") return;
+        const t = setTimeout(() => setPasoPago("exito"), 3200);
+        return () => clearTimeout(t);
+    }, [pasoPago]);
+
+    /* ciclar mensajes del procesador */
+    useEffect(() => {
+        if (pasoPago !== "procesando") { setPagoMsgIdx(0); return; }
+        const t = setInterval(() => setPagoMsgIdx(i => (i >= PROCESS_MSGS.length - 1 ? i : i + 1)), 1060);
+        return () => clearInterval(t);
+    }, [pasoPago]);
 
     const abrirLogin = () => {
         setLoginOpen(true);
@@ -323,7 +369,7 @@ export function PlanesTemplate() {
                                 $colorAlt={plan.colorAlt}
                                 $glow={plan.glow}
                                 $popular={plan.popular}
-                                onClick={abrirLogin}
+                                onClick={() => abrirPago(plan)}
                             >
                                 {plan.popular ? "Comenzar con Fuego 🔥" : `Elegir ${plan.nombre}`}
                             </BtnPlan>
@@ -408,7 +454,7 @@ export function PlanesTemplate() {
                     <span>POS<b>.DTO2</b></span>
                 </FooterLogo>
                 <FooterTexto>© {new Date().getFullYear()} ADMA BI · Todos los derechos reservados</FooterTexto>
-                <FooterTexto>Medellín, Colombia 🇨🇴</FooterTexto>
+                <FooterTexto>Bogotá, Colombia 🇨🇴</FooterTexto>
             </PlanFooter>
         </Pagina>
 
@@ -424,13 +470,20 @@ export function PlanesTemplate() {
             </DrawerLogo>
 
             {regOk ? (
-                <>
-                <DrawerTitle>¡Listo! Te contactamos pronto 🎉</DrawerTitle>
-                <DrawerSub>Recibimos tu información. En poco tiempo uno de nuestros asesores se pondrá en contacto contigo para ayudarte a elegir el plan ideal.</DrawerSub>
-                <BtnIngresar type="button" disabled={false} onClick={cerrarRegistro} style={{ marginTop: "8px" }}>
-                    Cerrar
-                </BtnIngresar>
-                </>
+                <RegExitoWrap>
+                    <ConfettiCenter>
+                        <ConfettiExplosion force={0.65} duration={3200} particleCount={180} width={600}
+                            colors={['#f88533','#fbbf24','#34d399','#818cf8','#fff','#f87171']} />
+                    </ConfettiCenter>
+                    <RegExitoCirculo>🚀</RegExitoCirculo>
+                    <DrawerTitle style={{ textAlign:"center" }}>¡Listo! Te contactamos pronto</DrawerTitle>
+                    <DrawerSub style={{ textAlign:"center" }}>
+                        Recibimos tu información. En poco tiempo uno de nuestros asesores se pondrá en contacto contigo para ayudarte a elegir el plan ideal.
+                    </DrawerSub>
+                    <BtnIngresar type="button" disabled={false} onClick={cerrarRegistro} style={{ marginTop: "8px" }}>
+                        Cerrar
+                    </BtnIngresar>
+                </RegExitoWrap>
             ) : (
                 <>
                 <DrawerTitle>Empieza hoy mismo</DrawerTitle>
@@ -490,6 +543,162 @@ export function PlanesTemplate() {
                 </>
             )}
         </LoginDrawer>
+
+        {/* ══ PASARELA DE PAGO ══ */}
+        <Overlay $open={pagoOpen} onClick={pasoPago === "datos" ? cerrarPago : undefined} />
+        <PagoDrawerWrap $open={pagoOpen}>
+            <DrawerHandle />
+            {pasoPago !== "procesando" && (
+                <BtnCerrar onClick={cerrarPago}><RiCloseLine /></BtnCerrar>
+            )}
+
+            {/* ─── PASO 1: Datos ─── */}
+            {pasoPago === "datos" && planPago && (
+                <>
+                    <PagoMiniPlan $color={planPago.color} $glow={planPago.glow}>
+                        <PagoMiniLeft>
+                            <PagoMiniEmoji>{planPago.emoji}</PagoMiniEmoji>
+                            <div>
+                                <PagoMiniNombre $color={planPago.color}>Plan {planPago.nombre}</PagoMiniNombre>
+                                <PagoMiniPeriodo>{anual ? "Facturación anual · −20%" : "Facturación mensual"}</PagoMiniPeriodo>
+                            </div>
+                        </PagoMiniLeft>
+                        <PagoMiniPrecio $color={planPago.color}>
+                            {formatCOP(anual ? planPago.precio_ano : planPago.precio_mes)}
+                            <PagoMiniPer>/mes</PagoMiniPer>
+                        </PagoMiniPrecio>
+                    </PagoMiniPlan>
+
+                    <DrawerTitle>Datos para tu cuenta</DrawerTitle>
+                    <DrawerSub>Completa la información para activar tu plan</DrawerSub>
+
+                    <LoginForm onSubmit={handlePago}>
+                        <RegRow>
+                            <InputGroup>
+                                <InputLabel>Nombre *</InputLabel>
+                                <InputField type="text" placeholder="Tu nombre" value={pagoForm.nombre}
+                                    onChange={e => setPagoForm(f => ({...f, nombre: e.target.value}))} required />
+                            </InputGroup>
+                            <InputGroup>
+                                <InputLabel>Apellido *</InputLabel>
+                                <InputField type="text" placeholder="Tu apellido" value={pagoForm.apellido}
+                                    onChange={e => setPagoForm(f => ({...f, apellido: e.target.value}))} required />
+                            </InputGroup>
+                        </RegRow>
+                        <InputGroup>
+                            <InputLabel>Correo electrónico *</InputLabel>
+                            <InputField type="email" placeholder="tu@empresa.com" value={pagoForm.email}
+                                onChange={e => setPagoForm(f => ({...f, email: e.target.value}))} required />
+                        </InputGroup>
+                        <InputGroup>
+                            <InputLabel>Empresa / negocio *</InputLabel>
+                            <InputField type="text" placeholder="Nombre de tu negocio" value={pagoForm.empresa}
+                                onChange={e => setPagoForm(f => ({...f, empresa: e.target.value}))} required />
+                        </InputGroup>
+                        <InputGroup>
+                            <InputLabel>Teléfono</InputLabel>
+                            <InputField type="tel" placeholder="Ej: 3001234567" value={pagoForm.telefono}
+                                onChange={e => setPagoForm(f => ({...f, telefono: e.target.value}))} />
+                        </InputGroup>
+
+                        <PagoSubtotal $color={planPago.color}>
+                            <PagoSubRow>
+                                <span>Plan {planPago.nombre} · {anual ? "Anual" : "Mensual"}</span>
+                                <span>{formatCOP(anual ? planPago.precio_ano : planPago.precio_mes)}/mes</span>
+                            </PagoSubRow>
+                            {anual && (
+                                <PagoSubRow $highlight>
+                                    <span>Total a facturar hoy</span>
+                                    <span style={{ color: planPago.color, fontWeight: 900 }}>
+                                        {formatCOP(planPago.precio_ano * 12)}/año
+                                    </span>
+                                </PagoSubRow>
+                            )}
+                        </PagoSubtotal>
+
+                        <BtnPagoSubmit type="submit" $color={planPago.color} $colorAlt={planPago.colorAlt} $glow={planPago.glow}
+                            disabled={!pagoForm.nombre || !pagoForm.apellido || !pagoForm.email || !pagoForm.empresa}>
+                            <RiLockLine /> Ir al pago seguro →
+                        </BtnPagoSubmit>
+                    </LoginForm>
+
+                    <PagoSeguridad>
+                        <RiShieldLine /> Pago cifrado · Sin permanencia · Cancela cuando quieras
+                    </PagoSeguridad>
+                </>
+            )}
+
+            {/* ─── PASO 2: Procesando ─── */}
+            {pasoPago === "procesando" && planPago && (
+                <PagoProc>
+                    <OrbitWrap>
+                        <OrbitRing $color={planPago.color}>
+                            <OrbitDot $color={planPago.color} />
+                        </OrbitRing>
+                        <OrbitRing2 $color={planPago.color}>
+                            <OrbitDot2 $color={planPago.colorAlt} />
+                        </OrbitRing2>
+                        <OrbitCenter>
+                            <img src={v.logo} alt="logo" width={38} height={38} style={{ objectFit:"contain" }} />
+                        </OrbitCenter>
+                    </OrbitWrap>
+                    <PagoProcEmoji>{planPago.emoji}</PagoProcEmoji>
+                    <PagoProcTitle>Procesando tu pago</PagoProcTitle>
+                    <PagoProcMsg key={pagoMsgIdx}>{PROCESS_MSGS[pagoMsgIdx]}</PagoProcMsg>
+                    <ProgressBar>
+                        <ProgressFill $color={planPago.color} />
+                    </ProgressBar>
+                    <PagoProcNote>🔒 Conexión segura · No cierres esta ventana</PagoProcNote>
+                </PagoProc>
+            )}
+
+            {/* ─── PASO 3: Éxito ─── */}
+            {pasoPago === "exito" && planPago && (
+                <PagoExito>
+                    <ConfettiCenter>
+                        <ConfettiExplosion force={0.75} duration={3800} particleCount={220} width={900}
+                            colors={['#f88533','#fbbf24', planPago.color,'#34d399','#fff','#f87171','#c084fc']} />
+                    </ConfettiCenter>
+
+                    <CheckCircle $color={planPago.color} $glow={planPago.glow}>
+                        <RiCheckboxCircleFill />
+                    </CheckCircle>
+
+                    <ExitoTitle>¡{pagoForm.nombre ? `${pagoForm.nombre.split(" ")[0]}, bienvenido` : "¡Bienvenido"}! 🎉</ExitoTitle>
+                    <ExitoSub>Tu plan <b style={{ color: planPago.color }}>{planPago.nombre}</b> está listo para activarse.</ExitoSub>
+
+                    <ExitoPlanCard $color={planPago.color} $glow={planPago.glow}>
+                        <ExitoPlanHeader>
+                            <ExitoPlanEmoji>{planPago.emoji}</ExitoPlanEmoji>
+                            <div>
+                                <ExitoPlanNombre $color={planPago.color}>{planPago.nombre}</ExitoPlanNombre>
+                                <ExitoPlanPrecio>
+                                    {formatCOP(anual ? planPago.precio_ano : planPago.precio_mes)}/mes
+                                    · {anual ? "facturación anual" : "facturación mensual"}
+                                </ExitoPlanPrecio>
+                            </div>
+                        </ExitoPlanHeader>
+                        <ExitoFeatures>
+                            {planPago.features.filter(f => f.ok).slice(0, 5).map((f, i) => (
+                                <ExitoFeatureRow key={i} $color={planPago.color}>
+                                    <RiCheckLine /> {f.txt}
+                                </ExitoFeatureRow>
+                            ))}
+                        </ExitoFeatures>
+                    </ExitoPlanCard>
+
+                    <BtnIngresar type="button" onClick={() => { cerrarPago(); abrirLogin(); }}>
+                        Ingresar a mi panel →
+                    </BtnIngresar>
+
+                    {pagoForm.email && (
+                        <ExitoNota>
+                            <RiMailLine /> Confirmación enviada a <b>{pagoForm.email}</b>
+                        </ExitoNota>
+                    )}
+                </PagoExito>
+            )}
+        </PagoDrawerWrap>
 
         {/* ══ MODAL DE LOGIN ══ */}
         <Overlay $open={loginOpen} onClick={cerrarLogin} />
@@ -1332,4 +1541,291 @@ const FooterLogo = styled.button`
 
 const FooterTexto = styled.span`
     font-size: 12px; color: rgba(255,255,255,0.2);
+`;
+
+/* ══════════════════════════════════════
+   PASARELA DE PAGO — STYLED COMPONENTS
+══════════════════════════════════════ */
+const orbit1 = keyframes`
+    from { transform: rotate(0deg) translateX(62px) rotate(0deg); }
+    to   { transform: rotate(360deg) translateX(62px) rotate(-360deg); }
+`;
+const orbit2 = keyframes`
+    from { transform: rotate(180deg) translateX(44px) rotate(-180deg); }
+    to   { transform: rotate(540deg) translateX(44px) rotate(-540deg); }
+`;
+const progressAnim = keyframes`
+    0%   { width: 0%; }
+    30%  { width: 35%; }
+    65%  { width: 72%; }
+    85%  { width: 88%; }
+    100% { width: 96%; }
+`;
+const msgFadeIn = keyframes`
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+`;
+const checkPop = keyframes`
+    0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+    60%  { transform: scale(1.18) rotate(5deg); opacity: 1; }
+    80%  { transform: scale(0.93) rotate(-2deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+`;
+const slideCard = keyframes`
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+`;
+
+const PagoDrawerWrap = styled.div`
+    position: fixed; z-index: 301;
+    background: #080b12;
+    display: flex; flex-direction: column; gap: 16px;
+
+    @media (min-width: 769px) {
+        top: 0; right: 0; bottom: 0; width: 480px;
+        padding: 40px 36px;
+        border-left: 1px solid rgba(255,255,255,0.07);
+        box-shadow: -16px 0 64px rgba(0,0,0,0.7);
+        transform: ${({ $open }) => $open ? "translateX(0)" : "translateX(100%)"};
+        opacity: ${({ $open }) => $open ? 1 : 0};
+        transition: transform 0.38s cubic-bezier(0.4,0,0.2,1), opacity 0.38s ease;
+        overflow-y: auto;
+    }
+
+    @media (max-width: 768px) {
+        left: 0; right: 0; bottom: 0;
+        border-radius: 28px 28px 0 0;
+        padding: 12px 22px 40px;
+        border-top: 1px solid rgba(255,255,255,0.07);
+        box-shadow: 0 -16px 64px rgba(0,0,0,0.8);
+        transform: ${({ $open }) => $open ? "translateY(0)" : "translateY(100%)"};
+        opacity: ${({ $open }) => $open ? 1 : 0};
+        transition: transform 0.38s cubic-bezier(0.4,0,0.2,1), opacity 0.38s ease;
+        max-height: 93vh; overflow-y: auto;
+    }
+`;
+
+/* Mini resumen del plan seleccionado */
+const PagoMiniPlan = styled.div`
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; border-radius: 16px;
+    background: ${({ $color }) => `${$color}12`};
+    border: 1.5px solid ${({ $color }) => `${$color}35`};
+    box-shadow: 0 0 28px ${({ $glow }) => $glow};
+`;
+const PagoMiniLeft = styled.div`
+    display: flex; align-items: center; gap: 12px;
+`;
+const PagoMiniEmoji = styled.span`
+    font-size: 28px; line-height: 1;
+`;
+const PagoMiniNombre = styled.span`
+    display: block; font-size: 15px; font-weight: 900;
+    color: ${({ $color }) => $color};
+`;
+const PagoMiniPeriodo = styled.span`
+    display: block; font-size: 11px; color: rgba(255,255,255,0.35); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.3px;
+`;
+const PagoMiniPrecio = styled.div`
+    font-size: 20px; font-weight: 900;
+    color: ${({ $color }) => $color};
+    display: flex; align-items: baseline; gap: 3px;
+`;
+const PagoMiniPer = styled.span`
+    font-size: 12px; color: rgba(255,255,255,0.35); font-weight: 600;
+`;
+
+/* Subtotal box */
+const PagoSubtotal = styled.div`
+    border-radius: 12px; padding: 14px 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid ${({ $color }) => `${$color}25`};
+    display: flex; flex-direction: column; gap: 8px;
+`;
+const PagoSubRow = styled.div`
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: ${({ $highlight }) => $highlight ? "14px" : "13px"};
+    font-weight: ${({ $highlight }) => $highlight ? "800" : "600"};
+    color: ${({ $highlight }) => $highlight ? "#fff" : "rgba(255,255,255,0.45)"};
+    border-top: ${({ $highlight }) => $highlight ? "1px solid rgba(255,255,255,0.08)" : "none"};
+    padding-top: ${({ $highlight }) => $highlight ? "8px" : "0"};
+`;
+
+/* Botón de pago con color del plan */
+const BtnPagoSubmit = styled.button`
+    width: 100%; padding: 16px 20px; min-height: 56px; border-radius: 14px;
+    border: 2px solid ${({ $colorAlt, disabled }) => disabled ? "rgba(255,255,255,0.08)" : `${$colorAlt}99`};
+    background: ${({ $color, $colorAlt, disabled }) => disabled
+        ? "rgba(255,255,255,0.05)"
+        : `linear-gradient(135deg, ${$color} 0%, ${$colorAlt} 100%)`};
+    color: ${({ disabled }) => disabled ? "rgba(255,255,255,0.3)" : "#fff"};
+    font-size: 15px; font-weight: 800;
+    font-family: "Poppins", sans-serif;
+    cursor: ${({ disabled }) => disabled ? "not-allowed" : "pointer"};
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    box-shadow: ${({ $glow, disabled }) => disabled ? "none" : `0 6px 24px ${$glow}, 4px 4px 0 rgba(0,0,0,0.3)`};
+    transition: filter 0.15s, transform 0.15s, box-shadow 0.15s;
+    letter-spacing: 0.2px;
+    &:hover:not(:disabled) { filter: brightness(1.12); transform: translateY(-2px); }
+    &:active:not(:disabled) { transform: translate(2px,2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.4); }
+`;
+
+/* Nota de seguridad */
+const PagoSeguridad = styled.p`
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    font-size: 12px; color: rgba(255,255,255,0.28); text-align: center; margin: 0;
+    svg { font-size: 14px; color: rgba(52,211,153,0.7); }
+`;
+
+/* ── Paso 2: Procesando ── */
+const PagoProc = styled.div`
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 20px; padding: 20px 0;
+    text-align: center;
+`;
+const OrbitWrap = styled.div`
+    position: relative;
+    width: 148px; height: 148px;
+    display: flex; align-items: center; justify-content: center;
+`;
+const OrbitRing = styled.div`
+    position: absolute;
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    border: 1.5px dashed ${({ $color }) => `${$color}40`};
+    display: flex; align-items: center; justify-content: center;
+`;
+const OrbitDot = styled.div`
+    width: 10px; height: 10px; border-radius: 50%;
+    background: ${({ $color }) => $color};
+    box-shadow: 0 0 12px ${({ $color }) => $color}, 0 0 4px ${({ $color }) => $color};
+    position: absolute;
+    animation: ${orbit1} 2.4s linear infinite;
+`;
+const OrbitRing2 = styled.div`
+    position: absolute;
+    width: 96px; height: 96px;
+    border-radius: 50%;
+    border: 1.5px dashed ${({ $color }) => `${$color}30`};
+`;
+const OrbitDot2 = styled.div`
+    width: 7px; height: 7px; border-radius: 50%;
+    background: ${({ $color }) => $color};
+    box-shadow: 0 0 8px ${({ $color }) => $color};
+    position: absolute;
+    animation: ${orbit2} 1.8s linear infinite;
+`;
+const OrbitCenter = styled.div`
+    position: absolute; z-index: 2;
+    width: 60px; height: 60px; border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    animation: ${pulse} 2s ease-in-out infinite;
+`;
+const PagoProcEmoji = styled.div`
+    font-size: 36px; line-height: 1;
+    animation: ${pulse} 1.6s ease-in-out infinite;
+`;
+const PagoProcTitle = styled.h3`
+    font-size: 22px; font-weight: 900; color: #fff; margin: 0;
+`;
+const PagoProcMsg = styled.p`
+    font-size: 13px; color: rgba(255,255,255,0.45); margin: 0;
+    animation: ${msgFadeIn} 0.4s ease;
+`;
+const ProgressBar = styled.div`
+    width: 100%; max-width: 280px; height: 5px;
+    border-radius: 999px; background: rgba(255,255,255,0.07);
+    overflow: hidden;
+`;
+const ProgressFill = styled.div`
+    height: 100%; border-radius: 999px;
+    background: ${({ $color }) => `linear-gradient(90deg, ${$color}99, ${$color})`};
+    animation: ${progressAnim} 3.2s cubic-bezier(0.4,0,0.2,1) forwards;
+`;
+const PagoProcNote = styled.p`
+    font-size: 11px; color: rgba(255,255,255,0.22); margin: 0;
+    letter-spacing: 0.2px;
+`;
+
+/* ── Paso 3: Éxito ── */
+const PagoExito = styled.div`
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 16px; padding: 8px 0;
+    text-align: center; position: relative;
+`;
+const ConfettiCenter = styled.div`
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    pointer-events: none; z-index: 10;
+`;
+const CheckCircle = styled.div`
+    width: 80px; height: 80px; border-radius: 50%;
+    background: ${({ $color }) => `${$color}18`};
+    border: 3px solid ${({ $color }) => $color};
+    box-shadow: 0 0 40px ${({ $glow }) => $glow}, 0 0 12px ${({ $glow }) => $glow};
+    display: flex; align-items: center; justify-content: center;
+    color: ${({ $color }) => $color}; font-size: 44px;
+    animation: ${checkPop} 0.65s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    margin-top: 8px;
+`;
+const ExitoTitle = styled.h2`
+    font-size: 22px; font-weight: 900; color: #fff;
+    margin: 0; letter-spacing: -0.3px;
+    animation: ${slideCard} 0.5s 0.2s ease both;
+`;
+const ExitoSub = styled.p`
+    font-size: 14px; color: rgba(255,255,255,0.45); margin: 0; line-height: 1.5;
+    animation: ${slideCard} 0.5s 0.3s ease both;
+`;
+const ExitoPlanCard = styled.div`
+    width: 100%; border-radius: 18px; padding: 18px;
+    background: ${({ $color }) => `${$color}10`};
+    border: 1.5px solid ${({ $color }) => `${$color}30`};
+    box-shadow: 0 0 32px ${({ $glow }) => $glow};
+    display: flex; flex-direction: column; gap: 14px;
+    animation: ${slideCard} 0.5s 0.4s ease both;
+`;
+const ExitoPlanHeader = styled.div`
+    display: flex; align-items: center; gap: 12px;
+`;
+const ExitoPlanEmoji = styled.span`
+    font-size: 32px;
+`;
+const ExitoPlanNombre = styled.span`
+    display: block; font-size: 17px; font-weight: 900;
+    color: ${({ $color }) => $color};
+`;
+const ExitoPlanPrecio = styled.span`
+    display: block; font-size: 12px; color: rgba(255,255,255,0.38);
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px;
+`;
+const ExitoFeatures = styled.ul`
+    list-style: none; margin: 0; padding: 0;
+    display: flex; flex-direction: column; gap: 8px;
+`;
+const ExitoFeatureRow = styled.li`
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.75);
+    svg { color: ${({ $color }) => $color}; font-size: 15px; flex-shrink: 0; }
+`;
+const ExitoNota = styled.p`
+    font-size: 12px; color: rgba(255,255,255,0.3); margin: 0;
+    display: flex; align-items: center; gap: 5px;
+    svg { font-size: 14px; }
+    b { color: rgba(255,255,255,0.5); }
+    animation: ${slideCard} 0.5s 0.6s ease both;
+`;
+
+/* ── Éxito del formulario de registro ── */
+const RegExitoWrap = styled.div`
+    display: flex; flex-direction: column; align-items: center;
+    gap: 16px; padding: 12px 0; text-align: center;
+    position: relative;
+`;
+const RegExitoCirculo = styled.div`
+    font-size: 64px; line-height: 1;
+    animation: ${checkPop} 0.7s cubic-bezier(0.34,1.56,0.64,1) forwards;
 `;
