@@ -1,7 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import styled, { keyframes, css } from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { v } from "../../styles/variables";
+import { useQuery } from "@tanstack/react-query";
+import { MostrarConfigPlanes } from "../../supabase/crudConfigPlanes";
 import { useAuthStore } from "../../store/AuthStore";
 import { ObtenerEmailPorUsuario } from "../../supabase/crudUsuarios";
 import { CrearProspecto, CerrarProspectoPago } from "../../supabase/crudProspectos";
@@ -32,7 +34,7 @@ const PLANES = [
         sub: "Para tu primera tienda — simple, rápido y sin complicaciones.",
         badge: "Ideal para comenzar",
         precio_mes: 49000,
-        precio_ano: 39000,
+        precio_ano: 42000,
         color: "#818cf8",
         colorAlt: "#6366f1",
         colorDark: "#4338ca",
@@ -58,7 +60,7 @@ const PLANES = [
         sub: "Para negocios que ya saben lo que quieren y van por más.",
         badge: "⭐ El más elegido",
         precio_mes: 129000,
-        precio_ano: 99000,
+        precio_ano: 110000,
         color: "#f88533",
         colorAlt: "#f56a00",
         colorDark: "#b45309",
@@ -85,7 +87,7 @@ const PLANES = [
         sub: "Para cadenas y operaciones que piensan en grande — muy en grande.",
         badge: "Potencia ilimitada",
         precio_mes: 249000,
-        precio_ano: 199000,
+        precio_ano: 212000,
         color: "#34d399",
         colorAlt: "#10b981",
         colorDark: "#065f46",
@@ -126,6 +128,34 @@ const formatCOP = (n) =>
 export function PlanesTemplate() {
     const navigate = useNavigate();
     const { loginEmail } = useAuthStore();
+
+    // Features desde DB (superadmin puede editarlas en /configuracion/planes)
+    const { data: configPlanes = [] } = useQuery({
+        queryKey: ["config-planes"],
+        queryFn: MostrarConfigPlanes,
+        staleTime: 5 * 60 * 1000,
+    });
+
+    const planFeatures = useMemo(() => {
+        const result = {};
+        PLANES.forEach(plan => {
+            const dbPlan = configPlanes.find(p => p.tier === plan.id);
+            if (dbPlan?.features?.length) {
+                // Mapa de iconos locales por texto
+                const iconMap = {};
+                plan.features.forEach(f => { iconMap[f.txt] = f.icon; });
+                result[plan.id] = dbPlan.features.map(f => ({
+                    icon: iconMap[f.label] ?? null,
+                    ok:   f.activo,
+                    txt:  f.label,
+                }));
+            } else {
+                result[plan.id] = plan.features;
+            }
+        });
+        return result;
+    }, [configPlanes]);
+
     const [anual, setAnual] = useState(false);
     const [visible, setVisible] = useState(false);
     const heroRef = useRef(null);
@@ -395,9 +425,9 @@ export function PlanesTemplate() {
 
                             <Divisor />
 
-                            {/* Features */}
+                            {/* Features — editables desde /configuracion/planes */}
                             <FeatureList>
-                                {plan.features.map((f, i) => (
+                                {(planFeatures[plan.id] ?? plan.features).map((f, i) => (
                                     <FeatureRow key={i} $ok={f.ok}>
                                         <FeatureIco $ok={f.ok} $color={plan.color}>
                                             {f.ok ? <RiCheckLine /> : <RiCloseLine />}

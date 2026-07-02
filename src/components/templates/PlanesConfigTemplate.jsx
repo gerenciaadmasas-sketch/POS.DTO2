@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MostrarConfigPlanes, EditarPrecioTier, calcularPrecios } from "../../supabase/crudConfigPlanes";
+import { MostrarConfigPlanes, EditarPrecioTier, EditarFeaturesTier, calcularPrecios } from "../../supabase/crudConfigPlanes";
 import { toastExito } from "../../utils/toast";
 import { RiEditLine, RiCheckLine, RiCloseLine } from "react-icons/ri";
 
@@ -9,33 +9,9 @@ const formatCOP = (n) =>
     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n ?? 0);
 
 const TIERS = {
-    chispa: {
-        emoji:   "⚡",
-        nombre:  "Chispa",
-        color:   "#fbbf24",
-        glow:    "rgba(251,191,36,0.35)",
-        bg:      "rgba(251,191,36,0.06)",
-        border:  "rgba(251,191,36,0.2)",
-        features: ["1 almacén", "2 usuarios", "POS completo", "Reportes básicos"],
-    },
-    fuego: {
-        emoji:   "🔥",
-        nombre:  "Fuego",
-        color:   "#f88533",
-        glow:    "rgba(248,133,51,0.35)",
-        bg:      "rgba(248,133,51,0.06)",
-        border:  "rgba(248,133,51,0.2)",
-        features: ["3 almacenes", "10 usuarios", "POS completo", "Kardex", "Reportes avanzados"],
-    },
-    cosmos: {
-        emoji:   "🌌",
-        nombre:  "Cosmos",
-        color:   "#818cf8",
-        glow:    "rgba(129,140,248,0.35)",
-        bg:      "rgba(129,140,248,0.06)",
-        border:  "rgba(129,140,248,0.2)",
-        features: ["Almacenes ilimitados", "Usuarios ilimitados", "Todo de Fuego", "Soporte prioritario"],
-    },
+    chispa: { emoji: "⚡", nombre: "Chispa", color: "#fbbf24", glow: "rgba(251,191,36,0.35)", bg: "rgba(251,191,36,0.06)", border: "rgba(251,191,36,0.2)" },
+    fuego:  { emoji: "🔥", nombre: "Fuego",  color: "#f88533", glow: "rgba(248,133,51,0.35)", bg: "rgba(248,133,51,0.06)", border: "rgba(248,133,51,0.2)" },
+    cosmos: { emoji: "🌌", nombre: "Cosmos", color: "#818cf8", glow: "rgba(129,140,248,0.35)", bg: "rgba(129,140,248,0.06)", border: "rgba(129,140,248,0.2)" },
 };
 
 export function PlanesConfigTemplate() {
@@ -45,13 +21,18 @@ export function PlanesConfigTemplate() {
         queryFn: MostrarConfigPlanes,
     });
 
-    const [bases, setBases] = useState({});
+    const [bases, setBases]       = useState({});
     const [editando, setEditando] = useState(null);
+    const [localF, setLocalF]     = useState({}); // {planId: [{label, activo}]}
 
     useEffect(() => {
-        const map = {};
-        planes.forEach(p => { map[p.id] = String(p.precio_base ?? 0); });
-        setBases(map);
+        const mapB = {}, mapF = {};
+        planes.forEach(p => {
+            mapB[p.id] = String(p.precio_base ?? 0);
+            mapF[p.id] = p.features ?? [];
+        });
+        setBases(mapB);
+        setLocalF(mapF);
     }, [planes]);
 
     const mutEditar = useMutation({
@@ -62,6 +43,19 @@ export function PlanesConfigTemplate() {
             setEditando(null);
         },
     });
+
+    const mutFeatures = useMutation({
+        mutationFn: ({ id, features }) => EditarFeaturesTier({ id, features }),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ["config-planes"] }),
+    });
+
+    function toggleFeature(planId, idx) {
+        const updated = (localF[planId] ?? []).map((f, i) =>
+            i === idx ? { ...f, activo: !f.activo } : f
+        );
+        setLocalF({ ...localF, [planId]: updated });
+        mutFeatures.mutate({ id: planId, features: updated });
+    }
 
     return (
         <Page>
@@ -130,11 +124,21 @@ export function PlanesConfigTemplate() {
                                 </DerivadoItem>
                             </DerivadosList>
 
-                            {/* Features del tier */}
+                            {/* Features del tier — click para activar/desactivar */}
+                            <FeatureHint>Click para activar / desactivar</FeatureHint>
                             <FeaturesList>
-                                {cfg.features.map((f, i) => (
-                                    <FeatureItem key={i} $color={cfg.color}>
-                                        <span>✓</span> {f}
+                                {(localF[plan.id] ?? []).map((f, i) => (
+                                    <FeatureItem
+                                        key={i}
+                                        $activo={f.activo}
+                                        $color={cfg.color}
+                                        onClick={() => toggleFeature(plan.id, i)}
+                                        title={f.activo ? "Desactivar" : "Activar"}
+                                    >
+                                        <FeatureCheck $activo={f.activo} $color={cfg.color}>
+                                            {f.activo ? <RiCheckLine /> : <RiCloseLine />}
+                                        </FeatureCheck>
+                                        <FeatureTxt $activo={f.activo}>{f.label}</FeatureTxt>
                                     </FeatureItem>
                                 ))}
                             </FeaturesList>
@@ -277,18 +281,35 @@ const DerivadoVal = styled.span`
 `;
 
 /* ── Features ── */
+const FeatureHint = styled.div`
+    font-size: 10px; color: rgba(255,255,255,0.22); font-style: italic;
+    text-align: center; width: 100%;
+`;
+
 const FeaturesList = styled.ul`
     width: 100%; list-style: none; padding: 0; margin: 0;
-    display: flex; flex-direction: column; gap: 6px;
+    display: flex; flex-direction: column; gap: 4px;
     border-top: 1px solid rgba(255,255,255,0.06);
-    padding-top: 14px;
+    padding-top: 12px;
 `;
 
 const FeatureItem = styled.li`
-    font-size: 12px; color: ${({ theme }) => theme.colorsubtitlecard};
-    font-family: "Poppins", sans-serif;
     display: flex; align-items: center; gap: 8px;
-    span { color: ${({ $color }) => $color}; font-weight: 900; }
+    padding: 5px 8px; border-radius: 8px; cursor: pointer;
+    transition: background 0.15s;
+    opacity: ${({ $activo }) => $activo ? 1 : 0.45};
+    &:hover { background: rgba(255,255,255,0.05); opacity: 1; }
+`;
+
+const FeatureCheck = styled.span`
+    font-size: 14px; flex-shrink: 0;
+    color: ${({ $activo, $color }) => $activo ? $color : "#f87171"};
+`;
+
+const FeatureTxt = styled.span`
+    font-size: 12px; font-family: "Poppins", sans-serif;
+    color: ${({ theme }) => theme.colorsubtitlecard};
+    text-decoration: ${({ $activo }) => $activo ? "none" : "line-through"};
 `;
 
 const Nota = styled.div`

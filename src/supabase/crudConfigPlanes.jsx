@@ -10,6 +10,14 @@ export async function MostrarConfigPlanes() {
     return data ?? [];
 }
 
+export async function EditarFeaturesTier({ id, features }) {
+    const { error } = await supabase
+        .from("config_planes")
+        .update({ features })
+        .eq("id", id);
+    if (error) { toastError(error.message, "Planes › Features"); throw error; }
+}
+
 export async function EditarPrecioTier({ id, precio_base }) {
     const { error } = await supabase
         .from("config_planes")
