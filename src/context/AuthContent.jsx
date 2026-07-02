@@ -93,6 +93,26 @@ export const AuthContextProvider = ({ children }) => {
         return;
       }
 
+      // Fallback: buscar por email (empleados creados con Edge Function
+      // pueden tener id_auth no sincronizado en la tabla)
+      const { data: usuarioPorEmail } = await supabase
+        .from("usuarios")
+        .select("id, id_auth")
+        .eq("email", email)
+        .maybeSingle();
+
+      if (usuarioPorEmail?.id) {
+        // Sincronizar id_auth si cambió
+        if (usuarioPorEmail.id_auth !== idAuth) {
+          await supabase
+            .from("usuarios")
+            .update({ id_auth: idAuth })
+            .eq("id", usuarioPorEmail.id);
+        }
+        return;
+      }
+
+      // Solo llegar aquí si es realmente un usuario nuevo (admin que se registra)
       if (empresaExistente?.id_usuario) return;
 
       let idEmpresa = empresaExistente?.id;
