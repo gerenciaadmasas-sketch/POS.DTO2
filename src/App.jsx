@@ -22,11 +22,6 @@ function App() {
         <GlobalStyles />
         {!isLoginRoute ? (
           <>
-          <BgOrb $x="-5%"  $y="-5%"  $c="rgba(248,133,51,0.18)" $s="700px" $dur="9s"  />
-          <BgOrb $x="65%"  $y="12%"  $c="rgba(99,102,241,0.14)" $s="500px" $dur="11s" $delay="2s" />
-          <BgOrb $x="25%"  $y="62%"  $c="rgba(52,211,153,0.10)" $s="450px" $dur="13s" $delay="4s" />
-          <BgOrb $x="82%"  $y="72%"  $c="rgba(248,133,51,0.12)" $s="400px" $dur="8s"  $delay="1s" />
-          <BgLines />
           <Container className={sidebarOpen ? "active" : ""}>
             <section className="contentSidebar">
               <Sidebar
@@ -49,6 +44,11 @@ function App() {
               <MobileOverlay onClick={() => setSidebarOpen(false)} />
             )}
           </Container>
+          <BgOrb $x="-5%"  $y="-5%"  $c="rgba(248,133,51,0.18)" $s="700px" $dur="9s"  />
+          <BgOrb $x="65%"  $y="12%"  $c="rgba(99,102,241,0.14)" $s="500px" $dur="11s" $delay="2s" />
+          <BgOrb $x="25%"  $y="62%"  $c="rgba(52,211,153,0.10)" $s="450px" $dur="13s" $delay="4s" />
+          <BgOrb $x="82%"  $y="72%"  $c="rgba(248,133,51,0.12)" $s="400px" $dur="8s"  $delay="1s" />
+          <BgLines />
           </>
         ) : (
           <Myroutes />
