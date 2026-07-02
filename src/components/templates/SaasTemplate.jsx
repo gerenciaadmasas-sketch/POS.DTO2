@@ -3,7 +3,7 @@ import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { MostrarSuscripciones, InsertarSuscripcion, EditarSuscripcion, EliminarSuscripcion, RegistrarPago, MostrarPagosCliente, EximirPago, ReactivarCuenta } from "../../supabase/crudSuscripciones";
 import { MostrarConfigPlanes } from "../../supabase/crudConfigPlanes";
-import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine, RiShieldLine, RiPercentLine, RiCalendarLine, RiRefreshLine, RiShieldCheckLine, RiArrowDownSLine } from "react-icons/ri";
+import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine, RiShieldLine, RiPercentLine, RiRefreshLine, RiShieldCheckLine, RiArrowDownSLine } from "react-icons/ri";
 import { Icon } from "@iconify/react";
 import { toastExito, confirmar } from "../../utils/toast";
 import ConfettiExplosion from "react-confetti-explosion";
@@ -138,19 +138,23 @@ export function SaasTemplate() {
     });
 
     const mutEditar = useMutation({
-        mutationFn: () => EditarSuscripcion({
-            id: editando.id,
-            nombre_cliente: form.nombre_cliente,
-            plan: form.plan,
-            tipo_plan: form.tipo_plan,
-            valor_mensual: Number(form.valor_mensual) || 0,
-            estado: form.estado,
-            fecha_proximo_pago: form.fecha_proximo_pago || null,
-            notas: form.notas,
-            actividad_economica: form.actividad_economica,
-            gracia_hasta: form.gracia_hasta || null,
-            descuento_pct: Number(form.descuento_pct) || 0,
-        }),
+        mutationFn: () => {
+            const base = Number(editando.valor_mensual) || 0;
+            const pct  = Number(form.descuento_pct) || 0;
+            const valorFinal = pct > 0 ? Math.round(base * (1 - pct / 100)) : (Number(form.valor_mensual) || 0);
+            return EditarSuscripcion({
+                id: editando.id,
+                nombre_cliente: form.nombre_cliente,
+                plan: form.plan,
+                tipo_plan: form.tipo_plan,
+                valor_mensual: valorFinal,
+                estado: form.estado,
+                fecha_proximo_pago: form.fecha_proximo_pago || null,
+                notas: form.notas,
+                actividad_economica: form.actividad_economica,
+                descuento_pct: pct,
+            });
+        },
         onSuccess: () => { toastExito("Cliente actualizado"); invalidar(); cerrar(); },
     });
 
@@ -534,32 +538,33 @@ export function SaasTemplate() {
                                 </DropWrap>
                             </Campo>
 
-                            {/* ── Controles de retención (solo al editar) ── */}
+                            {/* ── Descuento de retención (solo al editar) ── */}
                             {editando && (
                                 <RetencionBox>
                                     <RetencionTitulo>
                                         <RiShieldLine /> Retención de cliente
                                     </RetencionTitulo>
-                                    <FilaDos>
-                                        <Campo>
-                                            <label><RiCalendarLine style={{ verticalAlign: "middle" }} /> Gracia hasta (eximir mora)</label>
-                                            <Input type="date" value={form.gracia_hasta} onChange={e => setForm({ ...form, gracia_hasta: e.target.value })} />
-                                        </Campo>
-                                        <Campo>
-                                            <label><RiPercentLine style={{ verticalAlign: "middle" }} /> Descuento ({form.descuento_pct}%)</label>
-                                            <Input
-                                                type="range" min={0} max={100} step={5}
+                                    <Campo>
+                                        <label>
+                                            <RiPercentLine style={{ verticalAlign: "middle" }} /> Descuento — {form.descuento_pct}%
+                                        </label>
+                                        <SliderWrap>
+                                            <input
+                                                type="range" min={0} max={50} step={5}
                                                 value={form.descuento_pct}
                                                 onChange={e => setForm({ ...form, descuento_pct: Number(e.target.value) })}
-                                                style={{ padding: "10px 0", cursor: "pointer" }}
                                             />
+                                            <SliderTrack $pct={form.descuento_pct * 2} />
+                                        </SliderWrap>
+                                        <DescuentoPreview>
+                                            <span style={{ color: "#94a3b8" }}>Valor actual: {formatCOP(Number(editando.valor_mensual) || 0)}</span>
                                             {form.descuento_pct > 0 && (
-                                                <span style={{ fontSize: 12, color: "#4ade80", fontWeight: 700 }}>
-                                                    Nuevo valor: {formatCOP(Math.round((Number(form.valor_mensual) || 0) * (1 - form.descuento_pct / 100)))} /mes
+                                                <span style={{ color: "#4ade80", fontWeight: 800 }}>
+                                                    → {formatCOP(Math.round((Number(editando.valor_mensual) || 0) * (1 - form.descuento_pct / 100)))} /mes al guardar
                                                 </span>
                                             )}
-                                        </Campo>
-                                    </FilaDos>
+                                        </DescuentoPreview>
+                                    </Campo>
                                 </RetencionBox>
                             )}
                             <Campo>
@@ -957,6 +962,20 @@ const RetencionTitulo = styled.div`
     color: #a5b4fc;
     font-family: "Poppins", sans-serif;
     svg { font-size: 16px; }
+`;
+
+const SliderWrap = styled.div`
+    padding: 6px 0;
+    input[type="range"] {
+        width: 100%; cursor: pointer; accent-color: #f88533;
+        height: 4px; border-radius: 4px;
+    }
+`;
+
+const DescuentoPreview = styled.div`
+    display: flex; flex-direction: column; gap: 3px;
+    font-size: 12px; font-family: "Poppins", sans-serif;
+    margin-top: 4px;
 `;
 
 /* ── Plan badges selector ── */
