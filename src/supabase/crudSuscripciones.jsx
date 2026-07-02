@@ -127,6 +127,28 @@ export async function RegistrarPago({ id_suscripcion, monto, metodo, notas, plan
     if (errSus) { toastError(errSus.message, "Pagos › Actualizar fecha"); }
 }
 
+export async function EximirPago({ id, plan }) {
+    const meses = plan === "trimestral" ? 3 : plan === "bimestral" ? 2 : 1;
+    const hoy = new Date();
+    const prox = new Date(hoy.getFullYear(), hoy.getMonth() + meses, hoy.getDate());
+    const { error } = await supabase
+        .from(tabla)
+        .update({ fecha_proximo_pago: prox.toISOString().split("T")[0], estado: "al_dia" })
+        .eq("id", id);
+    if (error) { toastError(error.message, "Suscripciones › Eximir"); throw error; }
+}
+
+export async function ReactivarCuenta({ id, plan }) {
+    const meses = plan === "trimestral" ? 3 : plan === "bimestral" ? 2 : 1;
+    const hoy = new Date();
+    const prox = new Date(hoy.getFullYear(), hoy.getMonth() + meses, hoy.getDate());
+    const { error } = await supabase
+        .from(tabla)
+        .update({ estado: "al_dia", fecha_proximo_pago: prox.toISOString().split("T")[0] })
+        .eq("id", id);
+    if (error) { toastError(error.message, "Suscripciones › Reactivar"); throw error; }
+}
+
 export async function MostrarPagosCliente({ id_suscripcion }) {
     const { data, error } = await supabase
         .from("pagos_clientes")

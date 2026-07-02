@@ -1,9 +1,9 @@
 import { useState } from "react";
 import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MostrarSuscripciones, InsertarSuscripcion, EditarSuscripcion, EliminarSuscripcion, RegistrarPago, MostrarPagosCliente } from "../../supabase/crudSuscripciones";
+import { MostrarSuscripciones, InsertarSuscripcion, EditarSuscripcion, EliminarSuscripcion, RegistrarPago, MostrarPagosCliente, EximirPago, ReactivarCuenta } from "../../supabase/crudSuscripciones";
 import { MostrarConfigPlanes } from "../../supabase/crudConfigPlanes";
-import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine, RiShieldLine, RiPercentLine, RiCalendarLine } from "react-icons/ri";
+import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine, RiShieldLine, RiPercentLine, RiCalendarLine, RiRefreshLine, RiShieldCheckLine } from "react-icons/ri";
 import { Icon } from "@iconify/react";
 import { toastExito, confirmar } from "../../utils/toast";
 import ConfettiExplosion from "react-confetti-explosion";
@@ -146,6 +146,16 @@ export function SaasTemplate() {
     const mutEliminar = useMutation({
         mutationFn: (id) => EliminarSuscripcion({ id }),
         onSuccess: () => { toastExito("Cliente eliminado"); invalidar(); },
+    });
+
+    const mutEximir = useMutation({
+        mutationFn: (s) => EximirPago({ id: s.id, plan: s.plan }),
+        onSuccess: () => { toastExito("Pago eximido — cuenta al día"); invalidar(); },
+    });
+
+    const mutReactivar = useMutation({
+        mutationFn: (s) => ReactivarCuenta({ id: s.id, plan: s.plan }),
+        onSuccess: () => { toastExito("Cuenta reactivada correctamente"); invalidar(); },
     });
 
     function getPrecioTier(tier) {
@@ -374,6 +384,7 @@ export function SaasTemplate() {
                             </CardBody>
 
                             <CardActions>
+                                {/* Pago manual — solo cuando está en mora o próximo a vencer */}
                                 {(estadoCalc === "mora" || estadoCalc === "proximo") && (
                                     <BtnPago onClick={async () => {
                                         const { default: Swal } = await import("sweetalert2");
@@ -416,6 +427,37 @@ export function SaasTemplate() {
                                         <Icon icon="solar:hand-money-bold-duotone" style={{ fontSize: 16 }} /> Registrar pago
                                     </BtnPago>
                                 )}
+
+                                {/* Eximir pago — resetea el reloj sin cobrar (mora o próximo) */}
+                                {(estadoCalc === "mora" || estadoCalc === "proximo") && (
+                                    <BtnEximir
+                                        title="Eximir pago — extender fecha sin cobrar"
+                                        disabled={mutEximir.isPending}
+                                        onClick={() => confirmar({
+                                            titulo: "¿Eximir pago?",
+                                            texto: `Se extenderá la fecha de ${s.nombre_cliente} sin registrar cobro.`,
+                                            onConfirmar: () => mutEximir.mutate(s),
+                                        })}
+                                    >
+                                        <RiShieldCheckLine /> Eximir
+                                    </BtnEximir>
+                                )}
+
+                                {/* Reactivar — para cuentas suspendidas o canceladas */}
+                                {(estadoCalc === "suspendido" || estadoCalc === "cancelado") && (
+                                    <BtnReactivar
+                                        title="Reactivar cuenta"
+                                        disabled={mutReactivar.isPending}
+                                        onClick={() => confirmar({
+                                            titulo: "¿Reactivar cuenta?",
+                                            texto: `Se reactivará la cuenta de ${s.nombre_cliente} y se reiniciará el período de pago.`,
+                                            onConfirmar: () => mutReactivar.mutate(s),
+                                        })}
+                                    >
+                                        <RiRefreshLine /> Reactivar
+                                    </BtnReactivar>
+                                )}
+
                                 <BtnIco onClick={() => abrirEditar(s)}><RiEditLine /></BtnIco>
                                 <BtnIco $rojo onClick={() => confirmar({
                                     titulo: "¿Eliminar cliente?",
@@ -738,6 +780,28 @@ const BtnPago = styled.button`
     font-size: 11px; font-weight: 700; cursor: pointer;
     font-family: "Poppins", sans-serif;
     &:hover { background: rgba(74,222,128,0.25); }
+`;
+
+const BtnEximir = styled.button`
+    display: flex; align-items: center; gap: 5px;
+    padding: 6px 12px; border-radius: 8px; border: none;
+    background: rgba(251,191,36,0.12); color: #fbbf24;
+    font-size: 11px; font-weight: 700; cursor: pointer;
+    font-family: "Poppins", sans-serif;
+    transition: background 0.15s;
+    &:hover { background: rgba(251,191,36,0.22); }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+`;
+
+const BtnReactivar = styled.button`
+    display: flex; align-items: center; gap: 5px;
+    padding: 6px 12px; border-radius: 8px; border: none;
+    background: rgba(99,102,241,0.15); color: #818cf8;
+    font-size: 11px; font-weight: 700; cursor: pointer;
+    font-family: "Poppins", sans-serif;
+    transition: background 0.15s;
+    &:hover { background: rgba(99,102,241,0.25); }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
 `;
 
 const BtnIco = styled.button`
