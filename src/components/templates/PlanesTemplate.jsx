@@ -18,8 +18,20 @@ import {
     RiSmartphoneLine, RiInfinityLine, RiVipCrownLine,
     RiTimeLine, RiGroupLine, RiEyeLine, RiEyeOffLine,
     RiPhoneLine, RiLockLine, RiCheckboxCircleFill,
-    RiShieldLine, RiMailLine,
+    RiShieldLine, RiMailLine, RiArrowDownSLine, RiStoreLine,
 } from "react-icons/ri";
+
+const ACTIVIDADES = [
+    { key: "retail_ropa",   label: "Retail — Ropa y accesorios",   emoji: "👗" },
+    { key: "restaurante",   label: "Restaurante",                   emoji: "🍽️" },
+    { key: "cafeteria",     label: "Cafetería",                     emoji: "☕" },
+    { key: "tienda",        label: "Tienda / Minimarket",           emoji: "🛒" },
+    { key: "farmacia",      label: "Farmacia / Droguería",          emoji: "💊" },
+    { key: "ferreteria",    label: "Ferretería",                    emoji: "🔧" },
+    { key: "salon_belleza", label: "Salón de belleza",              emoji: "💇" },
+    { key: "veterinaria",   label: "Veterinaria",                   emoji: "🐾" },
+    { key: "construccion",  label: "Construcción / Inmobiliaria",   emoji: "🏗️" },
+];
 
 /* ─────────────────────────────────────────
    DATOS DE LOS PLANES
@@ -171,9 +183,20 @@ export function PlanesTemplate() {
     const [pagoOpen, setPagoOpen]       = useState(false);
     const [planPago, setPlanPago]       = useState(null);
     const [pasoPago, setPasoPago]       = useState("datos"); // datos | procesando | exito
-    const [pagoForm, setPagoForm]       = useState({ nombre: "", apellido: "", email: "", empresa: "", telefono: "" });
+    const [pagoForm, setPagoForm]       = useState({ nombre: "", apellido: "", email: "", empresa: "", telefono: "", actividad_economica: "" });
     const [pagoMsgIdx, setPagoMsgIdx]   = useState(0);
     const [prospectoId, setProspectoId] = useState(null);
+    const [dropActPago, setDropActPago] = useState(false);
+    const dropActPagoRef                = useRef(null);
+
+    useEffect(() => {
+        const handler = (e) => {
+            if (dropActPagoRef.current && !dropActPagoRef.current.contains(e.target))
+                setDropActPago(false);
+        };
+        document.addEventListener("mousedown", handler);
+        return () => document.removeEventListener("mousedown", handler);
+    }, []);
 
     const abrirRegistro  = () => { setRegistroOpen(true); setRegOk(false); setRegError(""); setRegForm({ nombre: "", apellido: "", telefono: "", contacto_preferido: "whatsapp", negocio: "" }); };
     const cerrarRegistro = () => { setRegistroOpen(false); setRegOk(false); };
@@ -181,8 +204,9 @@ export function PlanesTemplate() {
     const abrirPago = (plan) => {
         setPlanPago(plan);
         setPasoPago("datos");
-        setPagoForm({ nombre: "", apellido: "", email: "", empresa: "", telefono: "" });
+        setPagoForm({ nombre: "", apellido: "", email: "", empresa: "", telefono: "", actividad_economica: "" });
         setPagoMsgIdx(0);
+        setDropActPago(false);
         setPagoOpen(true);
     };
     const cerrarPago = () => { setPagoOpen(false); setProspectoId(null); };
@@ -193,13 +217,14 @@ export function PlanesTemplate() {
         // Registrar como lead "en negociación"
         try {
             const id = await CrearProspecto({
-                nombre:    pagoForm.nombre,
-                apellido:  pagoForm.apellido,
-                telefono:  pagoForm.telefono || "—",
-                email:     pagoForm.email,
-                negocio:   pagoForm.empresa,
-                plan:      planPago?.nombre ?? "",
-                estado:    "en negociación",
+                nombre:               pagoForm.nombre,
+                apellido:             pagoForm.apellido,
+                telefono:             pagoForm.telefono || "—",
+                email:                pagoForm.email,
+                negocio:              pagoForm.empresa,
+                plan:                 planPago?.nombre ?? "",
+                estado:               "en negociación",
+                actividad_economica:  pagoForm.actividad_economica,
             });
             setProspectoId(id);
         } catch (_) { /* no bloquear el pago si falla */ }
@@ -650,6 +675,38 @@ export function PlanesTemplate() {
                                 onChange={e => setPagoForm(f => ({...f, telefono: e.target.value}))} />
                         </InputGroup>
 
+                        <InputGroup ref={dropActPagoRef} style={{ position: "relative" }}>
+                            <InputLabel>¿A qué se dedica tu negocio? *</InputLabel>
+                            <ActDropBtn
+                                type="button"
+                                $open={dropActPago}
+                                $color={planPago.color}
+                                $empty={!pagoForm.actividad_economica}
+                                onClick={() => setDropActPago(v => !v)}
+                            >
+                                {pagoForm.actividad_economica
+                                    ? <><span>{ACTIVIDADES.find(a => a.key === pagoForm.actividad_economica)?.emoji}</span> {ACTIVIDADES.find(a => a.key === pagoForm.actividad_economica)?.label}</>
+                                    : <><RiStoreLine style={{ opacity: 0.5 }} /> Selecciona tu actividad económica</>
+                                }
+                                <RiArrowDownSLine style={{ marginLeft: "auto", flexShrink: 0, transition: "transform 0.2s", transform: dropActPago ? "rotate(180deg)" : "none" }} />
+                            </ActDropBtn>
+                            {dropActPago && (
+                                <ActDropMenu>
+                                    {ACTIVIDADES.map(a => (
+                                        <ActDropItem
+                                            key={a.key}
+                                            type="button"
+                                            $activo={pagoForm.actividad_economica === a.key}
+                                            $color={planPago.color}
+                                            onClick={() => { setPagoForm(f => ({...f, actividad_economica: a.key})); setDropActPago(false); }}
+                                        >
+                                            <span>{a.emoji}</span> {a.label}
+                                        </ActDropItem>
+                                    ))}
+                                </ActDropMenu>
+                            )}
+                        </InputGroup>
+
                         <PagoSubtotal $color={planPago.color}>
                             <PagoSubRow>
                                 <span>Plan {planPago.nombre} · {anual ? "Anual" : "Mensual"}</span>
@@ -666,7 +723,7 @@ export function PlanesTemplate() {
                         </PagoSubtotal>
 
                         <BtnPagoSubmit type="submit" $color={planPago.color} $colorAlt={planPago.colorAlt} $glow={planPago.glow}
-                            disabled={!pagoForm.nombre || !pagoForm.apellido || !pagoForm.email || !pagoForm.empresa}>
+                            disabled={!pagoForm.nombre || !pagoForm.apellido || !pagoForm.email || !pagoForm.empresa || !pagoForm.actividad_economica}>
                             <RiLockLine /> Ir al pago seguro →
                         </BtnPagoSubmit>
                     </LoginForm>
@@ -1054,6 +1111,37 @@ const InputField = styled.input`
     transition: border-color 0.2s;
     &:focus { border-color: #f88533; }
     &::placeholder { color: rgba(255,255,255,0.25); }
+`;
+
+const ActDropBtn = styled.button`
+    width: 100%; display: flex; align-items: center; gap: 10px;
+    padding: 14px 16px; border-radius: 12px; cursor: pointer; min-height: 52px;
+    border: 2px solid ${({ $open, $color }) => $open ? $color : "rgba(255,255,255,0.1)"};
+    background: rgba(255,255,255,0.05);
+    color: ${({ $empty }) => $empty ? "rgba(255,255,255,0.35)" : "#fff"};
+    font-size: 15px; font-family: "Poppins", sans-serif; text-align: left;
+    transition: border-color 0.2s;
+    &:hover { border-color: ${({ $color }) => $color}; }
+`;
+
+const ActDropMenu = styled.div`
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0; z-index: 500;
+    background: #0f1520;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px; padding: 6px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+    max-height: 260px; overflow-y: auto;
+`;
+
+const ActDropItem = styled.button`
+    width: 100%; display: flex; align-items: center; gap: 10px;
+    text-align: left; padding: 11px 14px; border-radius: 10px;
+    border: none; cursor: pointer; font-size: 14px; font-weight: 600;
+    font-family: "Poppins", sans-serif;
+    background: ${({ $activo, $color }) => $activo ? `${$color}22` : "transparent"};
+    color: ${({ $activo, $color }) => $activo ? $color : "rgba(255,255,255,0.8)"};
+    transition: background 0.12s;
+    &:hover { background: rgba(255,255,255,0.06); }
 `;
 
 const BtnEye = styled.button`

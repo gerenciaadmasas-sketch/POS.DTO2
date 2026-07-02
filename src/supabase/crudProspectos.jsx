@@ -1,6 +1,6 @@
 import { supabase } from "./supabase.config";
 
-export async function CrearProspecto({ nombre, apellido, telefono, contacto_preferido, negocio, email = "", plan = "", estado = "nuevo" }) {
+export async function CrearProspecto({ nombre, apellido, telefono, contacto_preferido, negocio, email = "", plan = "", estado = "nuevo", actividad_economica = "" }) {
     const { data, error } = await supabase
         .rpc("crear_prospecto", {
             p_nombre: nombre,
@@ -11,6 +11,7 @@ export async function CrearProspecto({ nombre, apellido, telefono, contacto_pref
             p_email: email,
             p_plan: plan,
             p_estado: estado,
+            p_actividad: actividad_economica,
         });
     if (error) throw error;
     return data; // retorna el UUID del prospecto
