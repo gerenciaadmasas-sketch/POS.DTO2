@@ -1,8 +1,8 @@
 import { useState } from "react";
 import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { MostrarVersion, EditarVersion, NuevaVersion } from "../../supabase/crudVersion";
-import { RiEditLine, RiAddLine, RiCloseLine } from "react-icons/ri";
+import { MostrarVersion, EditarVersion } from "../../supabase/crudVersion";
+import { RiEditLine, RiCloseLine } from "react-icons/ri";
 import { Icon } from "@iconify/react";
 import { toastExito } from "../../utils/toast";
 
@@ -19,21 +19,10 @@ export function VersionTemplate() {
 
     const actual = versiones[0];
 
-    const mutNueva = useMutation({
-        mutationFn: () => NuevaVersion(form),
-        onSuccess: () => { toastExito("Nueva versión registrada"); queryClient.invalidateQueries({ queryKey: ["config-version"] }); cerrar(); },
-    });
-
     const mutEditar = useMutation({
         mutationFn: () => EditarVersion({ id: editando.id, ...form }),
         onSuccess: () => { toastExito("Versión actualizada"); queryClient.invalidateQueries({ queryKey: ["config-version"] }); cerrar(); },
     });
-
-    function abrirNueva() {
-        setForm({ version: "", descripcion: "" });
-        setEditando(null);
-        setModal(true);
-    }
 
     function abrirEditar(v) {
         setForm({ version: v.version, descripcion: v.descripcion ?? "" });
@@ -45,19 +34,14 @@ export function VersionTemplate() {
 
     function handleGuardar(e) {
         e.preventDefault();
-        editando ? mutEditar.mutate() : mutNueva.mutate();
+        mutEditar.mutate();
     }
 
     return (
         <Page>
             <TopBar>
-                <div>
-                    <h1>Versión del sistema</h1>
-                    <p>historial de versiones y notas de actualización</p>
-                </div>
-                <BtnNueva onClick={abrirNueva}>
-                    <RiAddLine style={{ fontSize: 18 }} /> Nueva versión
-                </BtnNueva>
+                <h1>Versión del sistema</h1>
+                <p>historial de versiones y notas de actualización</p>
             </TopBar>
 
             {/* Versión actual */}
@@ -90,7 +74,7 @@ export function VersionTemplate() {
                 <Overlay onClick={cerrar}>
                     <Modal onClick={e => e.stopPropagation()}>
                         <ModalHeader>
-                            <span>{editando ? "Editar versión" : "Nueva versión"}</span>
+                            <span>Editar versión</span>
                             <BtnCerrar onClick={cerrar}><RiCloseLine /></BtnCerrar>
                         </ModalHeader>
                         <ModalForm onSubmit={handleGuardar}>
@@ -102,7 +86,7 @@ export function VersionTemplate() {
                                 <label>Notas de actualización</label>
                                 <Textarea value={form.descripcion} onChange={e => setForm({ ...form, descripcion: e.target.value })} placeholder="Describe qué cambió en esta versión..." rows={5} />
                             </Campo>
-                            <BtnGuardar type="submit" disabled={mutNueva.isPending || mutEditar.isPending}>
+                            <BtnGuardar type="submit" disabled={mutEditar.isPending}>
                                 {editando ? "Guardar cambios" : "Registrar versión"}
                             </BtnGuardar>
                         </ModalForm>
@@ -123,19 +107,9 @@ const Page = styled.div`
 `;
 
 const TopBar = styled.div`
-    display: flex; align-items: flex-start; justify-content: space-between;
-    margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+    margin-bottom: 28px;
     h1 { font-size: 22px; font-weight: 900; color: ${({ theme }) => theme.text}; margin: 0 0 4px; }
     p { font-size: 13px; color: ${({ theme }) => theme.colorsubtitlecard}; margin: 0; }
-`;
-
-const BtnNueva = styled.button`
-    display: flex; align-items: center; gap: 8px;
-    padding: 10px 20px; border-radius: 10px; border: none;
-    background: #f88533; color: #fff;
-    font-size: 13px; font-weight: 700; cursor: pointer;
-    font-family: "Poppins", sans-serif;
-    &:hover { background: #e07020; }
 `;
 
 const VersionActual = styled.div`
