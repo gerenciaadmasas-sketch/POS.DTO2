@@ -2,10 +2,13 @@ import { supabase } from "./supabase.config";
 
 export async function CrearProspecto({ nombre, apellido, telefono, contacto_preferido, negocio }) {
     const { data, error } = await supabase
-        .from("prospectos")
-        .insert([{ nombre, apellido, telefono, contacto_preferido, negocio }])
-        .select()
-        .single();
+        .rpc("crear_prospecto", {
+            p_nombre: nombre,
+            p_apellido: apellido,
+            p_telefono: telefono,
+            p_contacto_preferido: contacto_preferido ?? "whatsapp",
+            p_negocio: negocio,
+        });
     if (error) throw error;
     return data;
 }
