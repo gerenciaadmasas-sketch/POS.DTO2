@@ -1,6 +1,6 @@
 import { supabase } from "./supabase.config";
 
-export async function CrearProspecto({ nombre, apellido, telefono, contacto_preferido, negocio }) {
+export async function CrearProspecto({ nombre, apellido, telefono, contacto_preferido, negocio, email = "", plan = "", estado = "nuevo" }) {
     const { data, error } = await supabase
         .rpc("crear_prospecto", {
             p_nombre: nombre,
@@ -8,9 +8,17 @@ export async function CrearProspecto({ nombre, apellido, telefono, contacto_pref
             p_telefono: telefono,
             p_contacto_preferido: contacto_preferido ?? "whatsapp",
             p_negocio: negocio,
+            p_email: email,
+            p_plan: plan,
+            p_estado: estado,
         });
     if (error) throw error;
-    return data;
+    return data; // retorna el UUID del prospecto
+}
+
+export async function CerrarProspectoPago(id) {
+    const { error } = await supabase.rpc("cerrar_prospecto_pago", { p_id: id });
+    if (error) throw error;
 }
 
 export async function MostrarProspectos() {

@@ -54,14 +54,13 @@ export function Myroutes() {
     return <span>error...</span>;
   }
   return (
+    <>
+    <SuspensionOverlay />
     <Routes>
       {/* ── Rutas públicas (sin autenticación) ── */}
       <Route path="/"       element={user ? <Navigate to="/home" replace /> : <Planes />} />
       <Route path="/planes" element={<Navigate to="/" replace />} />
       <Route path="/login"  element={user ? <Navigate to="/home" replace /> : <Login />} />
-
-      {/* ── Rutas protegidas ── */}
-      <SuspensionOverlay />
       <Route element={<ProtectedRoute user={user} redirectTo="/" />}>
         <Route path="/home" element={<Home />} />
         <Route path="/configuracion" element={<Configuraciones />} />
@@ -93,5 +92,6 @@ export function Myroutes() {
 
       <Route path="*" element={<Navigate to={user ? "/home" : "/"} replace />} />
     </Routes>
+    </>
   );
 }

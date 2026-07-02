@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { v } from "../../styles/variables";
 import { useAuthStore } from "../../store/AuthStore";
 import { ObtenerEmailPorUsuario } from "../../supabase/crudUsuarios";
-import { CrearProspecto } from "../../supabase/crudProspectos";
+import { CrearProspecto, CerrarProspectoPago } from "../../supabase/crudProspectos";
 import ConfettiExplosion from "react-confetti-explosion";
 import {
     RiArrowLeftSLine, RiCheckLine, RiCloseLine,
@@ -143,6 +143,7 @@ export function PlanesTemplate() {
     const [pasoPago, setPasoPago]       = useState("datos"); // datos | procesando | exito
     const [pagoForm, setPagoForm]       = useState({ nombre: "", apellido: "", email: "", empresa: "", telefono: "" });
     const [pagoMsgIdx, setPagoMsgIdx]   = useState(0);
+    const [prospectoId, setProspectoId] = useState(null);
 
     const abrirRegistro  = () => { setRegistroOpen(true); setRegOk(false); setRegError(""); setRegForm({ nombre: "", apellido: "", telefono: "", contacto_preferido: "whatsapp", negocio: "" }); };
     const cerrarRegistro = () => { setRegistroOpen(false); setRegOk(false); };
@@ -154,11 +155,24 @@ export function PlanesTemplate() {
         setPagoMsgIdx(0);
         setPagoOpen(true);
     };
-    const cerrarPago = () => { setPagoOpen(false); };
-    const handlePago = (e) => {
+    const cerrarPago = () => { setPagoOpen(false); setProspectoId(null); };
+    const handlePago = async (e) => {
         e.preventDefault();
         setPasoPago("procesando");
         setPagoMsgIdx(0);
+        // Registrar como lead "en negociación"
+        try {
+            const id = await CrearProspecto({
+                nombre:    pagoForm.nombre,
+                apellido:  pagoForm.apellido,
+                telefono:  pagoForm.telefono || "—",
+                email:     pagoForm.email,
+                negocio:   pagoForm.empresa,
+                plan:      planPago?.nombre ?? "",
+                estado:    "en negociación",
+            });
+            setProspectoId(id);
+        } catch (_) { /* no bloquear el pago si falla */ }
         // ─── WOMPI (pendiente): crear link de pago y redirigir ───
         // const link = await crearPagoWompi({ plan: planPago.id, precio, email: pagoForm.email })
         // window.location.href = link;
@@ -201,12 +215,17 @@ export function PlanesTemplate() {
         return () => { document.body.style.overflow = ""; };
     }, [loginOpen, registroOpen, pagoOpen]);
 
-    /* procesando → exito después de 3s */
+    /* procesando → exito después de 3s + cerrar lead si hay ID */
     useEffect(() => {
         if (pasoPago !== "procesando") return;
-        const t = setTimeout(() => setPasoPago("exito"), 3200);
+        const t = setTimeout(async () => {
+            setPasoPago("exito");
+            if (prospectoId) {
+                try { await CerrarProspectoPago(prospectoId); } catch (_) {}
+            }
+        }, 3200);
         return () => clearTimeout(t);
-    }, [pasoPago]);
+    }, [pasoPago, prospectoId]);
 
     /* ciclar mensajes del procesador */
     useEffect(() => {
