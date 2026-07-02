@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaStore } from "../../store/EmpresaStore";
 import { useUsuariosStore } from "../../store/UsuariosStore";
 import { MostrarSucursales, InsertarSucursal, EditarSucursal, EliminarSucursal } from "../../supabase/crudSucursales";
 import { MostrarAlmacenesPorEmpresa, InsertarAlmacen, EditarAlmacen, EliminarAlmacen, SubirLogoAlmacen } from "../../supabase/crudAlmacenesConfig";
-import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine, RiImageAddLine, RiStoreLine } from "react-icons/ri";
-import { useRef } from "react";
+import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine, RiImageAddLine, RiStoreLine, RiErrorWarningLine } from "react-icons/ri";
 import { toastExito, confirmar } from "../../utils/toast";
+import { usePlan } from "../../hooks/usePlan";
 
 export function SucursalesCajasTemplate() {
     const { dataempresa } = useEmpresaStore();
@@ -15,6 +15,7 @@ export function SucursalesCajasTemplate() {
     const queryClient = useQueryClient();
     const id_empresa = dataempresa?.id;
     const esSupervisor = datausuarios?.tipo === "supervisor";
+    const { limites, tipoPlan } = usePlan();
 
     const [modalSuc, setModalSuc] = useState(false);
     const [editSuc, setEditSuc]   = useState(null);
@@ -114,6 +115,8 @@ export function SucursalesCajasTemplate() {
         ? sucursales.filter(s => String(s.id) === String(datausuarios?.id_sucursal))
         : sucursales;
 
+    const limiteAlmAlcanzado = limites.max_almacenes !== Infinity && almacenes.length >= limites.max_almacenes;
+
     return (
         <Page>
             <TopBar>
@@ -121,7 +124,17 @@ export function SucursalesCajasTemplate() {
                     <h1>{esSupervisor ? "Almacenes" : "Sucursales y almacenes"}</h1>
                     <p>{esSupervisor ? "gestiona los almacenes de tu sucursal" : "gestiona tus puntos de venta y sus almacenes de inventario"}</p>
                 </div>
+                <PlanLimitBadge $alerta={limiteAlmAlcanzado}>
+                    {almacenes.length} / {limites.max_almacenes === Infinity ? "∞" : limites.max_almacenes} almacenes · {tipoPlan}
+                </PlanLimitBadge>
             </TopBar>
+
+            {limiteAlmAlcanzado && (
+                <LimitAlert>
+                    <RiErrorWarningLine />
+                    Tu plan <strong>{tipoPlan}</strong> permite hasta <strong>{limites.max_almacenes} almacén{limites.max_almacenes !== 1 ? "es" : ""}</strong>. Actualiza tu plan para agregar más.
+                </LimitAlert>
+            )}
 
             {!esSupervisor && (
                 <BtnAgregar onClick={abrirNuevaSuc}>
@@ -176,8 +189,12 @@ export function SucursalesCajasTemplate() {
                                     </AlmItem>
                                 ))}
 
-                                <BtnAgregarAlm onClick={() => abrirNuevoAlm(suc.id)}>
-                                    <RiAddLine /> agregar almacén
+                                <BtnAgregarAlm
+                                    onClick={() => !limiteAlmAlcanzado && abrirNuevoAlm(suc.id)}
+                                    $bloqueado={limiteAlmAlcanzado}
+                                    title={limiteAlmAlcanzado ? `Límite de ${limites.max_almacenes} almacén(es) alcanzado` : ""}
+                                >
+                                    <RiAddLine /> {limiteAlmAlcanzado ? `Límite alcanzado (${limites.max_almacenes} máx.)` : "agregar almacén"}
                                 </BtnAgregarAlm>
                             </AlmacenesLista>
                         </SucursalCard>
@@ -346,14 +363,31 @@ const AlmFecha = styled.span`font-size: 10px; color: ${({ theme }) => theme.colo
 const AlmNombre = styled.span`font-size: 13px; font-weight: 700; color: ${({ theme }) => theme.text};`;
 const AlmActions = styled.div`display: flex; gap: 4px;`;
 
+const PlanLimitBadge = styled.span`
+    font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 20px;
+    font-family: "Poppins", sans-serif;
+    background: ${({ $alerta }) => $alerta ? "rgba(248,113,113,0.12)" : "rgba(255,255,255,0.06)"};
+    color: ${({ $alerta }) => $alerta ? "#f87171" : "#94a3b8"};
+    border: 1px solid ${({ $alerta }) => $alerta ? "rgba(248,113,113,0.3)" : "rgba(255,255,255,0.08)"};
+`;
+
+const LimitAlert = styled.div`
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; border-radius: 12px; margin-bottom: 20px;
+    background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.25);
+    color: #f87171; font-size: 13px; font-weight: 600;
+    svg { font-size: 18px; flex-shrink: 0; }
+`;
+
 const BtnAgregarAlm = styled.button`
     display: flex; align-items: center; justify-content: center; gap: 6px;
     padding: 10px;
     border-radius: 12px;
-    border: 2px dashed ${({ theme }) => theme.color2};
-    background: none;
-    color: ${({ theme }) => theme.colorsubtitlecard};
-    font-size: 12px; font-weight: 700; cursor: pointer;
+    border: 2px dashed ${({ $bloqueado, theme }) => $bloqueado ? "rgba(248,113,113,0.3)" : theme.color2};
+    background: ${({ $bloqueado }) => $bloqueado ? "rgba(248,113,113,0.05)" : "none"};
+    color: ${({ $bloqueado }) => $bloqueado ? "#f87171" : "inherit"};
+    font-size: 12px; font-weight: 700;
+    cursor: ${({ $bloqueado }) => $bloqueado ? "not-allowed" : "pointer"};
     font-family: "Poppins", sans-serif;
     transition: all 0.15s;
     &:hover { border-color: #f88533; color: #f88533; }

@@ -10,6 +10,7 @@ import { useUsuariosStore } from "../../../store/UsuariosStore";
 import { ObtenerSesionAbierta } from "../../../supabase/crudSesionesCaja";
 import { useAlmacenesConfigStore } from "../../../store/AlmacenesConfigStore";
 import Swal from "sweetalert2";
+import { usePlan } from "../../../hooks/usePlan";
 
 const LINKS_CAJERO     = ["/home", "/pos", "/inventario", "/reportes"];
 const LINKS_ADMIN      = ["/home", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo"];
@@ -21,6 +22,7 @@ export function Sidebar({ state, setState, onNavClick }) {
     const { dataempresa } = useEmpresaStore();
     const { datausuarios } = useUsuariosStore();
     const { dataAlmacenes } = useAlmacenesConfigStore();
+    const { limites } = usePlan();
 
     async function handleCerrarSesion() {
         if (datausuarios?.permisos?.ventas && dataempresa?.id && datausuarios?.id) {
@@ -52,13 +54,17 @@ export function Sidebar({ state, setState, onNavClick }) {
     const esSuperAdmin = tipo === "superadmin";
     const esComercial  = tipo === "comercial";
 
-    const linksVisibles = esCajero
+    const linksBase = esCajero
         ? LinksArray.filter(l => LINKS_CAJERO.includes(l.to))
         : esSuperAdmin
         ? LinksArray.filter(l => LINKS_SUPERADMIN.includes(l.to))
         : esComercial
         ? LinksArray.filter(l => LINKS_COMERCIAL.includes(l.to))
         : LinksArray.filter(l => LINKS_ADMIN.includes(l.to));
+
+    const linksVisibles = !limites.kardex
+        ? linksBase.filter(l => l.to !== "/kardex")
+        : linksBase;
 
     return (
         <Wrap $isopen={state}>

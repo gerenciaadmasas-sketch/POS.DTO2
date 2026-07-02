@@ -10,8 +10,9 @@ import {
     ListarUsuariosEmpresa, CrearUsuarioEmpleado,
     ActualizarUsuario, EliminarUsuarioEmpleado,
 } from "../../supabase/crudUsuarios";
-import { RiDeleteBin2Line, RiEditLine, RiAddLine, RiCloseLine, RiUserLine, RiShieldLine } from "react-icons/ri";
+import { RiDeleteBin2Line, RiEditLine, RiAddLine, RiCloseLine, RiUserLine, RiShieldLine, RiErrorWarningLine } from "react-icons/ri";
 import { toastExito } from "../../utils/toast";
+import { usePlan } from "../../hooks/usePlan";
 
 /* ── Permisos disponibles ─────────────────────────────── */
 const PERMISOS = [
@@ -71,6 +72,8 @@ export function UsuariosTemplate() {
     const esSupervisor = tipoActual === "supervisor";
     const esAdmin = tipoActual === "administrador";
     const TIPOS = esSupervisor ? TIPOS_SUPERVISOR : esAdmin ? TIPOS_ADMIN : TIPOS_TODOS;
+
+    const { limites, tipoPlan } = usePlan();
 
     const [modalAbierto, setModalAbierto] = useState(false);
     const [editando,     setEditando]     = useState(null); // usuario a editar
@@ -205,6 +208,8 @@ export function UsuariosTemplate() {
     const onSubmit = (vals) => editando ? mutEditar.mutate(vals) : mutCrear.mutate(vals);
     const pending  = mutCrear.isPending || mutEditar.isPending;
 
+    const limiteAlcanzado = limites.max_usuarios !== Infinity && usuarios.length >= limites.max_usuarios;
+
     return (
         <Page>
             {/* ── Encabezado ── */}
@@ -213,11 +218,23 @@ export function UsuariosTemplate() {
                     <h1>Usuarios</h1>
                     <p>gestiona el equipo de trabajo</p>
                 </div>
-                <BtnNuevo onClick={abrirNuevo}>
-                    <RiAddLine style={{ fontSize: 18 }} />
-                    Nuevo usuario
-                </BtnNuevo>
+                <TopBarRight>
+                    <PlanLimitBadge $alerta={limiteAlcanzado}>
+                        {usuarios.length} / {limites.max_usuarios === Infinity ? "∞" : limites.max_usuarios} usuarios · {tipoPlan}
+                    </PlanLimitBadge>
+                    <BtnNuevo onClick={abrirNuevo} disabled={limiteAlcanzado} title={limiteAlcanzado ? `Límite del plan ${tipoPlan} alcanzado` : ""}>
+                        <RiAddLine style={{ fontSize: 18 }} />
+                        Nuevo usuario
+                    </BtnNuevo>
+                </TopBarRight>
             </TopBar>
+
+            {limiteAlcanzado && (
+                <LimitAlert>
+                    <RiErrorWarningLine />
+                    Tu plan <strong>{tipoPlan}</strong> permite hasta <strong>{limites.max_usuarios} usuarios</strong>. Actualiza tu plan para agregar más.
+                </LimitAlert>
+            )}
 
             {/* ── Lista de usuarios ── */}
             <Grid>
@@ -436,14 +453,34 @@ const TopBar = styled.div`
     p  { font-size: 13px; color: ${({ theme }) => theme.colorsubtitlecard}; margin: 0; }
 `;
 
+const TopBarRight = styled.div`display: flex; align-items: center; gap: 10px; flex-wrap: wrap;`;
+
+const PlanLimitBadge = styled.span`
+    font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 20px;
+    font-family: "Poppins", sans-serif;
+    background: ${({ $alerta }) => $alerta ? "rgba(248,113,113,0.12)" : "rgba(255,255,255,0.06)"};
+    color: ${({ $alerta }) => $alerta ? "#f87171" : "#94a3b8"};
+    border: 1px solid ${({ $alerta }) => $alerta ? "rgba(248,113,113,0.3)" : "rgba(255,255,255,0.08)"};
+`;
+
+const LimitAlert = styled.div`
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 16px; border-radius: 12px; margin-bottom: 20px;
+    background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.25);
+    color: #f87171; font-size: 13px; font-weight: 600;
+    svg { font-size: 18px; flex-shrink: 0; }
+`;
+
 const BtnNuevo = styled.button`
     display: flex; align-items: center; gap: 8px;
     padding: 10px 20px; border-radius: 10px; border: none;
-    background: #2563eb; color: #fff;
-    font-size: 13px; font-weight: 700; cursor: pointer;
+    background: ${({ disabled }) => disabled ? "rgba(37,99,235,0.35)" : "#2563eb"};
+    color: ${({ disabled }) => disabled ? "rgba(255,255,255,0.4)" : "#fff"};
+    font-size: 13px; font-weight: 700;
+    cursor: ${({ disabled }) => disabled ? "not-allowed" : "pointer"};
     font-family: "Poppins", sans-serif;
     transition: background 0.15s;
-    &:hover { background: #1d4ed8; }
+    &:hover:not(:disabled) { background: #1d4ed8; }
 `;
 
 /* ── Grid de usuarios ── */
