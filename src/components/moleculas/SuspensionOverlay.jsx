@@ -1,7 +1,7 @@
 import styled, { keyframes } from "styled-components";
 import { v } from "../../styles/variables";
 import { usePlan } from "../../hooks/usePlan";
-import { RiLockLine, RiWhatsappLine, RiSecureLine } from "react-icons/ri";
+import { RiLockLine, RiWhatsappLine, RiShieldCheckLine } from "react-icons/ri";
 
 const formatCOP = (n) =>
     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n ?? 0);
@@ -70,7 +70,7 @@ export function SuspensionOverlay() {
                 </Btns>
 
                 <Seguridad>
-                    <RiSecureLine /> Tus datos están cifrados y protegidos · Sin permanencia
+                    <RiShieldCheckLine /> Tus datos están cifrados y protegidos · Sin permanencia
                 </Seguridad>
             </Caja>
         </Fondo>
