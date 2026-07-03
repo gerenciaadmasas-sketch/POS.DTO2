@@ -74,7 +74,7 @@ export const LinksArray = [
     to: "/arqueo",
   },
   {
-    label: "Mensajes",
+    label: "Mensajes Equipo",
     icon: "solar:chat-round-bold-duotone",
     to: "/mensajes",
     color: "#60a5fa",
@@ -86,8 +86,8 @@ export const LinksArray = [
     color: "#34d399",
   },
   {
-    label: "Chat",
-    icon: "solar:chat-round-bold-duotone",
+    label: "Soporte",
+    icon: "solar:chat-round-dots-bold-duotone",
     to: "/chat",
     color: "#f88533",
   },
