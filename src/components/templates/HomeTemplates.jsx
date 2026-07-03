@@ -52,7 +52,7 @@ const ACCESOS_COMERCIAL = [
 ];
 
 const ACCESOS_SUSCRIPCIONES = [
-    { key: "suscriptores", icon: "solar:users-group-rounded-bold-duotone", label: "Suscriptores",    to: "/configuracion/clientes", accent: "#60a5fa", big: true  },
+    { key: "suscriptores", icon: "solar:users-group-rounded-bold-duotone", label: "Suscriptores",    to: "/clientes", accent: "#60a5fa", big: true  },
     { key: "mensajes",     icon: "solar:chat-round-bold-duotone",          label: "Mensajes Equipo", to: "/mensajes",               accent: "#818cf8", big: false },
     { key: "soporte",      icon: "ri:customer-service-2-fill",             label: "Soporte",         to: "/soporte",                accent: "#34d399", big: false },
     { key: "config",       icon: "solar:settings-bold-duotone",            label: "Configuración",   to: "/configuracion",          accent: "#f59e0b", big: false },

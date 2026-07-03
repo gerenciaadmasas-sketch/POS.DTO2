@@ -72,6 +72,7 @@ export function Myroutes() {
         <Route path="/configuracion/categorias" element={<Categorias />} />
         <Route path="/configuracion/productos" element={<Productos />} />
         <Route path="/configuracion/clientes" element={<Clientes />} />
+        <Route path="/clientes" element={<Clientes />} />
         <Route path="/configuracion/proveedores" element={<Proveedores />} />
         <Route path="/configuracion/empresa" element={<Empresa />} />
         <Route path="/configuracion/serializacion" element={<Serializacion />} />
