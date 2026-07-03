@@ -63,15 +63,31 @@ function fmtFecha(iso) {
     return new Date(iso).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+const PERIODOS_PAGO = [
+    { key: "mensual",   label: "Mensual",   meses: 1  },
+    { key: "semestral", label: "Semestral", meses: 6  },
+    { key: "anual",     label: "Anual",     meses: 12 },
+];
+
+function calcFechaVencimiento(fechaInstalacion, periodo) {
+    if (!fechaInstalacion || !periodo) return "";
+    const d = new Date(fechaInstalacion + "T12:00:00");
+    const meses = PERIODOS_PAGO.find(p => p.key === periodo)?.meses ?? 1;
+    d.setMonth(d.getMonth() + meses);
+    return d.toISOString().split("T")[0];
+}
+
 /* ── Formulario vacío ─────────────────────────────────────── */
 function formVacio() {
+    const hoy = new Date().toISOString().split("T")[0];
     return {
         nombre: "", apellido: "", telefono: "", email: "", documento: "",
         direccion: "",
         decoder_tipo: "hd_basic", decoder_serial: "",
         plan_nombre: "basico",
-        fecha_instalacion: new Date().toISOString().split("T")[0],
-        fecha_vencimiento: "",
+        periodo: "mensual",
+        fecha_instalacion: hoy,
+        fecha_vencimiento: calcFechaVencimiento(hoy, "mensual"),
         estado_manual: "",
         notas: "",
         productos_plan: [],
@@ -169,6 +185,7 @@ export function SuscriptoresTVTemplate() {
             decoder_tipo:       form.decoder_tipo,
             decoder_serial:     form.decoder_serial,
             plan_nombre:        form.plan_nombre,
+            periodo:            form.periodo,
             direccion:          form.direccion,
             fecha_instalacion:  form.fecha_instalacion,
             fecha_vencimiento:  form.fecha_vencimiento,
@@ -176,6 +193,16 @@ export function SuscriptoresTVTemplate() {
             notas:              form.notas,
             productos_plan:     form.productos_plan,
         };
+    }
+
+    function handleFrecuencia(periodo) {
+        const nuevaFecha = calcFechaVencimiento(form.fecha_instalacion, periodo);
+        setForm(f => ({ ...f, periodo, fecha_vencimiento: nuevaFecha }));
+    }
+
+    function handleFechaInstalacion(fecha) {
+        const nuevaFecha = calcFechaVencimiento(fecha, form.periodo);
+        setForm(f => ({ ...f, fecha_instalacion: fecha, fecha_vencimiento: nuevaFecha }));
     }
 
     function abrirNuevo() {
@@ -198,6 +225,7 @@ export function SuscriptoresTVTemplate() {
             decoder_tipo:      dx.decoder_tipo ?? "hd_basic",
             decoder_serial:    dx.decoder_serial ?? "",
             plan_nombre:       dx.plan_nombre ?? "basico",
+            periodo:           dx.periodo ?? "mensual",
             fecha_instalacion: dx.fecha_instalacion ?? "",
             fecha_vencimiento: dx.fecha_vencimiento ?? "",
             estado_manual:     dx.estado_manual ?? "",
@@ -439,19 +467,27 @@ export function SuscriptoresTVTemplate() {
                                     </FilaDos>
 
                                     <SectionLabel style={{ marginTop: 8 }}><RiSignalWifiLine /> Plan de suscripción</SectionLabel>
-                                    <Campo>
-                                        <label>Plan</label>
-                                        <Select value={form.plan_nombre} onChange={e => setForm(f => ({ ...f, plan_nombre: e.target.value }))}>
-                                            {PLANES.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
-                                        </Select>
-                                    </Campo>
+                                    <FilaDos>
+                                        <Campo>
+                                            <label>Plan</label>
+                                            <Select value={form.plan_nombre} onChange={e => setForm(f => ({ ...f, plan_nombre: e.target.value }))}>
+                                                {PLANES.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
+                                            </Select>
+                                        </Campo>
+                                        <Campo>
+                                            <label><RiCalendarLine /> Frecuencia de pago</label>
+                                            <Select value={form.periodo ?? "mensual"} onChange={e => handleFrecuencia(e.target.value)}>
+                                                {PERIODOS_PAGO.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
+                                            </Select>
+                                        </Campo>
+                                    </FilaDos>
                                     <FilaDos>
                                         <Campo>
                                             <label><RiCalendarLine /> Fecha instalación</label>
-                                            <Input type="date" value={form.fecha_instalacion} onChange={e => setForm(f => ({ ...f, fecha_instalacion: e.target.value }))} />
+                                            <Input type="date" value={form.fecha_instalacion} onChange={e => handleFechaInstalacion(e.target.value)} />
                                         </Campo>
                                         <Campo>
-                                            <label><RiCalendarLine /> Fecha vencimiento</label>
+                                            <label><RiCalendarLine /> Fecha de corte</label>
                                             <Input type="date" value={form.fecha_vencimiento} onChange={e => setForm(f => ({ ...f, fecha_vencimiento: e.target.value }))} />
                                         </Campo>
                                     </FilaDos>
