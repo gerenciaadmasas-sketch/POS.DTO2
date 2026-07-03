@@ -14,9 +14,10 @@ import { usePlan } from "../../../hooks/usePlan";
 import { useState, useEffect } from "react";
 import { supabase } from "../../../supabase/supabase.config";
 import { ContarNoLeidosCliente } from "../../../supabase/crudSoporte";
+import { ContarNoLeidosInternos } from "../../../supabase/crudMensajesInternos";
 
-const LINKS_CAJERO     = ["/home", "/pos", "/inventario", "/reportes"];
-const LINKS_ADMIN      = ["/home", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo", "/soporte"];
+const LINKS_CAJERO     = ["/home", "/pos", "/inventario", "/reportes", "/mensajes"];
+const LINKS_ADMIN      = ["/home", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo", "/mensajes", "/soporte"];
 const LINKS_SUPERADMIN = ["/home", "/saas", "/reportes", "/finanzas", "/prospectos", "/chat"];
 const LINKS_COMERCIAL  = ["/home", "/prospectos"];
 
@@ -57,22 +58,20 @@ export function Sidebar({ state, setState, onNavClick }) {
     const esSuperAdmin = tipo === "superadmin";
     const esComercial  = tipo === "comercial";
 
-    // Badge mensajes no leídos en Soporte (para admins y supervisores)
+    // Badge mensajes soporte (solo admins/supervisores)
     const [unreadSoporte, setUnreadSoporte] = useState(0);
     const id_empresa = dataempresa?.id;
-    const necesitaBadge = !esSuperAdmin && !esCajero && !esComercial;
+    const yo_id = String(datausuarios?.id ?? "");
+    const necesitaBadgeSoporte = !esSuperAdmin && !esCajero && !esComercial;
 
     useEffect(() => {
-        if (!id_empresa || !necesitaBadge) return;
+        if (!id_empresa || !necesitaBadgeSoporte) return;
         let channel = null;
         let idSus = null;
-
         const refrescar = async () => {
             if (!idSus) return;
-            const c = await ContarNoLeidosCliente({ id_suscripcion: idSus });
-            setUnreadSoporte(c);
+            setUnreadSoporte(await ContarNoLeidosCliente({ id_suscripcion: idSus }));
         };
-
         const init = async () => {
             const { data: sus } = await supabase
                 .from("suscripciones").select("id")
@@ -81,18 +80,32 @@ export function Sidebar({ state, setState, onNavClick }) {
             idSus = sus.id;
             await refrescar();
             channel = supabase
-                .channel(`sidebar-badge-${idSus}`)
-                .on("postgres_changes", {
-                    event: "*", schema: "public",
-                    table: "mensajes_soporte",
-                    filter: `id_suscripcion=eq.${idSus}`,
-                }, refrescar)
+                .channel(`sidebar-badge-soporte-${idSus}`)
+                .on("postgres_changes", { event: "*", schema: "public", table: "mensajes_soporte", filter: `id_suscripcion=eq.${idSus}` }, refrescar)
                 .subscribe();
         };
-
         init();
         return () => { if (channel) supabase.removeChannel(channel); };
-    }, [id_empresa, necesitaBadge]);
+    }, [id_empresa, necesitaBadgeSoporte]);
+
+    // Badge mensajes internos (todos los roles excepto superadmin y comercial)
+    const [unreadInternos, setUnreadInternos] = useState(0);
+    const necesitaBadgeInternos = !esSuperAdmin && !esComercial && !!yo_id;
+
+    useEffect(() => {
+        if (!id_empresa || !necesitaBadgeInternos || !yo_id) return;
+        let channel = null;
+        const refrescar = async () => {
+            const c = await ContarNoLeidosInternos({ id_empresa, receptor_id: yo_id });
+            setUnreadInternos(c);
+        };
+        refrescar();
+        channel = supabase
+            .channel(`sidebar-badge-internos-${id_empresa}-${yo_id}`)
+            .on("postgres_changes", { event: "*", schema: "public", table: "mensajes_internos", filter: `id_empresa=eq.${id_empresa}` }, refrescar)
+            .subscribe();
+        return () => { if (channel) supabase.removeChannel(channel); };
+    }, [id_empresa, yo_id, necesitaBadgeInternos]);
 
     const linksBase = esCajero
         ? LinksArray.filter(l => LINKS_CAJERO.includes(l.to))
@@ -139,6 +152,9 @@ export function Sidebar({ state, setState, onNavClick }) {
                             <Icon icon={icon} className="icon" color={color} />
                             {to === "/soporte" && unreadSoporte > 0 && (
                                 <BadgeDot>{unreadSoporte > 9 ? "9+" : unreadSoporte}</BadgeDot>
+                            )}
+                            {to === "/mensajes" && unreadInternos > 0 && (
+                                <BadgeDot>{unreadInternos > 9 ? "9+" : unreadInternos}</BadgeDot>
                             )}
                         </IconWrap>
                         <span className="link-label">{label}</span>
