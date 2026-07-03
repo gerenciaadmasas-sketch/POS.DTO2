@@ -18,7 +18,7 @@ import { ContarNoLeidosInternos } from "../../../supabase/crudMensajesInternos";
 
 const LINKS_CAJERO     = ["/home", "/pos", "/inventario", "/reportes", "/mensajes"];
 const LINKS_ADMIN      = ["/home", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo", "/mensajes", "/soporte"];
-const LINKS_SUPERADMIN = ["/home", "/saas", "/reportes", "/finanzas", "/prospectos", "/chat"];
+const LINKS_SUPERADMIN = ["/home", "/saas", "/reportes", "/finanzas", "/prospectos", "/chat", "/mensajes"];
 const LINKS_COMERCIAL  = ["/home", "/prospectos"];
 
 export function Sidebar({ state, setState, onNavClick }) {
@@ -90,7 +90,7 @@ export function Sidebar({ state, setState, onNavClick }) {
 
     // Badge mensajes internos (todos los roles excepto superadmin y comercial)
     const [unreadInternos, setUnreadInternos] = useState(0);
-    const necesitaBadgeInternos = !esSuperAdmin && !esComercial && !!yo_id;
+    const necesitaBadgeInternos = !esComercial && !!yo_id;
 
     useEffect(() => {
         if (!id_empresa || !necesitaBadgeInternos || !yo_id) return;
