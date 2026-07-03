@@ -254,6 +254,28 @@ export function SuscriptoresTVTemplate() {
         setForm(f => ({ ...f, productos_plan: f.productos_plan.filter((_, i) => i !== idx) }));
     }
 
+    async function confirmarPago() {
+        const periodoLabel = PERIODOS_PAGO.find(p => p.key === form.periodo)?.label ?? form.periodo;
+        const r = await Swal.fire({
+            title: "Confirmar pago y registro",
+            html: `
+                <div style="text-align:left;font-size:14px;line-height:2.2">
+                    <b>Cliente:</b> ${form.nombre} ${form.apellido}<br/>
+                    <b>Plan:</b> ${form.plan_nombre} · ${periodoLabel}<br/>
+                    <b>Fecha de corte:</b> ${fmtFecha(form.fecha_vencimiento)}<br/>
+                </div>
+            `,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "✓ Confirmar y registrar",
+            cancelButtonText: "Cancelar",
+            confirmButtonColor: "#60a5fa",
+            cancelButtonColor: "#374151",
+            customClass: { popup: "swal-pos" },
+        });
+        if (r.isConfirmed) mutCrear.mutate();
+    }
+
     async function confirmarEliminar(c) {
         const r = await Swal.fire({
             title: `¿Eliminar a ${c.nombre}?`,
@@ -561,7 +583,7 @@ export function SuscriptoresTVTemplate() {
 
                         <ModalFooter>
                             <BtnGuardar
-                                onClick={editando ? () => mutEditar.mutate() : () => mutCrear.mutate()}
+                                onClick={editando ? () => mutEditar.mutate() : confirmarPago}
                                 disabled={pending || !form.nombre.trim()}
                             >
                                 {pending ? "Guardando..." : editando ? "Guardar cambios" : "Registrar suscriptor"}
