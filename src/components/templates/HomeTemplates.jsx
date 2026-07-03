@@ -51,6 +51,12 @@ const ACCESOS_COMERCIAL = [
     { key: "prospectos", icon: "solar:user-speak-bold-duotone",           label: "Leads",      to: "/prospectos", accent: "#818cf8", big: true  },
 ];
 
+const ACCESOS_SUSCRIPCIONES = [
+    { key: "mensajes",  icon: "solar:chat-round-bold-duotone",       label: "Mensajes Equipo", to: "/mensajes",       accent: "#60a5fa", big: true  },
+    { key: "soporte",   icon: "ri:customer-service-2-fill",           label: "Soporte",         to: "/soporte",        accent: "#34d399", big: false },
+    { key: "config",    icon: "solar:settings-bold-duotone",          label: "Configuración",   to: "/configuracion",  accent: "#a78bfa", big: false },
+];
+
 export function HomeTemplates() {
     const navigate = useNavigate();
     const { dataempresa }   = useEmpresaStore();
@@ -83,10 +89,13 @@ export function HomeTemplates() {
         ? sucursal?.razon_social ?? "Sin sucursal"
         : dataempresa?.razon_social ?? "Empresa";
 
-    const accesos = tipo === "cajero"     ? ACCESOS_CAJERO
-                  : tipo === "supervisor"  ? ACCESOS_SUPERVISOR
-                  : tipo === "superadmin"  ? ACCESOS_SUPERADMIN
-                  : tipo === "comercial"   ? ACCESOS_COMERCIAL
+    const esSuscripcionesTV = dataempresa?.actividad_economica === "suscripciones_tv";
+
+    const accesos = esSuscripcionesTV       ? ACCESOS_SUSCRIPCIONES
+                  : tipo === "cajero"       ? ACCESOS_CAJERO
+                  : tipo === "supervisor"   ? ACCESOS_SUPERVISOR
+                  : tipo === "superadmin"   ? ACCESOS_SUPERADMIN
+                  : tipo === "comercial"    ? ACCESOS_COMERCIAL
                   : ACCESOS_ADMIN;
 
     const fecha = new Date().toLocaleDateString("es-CO", {

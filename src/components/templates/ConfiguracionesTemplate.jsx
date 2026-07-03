@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import { useEffect, useRef, useMemo } from "react";
 import { useModulosStore } from "../../store/ModulosStore";
 import { useUsuariosStore } from "../../store/UsuariosStore";
+import { useEmpresaStore } from "../../store/EmpresaStore";
 
 const OCULTOS_SUPERVISOR = [
     "/configuracion/empresa",
@@ -40,23 +41,35 @@ const ICONOS_MODULOS = {
 
 const getIcono = (link) => ICONOS_MODULOS[link];
 
+const VISIBLES_SUSCRIPCIONES = [
+    "/configuracion/planes",
+    "/configuracion/usuarios",
+    "/configuracion/empresa",
+    "/configuracion/sucursales",
+    "/configuracion/ticket",
+    "/configuracion/serializacion",
+];
+
 export function ConfiguracionesTemplate() {
     const { dataModulos = [] } = useModulosStore();
     const { datausuarios } = useUsuariosStore();
+    const { dataempresa } = useEmpresaStore();
     const gridRef = useRef(null);
     const tipo = datausuarios?.tipo;
     const esSupervisor = tipo === "supervisor";
     const esAdmin = tipo === "administrador";
     const esSuperAdmin = tipo === "superadmin";
+    const esSuscripcionesTV = dataempresa?.actividad_economica === "suscripciones_tv";
 
     const VISIBLES_SUPERADMIN = ["/configuracion/planes", "/configuracion/version"];
 
     const modulosFiltrados = useMemo(() => {
+        if (esSuscripcionesTV) return dataModulos.filter((m) => VISIBLES_SUSCRIPCIONES.includes(m.link));
         if (esSuperAdmin) return dataModulos.filter((m) => VISIBLES_SUPERADMIN.includes(m.link));
         if (esSupervisor) return dataModulos.filter((m) => !OCULTOS_SUPERVISOR.includes(m.link));
         if (esAdmin) return dataModulos.filter((m) => !OCULTOS_ADMIN.includes(m.link));
         return dataModulos;
-    }, [dataModulos, esSupervisor, esAdmin, esSuperAdmin]);
+    }, [dataModulos, esSupervisor, esAdmin, esSuperAdmin, esSuscripcionesTV]);
 
     useEffect(() => {
         const handleMouseMove = (e) => {
