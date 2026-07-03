@@ -56,6 +56,30 @@ serve(async (req) => {
       estado: "pendiente",
     });
 
+    // Crear prospecto en leads con service role (bypassa RLS)
+    const { data: prospecto } = await supabase
+      .from("prospectos")
+      .insert({
+        nombre:              nombre ?? "",
+        apellido:            apellido ?? "",
+        telefono:            telefono ?? "—",
+        email:               email ?? "",
+        negocio:             empresa ?? "",
+        plan:                plan,
+        estado:              "en negociación",
+        actividad_economica: actividad_economica ?? "",
+        contacto_preferido:  "whatsapp",
+        notas:               `Redirigido a pago Wompi · ref: ${reference}`,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (prospecto?.id) {
+      await supabase.from("wompi_transacciones_pendientes")
+        .update({ prospecto_id: prospecto.id })
+        .eq("reference", reference);
+    }
+
     // URL de checkout Wompi
     const publicKey  = Deno.env.get("WOMPI_PUBLIC_KEY")!;
     const frontendUrl = Deno.env.get("FRONTEND_URL") ?? "https://posdto2.vercel.app";

@@ -218,20 +218,6 @@ export function PlanesTemplate() {
         setPagoMsgIdx(0);
         setPagoError("");
 
-        // Registrar como lead (no bloquea el flujo)
-        try {
-            await CrearProspecto({
-                nombre:              pagoForm.nombre,
-                apellido:            pagoForm.apellido,
-                telefono:            pagoForm.telefono || "—",
-                email:               pagoForm.email,
-                negocio:             pagoForm.empresa,
-                plan:                planPago?.nombre ?? "",
-                estado:              "en negociación",
-                actividad_economica: pagoForm.actividad_economica,
-            });
-        } catch (_) { /* no bloquear si falla */ }
-
         try {
             // Llamar Edge Function wompi-sign para obtener hash + URL de checkout
             const { data, error } = await supabase.functions.invoke("wompi-sign", {

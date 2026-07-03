@@ -39,9 +39,25 @@ serve(async (req) => {
 
     // Marcar como fallido si fue rechazado
     if (tx.status !== "APPROVED") {
+      const { data: pendingFallido } = await supabase
+        .from("wompi_transacciones_pendientes")
+        .select()
+        .eq("reference", tx.reference)
+        .maybeSingle();
+
       await supabase.from("wompi_transacciones_pendientes")
         .update({ estado: "fallido", wompi_transaction_id: tx.id })
         .eq("reference", tx.reference);
+
+      // Actualizar prospecto con la nota de pago fallido
+      if (pendingFallido?.prospecto_id) {
+        await supabase.from("prospectos")
+          .update({
+            notas: `Pago fallido en Wompi · ref: ${tx.reference} · estado: ${tx.status}`,
+          })
+          .eq("id", pendingFallido.prospecto_id);
+      }
+
       return new Response("OK", { status: 200 });
     }
 
@@ -182,6 +198,16 @@ serve(async (req) => {
         password_admin:      password,
       })
       .eq("reference", tx.reference);
+
+    // 6. Cerrar prospecto (pago exitoso = cliente ganado)
+    if (pending.prospecto_id) {
+      await supabase.from("prospectos")
+        .update({
+          estado: "cerrado",
+          notas:  `Pago exitoso en Wompi · ref: ${tx.reference} · usuario: ${usuario}`,
+        })
+        .eq("id", pending.prospecto_id);
+    }
 
     console.log("[wompi-webhook] Cliente creado:", usuario, "empresa:", empresa.id);
     return new Response("OK", { status: 200 });
