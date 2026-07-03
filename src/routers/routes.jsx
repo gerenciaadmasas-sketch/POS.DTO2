@@ -11,6 +11,7 @@ import { Finanzas } from "../pages/Finanzas";
 import { Prospectos } from "../pages/Prospectos";
 import { Soporte } from "../pages/Soporte";
 import { Chat } from "../pages/Chat";
+import { PagoExitoso } from "../pages/PagoExitoso";
 import { useQuery } from "@tanstack/react-query";
 import { Spinner1 } from "../components/moleculas/Spinner1";
 import { MostrarEmpresaPorId } from "../supabase/crudEmpresa";
@@ -60,9 +61,10 @@ export function Myroutes() {
     <SuspensionOverlay />
     <Routes>
       {/* ── Rutas públicas (sin autenticación) ── */}
-      <Route path="/"       element={user ? <Navigate to="/home" replace /> : <Planes />} />
-      <Route path="/planes" element={<Navigate to="/" replace />} />
-      <Route path="/login"  element={user ? <Navigate to="/home" replace /> : <Login />} />
+      <Route path="/"              element={user ? <Navigate to="/home" replace /> : <Planes />} />
+      <Route path="/planes"        element={<Navigate to="/" replace />} />
+      <Route path="/login"         element={user ? <Navigate to="/home" replace /> : <Login />} />
+      <Route path="/pago-exitoso"  element={<PagoExitoso />} />
       <Route element={<ProtectedRoute user={user} redirectTo="/" />}>
         <Route path="/home" element={<Home />} />
         <Route path="/configuracion" element={<Configuraciones />} />

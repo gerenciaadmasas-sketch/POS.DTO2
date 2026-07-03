@@ -107,21 +107,27 @@ const HamburgerBtn = styled.button`
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  border: none;
-  background: linear-gradient(135deg, #f88533 0%, #f56a00 100%);
-  color: #fff;
+  border: 1px solid rgba(248, 133, 51, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #f88533;
   font-size: 22px;
   display: ${({ $hidden }) => $hidden ? "none" : "flex"};
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 200;
-  box-shadow: 0 4px 18px rgba(248, 133, 51, 0.45);
-  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+  transition: transform 0.15s, background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: rgba(248, 133, 51, 0.12);
+    border-color: rgba(248, 133, 51, 0.6);
+  }
 
   &:active {
     transform: scale(0.92);
-    box-shadow: 0 2px 8px rgba(248, 133, 51, 0.3);
   }
 
   /* Ocultar en tablet+ donde el sidebar está siempre visible */

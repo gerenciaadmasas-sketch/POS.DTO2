@@ -6,7 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { MostrarConfigPlanes } from "../../supabase/crudConfigPlanes";
 import { useAuthStore } from "../../store/AuthStore";
 import { ObtenerEmailPorUsuario } from "../../supabase/crudUsuarios";
-import { CrearProspecto, CerrarProspectoPago } from "../../supabase/crudProspectos";
+import { CrearProspecto } from "../../supabase/crudProspectos";
+import { supabase } from "../../supabase/supabase.config";
 import ConfettiExplosion from "react-confetti-explosion";
 import {
     RiArrowLeftSLine, RiCheckLine, RiCloseLine,
@@ -182,10 +183,10 @@ export function PlanesTemplate() {
     /* ── Estado de pasarela de pago ── */
     const [pagoOpen, setPagoOpen]       = useState(false);
     const [planPago, setPlanPago]       = useState(null);
-    const [pasoPago, setPasoPago]       = useState("datos"); // datos | procesando | exito
-    const [pagoForm, setPagoForm]       = useState({ nombre: "", apellido: "", email: "", empresa: "", telefono: "", actividad_economica: "" });
+    const [pasoPago, setPasoPago]       = useState("datos"); // datos | procesando
+    const [pagoForm, setPagoForm]       = useState({ nombre: "", apellido: "", cedula: "", email: "", empresa: "", telefono: "", actividad_economica: "" });
     const [pagoMsgIdx, setPagoMsgIdx]   = useState(0);
-    const [prospectoId, setProspectoId] = useState(null);
+    const [pagoError, setPagoError]     = useState("");
     const [dropActPago, setDropActPago] = useState(false);
     const dropActPagoRef                = useRef(null);
 
@@ -204,33 +205,56 @@ export function PlanesTemplate() {
     const abrirPago = (plan) => {
         setPlanPago(plan);
         setPasoPago("datos");
-        setPagoForm({ nombre: "", apellido: "", email: "", empresa: "", telefono: "", actividad_economica: "" });
+        setPagoForm({ nombre: "", apellido: "", cedula: "", email: "", empresa: "", telefono: "", actividad_economica: "" });
         setPagoMsgIdx(0);
+        setPagoError("");
         setDropActPago(false);
         setPagoOpen(true);
     };
-    const cerrarPago = () => { setPagoOpen(false); setProspectoId(null); };
+    const cerrarPago = () => { setPagoOpen(false); setPagoError(""); };
     const handlePago = async (e) => {
         e.preventDefault();
         setPasoPago("procesando");
         setPagoMsgIdx(0);
-        // Registrar como lead "en negociación"
+        setPagoError("");
+
+        // Registrar como lead (no bloquea el flujo)
         try {
-            const id = await CrearProspecto({
-                nombre:               pagoForm.nombre,
-                apellido:             pagoForm.apellido,
-                telefono:             pagoForm.telefono || "—",
-                email:                pagoForm.email,
-                negocio:              pagoForm.empresa,
-                plan:                 planPago?.nombre ?? "",
-                estado:               "en negociación",
-                actividad_economica:  pagoForm.actividad_economica,
+            await CrearProspecto({
+                nombre:              pagoForm.nombre,
+                apellido:            pagoForm.apellido,
+                telefono:            pagoForm.telefono || "—",
+                email:               pagoForm.email,
+                negocio:             pagoForm.empresa,
+                plan:                planPago?.nombre ?? "",
+                estado:              "en negociación",
+                actividad_economica: pagoForm.actividad_economica,
             });
-            setProspectoId(id);
-        } catch (_) { /* no bloquear el pago si falla */ }
-        // ─── WOMPI (pendiente): crear link de pago y redirigir ───
-        // const link = await crearPagoWompi({ plan: planPago.id, precio, email: pagoForm.email })
-        // window.location.href = link;
+        } catch (_) { /* no bloquear si falla */ }
+
+        try {
+            // Llamar Edge Function wompi-sign para obtener hash + URL de checkout
+            const { data, error } = await supabase.functions.invoke("wompi-sign", {
+                body: {
+                    plan:                planPago.id,
+                    billing:             anual ? "anual" : "mensual",
+                    nombre:              pagoForm.nombre,
+                    apellido:            pagoForm.apellido,
+                    email:               pagoForm.email,
+                    empresa:             pagoForm.empresa,
+                    telefono:            pagoForm.telefono,
+                    cedula:              pagoForm.cedula,
+                    actividad_economica: pagoForm.actividad_economica,
+                },
+            });
+            if (error) throw error;
+            // Redirigir al checkout de Wompi
+            window.location.href = data.checkoutUrl;
+        } catch (err) {
+            console.error("[Wompi]", err);
+            setPasoPago("datos");
+            setPagoError("No pudimos conectar con la pasarela de pago. Intenta de nuevo.");
+        }
     };
 
     const handleRegistro = async (e) => {
@@ -269,18 +293,6 @@ export function PlanesTemplate() {
         document.body.style.overflow = (loginOpen || registroOpen || pagoOpen) ? "hidden" : "";
         return () => { document.body.style.overflow = ""; };
     }, [loginOpen, registroOpen, pagoOpen]);
-
-    /* procesando → exito después de 3s + cerrar lead si hay ID */
-    useEffect(() => {
-        if (pasoPago !== "procesando") return;
-        const t = setTimeout(async () => {
-            setPasoPago("exito");
-            if (prospectoId) {
-                try { await CerrarProspectoPago(prospectoId); } catch (_) {}
-            }
-        }, 3200);
-        return () => clearTimeout(t);
-    }, [pasoPago, prospectoId]);
 
     /* ciclar mensajes del procesador */
     useEffect(() => {
@@ -675,6 +687,18 @@ export function PlanesTemplate() {
                                 onChange={e => setPagoForm(f => ({...f, telefono: e.target.value}))} />
                         </InputGroup>
 
+                        <InputGroup>
+                            <InputLabel>Cédula o NIT</InputLabel>
+                            <InputField
+                                type="text"
+                                placeholder="Ej: 1023456789  ·  Sin dígito de verificación"
+                                value={pagoForm.cedula}
+                                onChange={e => setPagoForm(f => ({...f, cedula: e.target.value.replace(/[^0-9]/g, "")}))}
+                                maxLength={15}
+                            />
+                            <CedulaNota>Si tienes NIT, no incluyas el dígito de verificación (el número después del guion)</CedulaNota>
+                        </InputGroup>
+
                         <InputGroup ref={dropActPagoRef} style={{ position: "relative" }}>
                             <InputLabel>¿A qué se dedica tu negocio? *</InputLabel>
                             <ActDropBtn
@@ -722,8 +746,10 @@ export function PlanesTemplate() {
                             )}
                         </PagoSubtotal>
 
+                        {pagoError && <MsgError>{pagoError}</MsgError>}
+
                         <BtnPagoSubmit type="submit" $color={planPago.color} $colorAlt={planPago.colorAlt} $glow={planPago.glow}
-                            disabled={!pagoForm.nombre || !pagoForm.apellido || !pagoForm.email || !pagoForm.empresa || !pagoForm.actividad_economica}>
+                            disabled={!pagoForm.nombre || !pagoForm.apellido || !pagoForm.email || !pagoForm.empresa || !pagoForm.cedula || !pagoForm.actividad_economica}>
                             <RiLockLine /> Ir al pago seguro →
                         </BtnPagoSubmit>
                     </LoginForm>
@@ -758,52 +784,6 @@ export function PlanesTemplate() {
                 </PagoProc>
             )}
 
-            {/* ─── PASO 3: Éxito ─── */}
-            {pasoPago === "exito" && planPago && (
-                <PagoExito>
-                    <ConfettiCenter>
-                        <ConfettiExplosion force={0.75} duration={3800} particleCount={220} width={900}
-                            colors={['#f88533','#fbbf24', planPago.color,'#34d399','#fff','#f87171','#c084fc']} />
-                    </ConfettiCenter>
-
-                    <CheckCircle $color={planPago.color} $glow={planPago.glow}>
-                        <RiCheckboxCircleFill />
-                    </CheckCircle>
-
-                    <ExitoTitle>¡{pagoForm.nombre ? `${pagoForm.nombre.split(" ")[0]}, bienvenido` : "¡Bienvenido"}! 🎉</ExitoTitle>
-                    <ExitoSub>Tu plan <b style={{ color: planPago.color }}>{planPago.nombre}</b> está listo para activarse.</ExitoSub>
-
-                    <ExitoPlanCard $color={planPago.color} $glow={planPago.glow}>
-                        <ExitoPlanHeader>
-                            <ExitoPlanEmoji>{planPago.emoji}</ExitoPlanEmoji>
-                            <div>
-                                <ExitoPlanNombre $color={planPago.color}>{planPago.nombre}</ExitoPlanNombre>
-                                <ExitoPlanPrecio>
-                                    {formatCOP(anual ? planPago.precio_ano : planPago.precio_mes)}/mes
-                                    · {anual ? "facturación anual" : "facturación mensual"}
-                                </ExitoPlanPrecio>
-                            </div>
-                        </ExitoPlanHeader>
-                        <ExitoFeatures>
-                            {planPago.features.filter(f => f.ok).slice(0, 5).map((f, i) => (
-                                <ExitoFeatureRow key={i} $color={planPago.color}>
-                                    <RiCheckLine /> {f.txt}
-                                </ExitoFeatureRow>
-                            ))}
-                        </ExitoFeatures>
-                    </ExitoPlanCard>
-
-                    <BtnIngresar type="button" onClick={() => { cerrarPago(); abrirLogin(); }}>
-                        Ingresar a mi panel →
-                    </BtnIngresar>
-
-                    {pagoForm.email && (
-                        <ExitoNota>
-                            <RiMailLine /> Confirmación enviada a <b>{pagoForm.email}</b>
-                        </ExitoNota>
-                    )}
-                </PagoExito>
-            )}
         </PagoDrawerWrap>
 
         {/* ══ MODAL DE LOGIN ══ */}
@@ -1111,6 +1091,10 @@ const InputField = styled.input`
     transition: border-color 0.2s;
     &:focus { border-color: #f88533; }
     &::placeholder { color: rgba(255,255,255,0.25); }
+`;
+
+const CedulaNota = styled.span`
+    font-size: 11px; color: rgba(255,255,255,0.3); line-height: 1.5;
 `;
 
 const ActDropBtn = styled.button`

@@ -1,4 +1,4 @@
-import styled, { keyframes } from "styled-components";
+import styled from "styled-components";
 import { LinksArray, SecondarylinksArray } from "../../../utils/dataEstatica";
 import { v } from "../../../styles/variables";
 import { NavLink } from "react-router-dom";
@@ -213,10 +213,6 @@ const LogoArea = styled.div`
     }
 `;
 
-const pulseGlow = keyframes`
-    0%, 100% { box-shadow: 0 0 0 0 rgba(248,133,51,0.5), 0 4px 14px rgba(248,133,51,0.35); }
-    50%       { box-shadow: 0 0 0 6px rgba(248,133,51,0), 0 4px 18px rgba(248,133,51,0.5); }
-`;
 
 const BtnCerrarMobile = styled.button`
     display: none;
@@ -226,19 +222,20 @@ const BtnCerrarMobile = styled.button`
         align-items: center;
         justify-content: center;
         margin-left: auto;
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        border: none;
-        background: linear-gradient(135deg, #f88533 0%, #f56a00 100%);
-        color: #fff;
-        font-size: 22px;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        border: 1px solid rgba(248, 133, 51, 0.3);
+        background: rgba(255, 255, 255, 0.06);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: #f88533;
+        font-size: 20px;
         cursor: pointer;
         flex-shrink: 0;
-        animation: ${pulseGlow} 2.4s ease-in-out infinite;
-        transition: transform 0.15s, filter 0.15s;
-        &:hover  { filter: brightness(1.15); transform: scale(1.07); }
-        &:active { transform: scale(0.92); }
+        transition: transform 0.15s, background 0.15s, border-color 0.15s;
+        &:hover  { background: rgba(248, 133, 51, 0.12); border-color: rgba(248, 133, 51, 0.55); }
+        &:active { transform: scale(0.9); }
     }
 `;
 
