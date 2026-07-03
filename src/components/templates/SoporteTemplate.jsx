@@ -5,7 +5,8 @@ import { supabase } from "../../supabase/supabase.config";
 import { useEmpresaStore } from "../../store/EmpresaStore";
 import { useUsuariosStore } from "../../store/UsuariosStore";
 import { EnviarMensaje, MostrarMensajes, MarcarLeidos } from "../../supabase/crudSoporte";
-import { RiSendPlaneFill, RiCustomerService2Line } from "react-icons/ri";
+import { RiSendPlaneFill } from "react-icons/ri";
+import { Icon } from "@iconify/react";
 
 const formatHora  = (iso) => new Date(iso).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" });
 const formatFecha = (iso) => new Date(iso).toLocaleDateString("es-CO", { day: "2-digit", month: "short" });
@@ -86,7 +87,7 @@ export function SoporteTemplate() {
     return (
         <Wrap>
             <ChatHeader>
-                <AvatarSoporte><RiCustomerService2Line /></AvatarSoporte>
+                <AvatarSoporte><Icon icon="solar:headphones-bold-duotone" /></AvatarSoporte>
                 <HeaderInfo>
                     <HeaderNombre>Soporte POS DL</HeaderNombre>
                     <HeaderSub>Tiempo de respuesta: mismo día · {datausuarios?.nombres?.split(" ")[0]}</HeaderSub>
@@ -99,7 +100,7 @@ export function SoporteTemplate() {
                     <EmptyWrap><span>Conectando...</span></EmptyWrap>
                 ) : mensajes.length === 0 ? (
                     <EmptyWrap>
-                        <RiCustomerService2Line size={44} style={{ opacity: 0.15 }} />
+                        <Icon icon="solar:headphones-bold-duotone" style={{ fontSize: 44, opacity: 0.15, color: "#f88533" }} />
                         <span>Aún no hay mensajes.<br />¡Escríbenos, estamos aquí para ayudarte!</span>
                     </EmptyWrap>
                 ) : (() => {
