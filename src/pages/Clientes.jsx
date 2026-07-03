@@ -24,6 +24,7 @@ export function Clientes() {
         placeholderData: keepPreviousData,
     });
 
+    if (!dataempresa) return <Spinner1 />;
     if (isLoading) return <Spinner1 />;
     if (error) return <span>error...</span>;
 
