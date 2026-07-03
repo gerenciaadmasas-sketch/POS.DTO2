@@ -20,7 +20,7 @@ const LINKS_CAJERO        = ["/home", "/pos", "/inventario", "/reportes", "/mens
 const LINKS_ADMIN         = ["/home", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo", "/mensajes", "/soporte"];
 const LINKS_SUPERADMIN    = ["/home", "/saas", "/reportes", "/finanzas", "/prospectos", "/chat", "/mensajes"];
 const LINKS_COMERCIAL     = ["/home", "/prospectos"];
-const LINKS_SUSCRIPCIONES = ["/home", "/mensajes", "/soporte", "/configuracion"];
+const LINKS_SUSCRIPCIONES = ["/home", "/mensajes", "/soporte", "/configuracion", "/configuracion/clientes"];
 
 export function Sidebar({ state, setState, onNavClick }) {
     const { cerrarSesion } = useAuthStore();
