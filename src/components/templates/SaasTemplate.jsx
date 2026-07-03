@@ -41,7 +41,7 @@ const ACTIVIDADES = [
     { key: "salon_belleza",  label: "Salón de belleza" },
     { key: "veterinaria",    label: "Veterinaria" },
     { key: "construccion",       label: "Construcción / Inmobiliaria" },
-    { key: "suscripciones_tv",   label: "Suscripciones de TV / Streaming" },
+    { key: "suscripciones_tv",   label: "Suscripciones" },
 ];
 
 export function SaasTemplate() {

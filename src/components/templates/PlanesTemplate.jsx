@@ -32,7 +32,7 @@ const ACTIVIDADES = [
     { key: "salon_belleza",      label: "Salón de belleza",                         emoji: "💇" },
     { key: "veterinaria",        label: "Veterinaria",                              emoji: "🐾" },
     { key: "construccion",       label: "Construcción / Inmobiliaria",              emoji: "🏗️" },
-    { key: "suscripciones_tv",   label: "Suscripciones de TV / Streaming",         emoji: "📺" },
+    { key: "suscripciones_tv",   label: "Suscripciones",         emoji: "📺" },
 ];
 
 /* ─────────────────────────────────────────
