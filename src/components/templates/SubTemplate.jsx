@@ -45,7 +45,7 @@ function calcVencimiento(periodo) {
 function uid() { return `plan_${Date.now()}`; }
 
 /* ════════════════════════════════════════════════════════════ */
-export function TVPosTemplate() {
+export function SubTemplate() {
     const { dataempresa, setEmpresa } = useEmpresaStore();
     const qc = useQueryClient();
     const datosExtra = dataempresa?.datos_extra ?? {};
