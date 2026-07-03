@@ -488,7 +488,11 @@ export function SuscriptoresTVTemplate() {
                                         </Campo>
                                         <Campo>
                                             <label><RiCalendarLine /> Fecha de corte</label>
-                                            <Input type="date" value={form.fecha_vencimiento} onChange={e => setForm(f => ({ ...f, fecha_vencimiento: e.target.value }))} />
+                                            <FechaCorteDisplay>
+                                                {form.fecha_vencimiento
+                                                    ? new Date(form.fecha_vencimiento + "T12:00:00").toLocaleDateString("es-CO", { day: "2-digit", month: "long", year: "numeric" })
+                                                    : "Se calculará automáticamente"}
+                                            </FechaCorteDisplay>
                                         </Campo>
                                     </FilaDos>
 
@@ -501,7 +505,6 @@ export function SuscriptoresTVTemplate() {
                                     </Campo>
 
                                     {form.fecha_vencimiento && (() => {
-                                        const dias = diasParaVencer(form.fecha_vencimiento);
                                         const estado = calcEstado({ fecha_vencimiento: form.fecha_vencimiento, estado_manual: form.estado_manual });
                                         const cfg = ESTADO_CFG[estado];
                                         return (
@@ -510,10 +513,7 @@ export function SuscriptoresTVTemplate() {
                                                 {estado === "por_vencer" && <RiTimeLine />}
                                                 {estado === "vencido" && <RiErrorWarningLine />}
                                                 {estado === "suspendido" && <RiPauseLine />}
-                                                <span>{cfg.label}
-                                                    {dias !== null && dias >= 0 && ` · vence en ${dias} día${dias !== 1 ? "s" : ""}`}
-                                                    {dias !== null && dias < 0 && ` · venció hace ${Math.abs(dias)} día${Math.abs(dias) !== 1 ? "s" : ""}`}
-                                                </span>
+                                                <span>{cfg.label}</span>
                                             </EstadoPreview>
                                         );
                                     })()}
@@ -791,6 +791,14 @@ const SectionLabel = styled.div`
     color: ${({ theme }) => theme.text};
     svg { color: #60a5fa; font-size: 16px; }
 `;
+const FechaCorteDisplay = styled.div`
+    padding: 10px 13px; border-radius: 10px;
+    border: 1.5px solid ${({ theme }) => theme.color2};
+    background: ${({ theme }) => theme.bgtotal};
+    color: #60a5fa; font-size: 14px; font-weight: 700;
+    opacity: 0.85;
+`;
+
 const EstadoPreview = styled.div`
     display: flex; align-items: center; gap: 8px;
     padding: 10px 14px; border-radius: 10px;
