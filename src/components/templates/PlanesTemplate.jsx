@@ -400,7 +400,7 @@ export function PlanesTemplate() {
                         <ToggleThumb $on={anual} />
                     </TogglePill>
                     <ToggleOpt $active={anual} onClick={() => setAnual(true)}>
-                        Anual <AhorroBadge>−20%</AhorroBadge>
+                        Anual <AhorroBadge>−15%</AhorroBadge>
                     </ToggleOpt>
                 </ToggleWrap>
             </Hero>
