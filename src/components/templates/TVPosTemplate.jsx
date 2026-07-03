@@ -535,7 +535,7 @@ const PlanesGrid = styled.div`
 const PlanCard = styled.div`
     border-radius: 14px; padding: 16px 14px;
     border: 2px solid ${({ $activo, $color }) => $activo ? $color : "transparent"};
-    background: ${({ $activo, $color }) => $activo ? `${$color}15` : ({ theme }) => theme.bgtotal};
+    background: ${({ $activo, $color, theme }) => $activo ? `${$color}15` : theme.bgtotal};
     cursor: pointer; text-align: center;
     transition: border-color 0.15s, background 0.15s;
     &:hover { border-color: ${({ $color }) => $color}; }
@@ -559,7 +559,7 @@ const PeriodosRow = styled.div`display: flex; gap: 12px; flex-wrap: wrap;`;
 const PeriodBtn = styled.button`
     flex: 1; min-width: 120px;
     padding: 14px 12px; border-radius: 12px;
-    border: 2px solid ${({ $activo }) => $activo ? "#60a5fa" : ({ theme }) => theme.color2};
+    border: 2px solid ${({ $activo, theme }) => $activo ? "#60a5fa" : theme.color2};
     background: ${({ $activo }) => $activo ? "rgba(96,165,250,0.12)" : "transparent"};
     color: ${({ theme }) => theme.text};
     cursor: pointer; font-weight: 700; font-size: 14px;
