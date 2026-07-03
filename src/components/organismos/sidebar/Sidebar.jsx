@@ -16,10 +16,11 @@ import { supabase } from "../../../supabase/supabase.config";
 import { ContarNoLeidosCliente } from "../../../supabase/crudSoporte";
 import { ContarNoLeidosInternos } from "../../../supabase/crudMensajesInternos";
 
-const LINKS_CAJERO     = ["/home", "/pos", "/inventario", "/reportes", "/mensajes"];
-const LINKS_ADMIN      = ["/home", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo", "/mensajes", "/soporte"];
-const LINKS_SUPERADMIN = ["/home", "/saas", "/reportes", "/finanzas", "/prospectos", "/chat", "/mensajes"];
-const LINKS_COMERCIAL  = ["/home", "/prospectos"];
+const LINKS_CAJERO        = ["/home", "/pos", "/inventario", "/reportes", "/mensajes"];
+const LINKS_ADMIN         = ["/home", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo", "/mensajes", "/soporte"];
+const LINKS_SUPERADMIN    = ["/home", "/saas", "/reportes", "/finanzas", "/prospectos", "/chat", "/mensajes"];
+const LINKS_COMERCIAL     = ["/home", "/prospectos"];
+const LINKS_SUSCRIPCIONES = ["/home"];
 
 export function Sidebar({ state, setState, onNavClick }) {
     const { cerrarSesion } = useAuthStore();
@@ -107,7 +108,11 @@ export function Sidebar({ state, setState, onNavClick }) {
         return () => { if (channel) supabase.removeChannel(channel); };
     }, [id_empresa, yo_id, necesitaBadgeInternos]);
 
-    const linksBase = esCajero
+    const esSuscripcionesTV = dataempresa?.actividad_economica === "suscripciones_tv";
+
+    const linksBase = esSuscripcionesTV
+        ? LinksArray.filter(l => LINKS_SUSCRIPCIONES.includes(l.to))
+        : esCajero
         ? LinksArray.filter(l => LINKS_CAJERO.includes(l.to))
         : esSuperAdmin
         ? LinksArray.filter(l => LINKS_SUPERADMIN.includes(l.to))
