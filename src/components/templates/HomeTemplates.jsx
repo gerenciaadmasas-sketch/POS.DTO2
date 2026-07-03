@@ -7,6 +7,7 @@ import { useAlmacenesConfigStore } from "../../store/AlmacenesConfigStore";
 import { Icon } from "@iconify/react";
 import { useQuery } from "@tanstack/react-query";
 import { MostrarVersion } from "../../supabase/crudVersion";
+import { usePlan } from "../../hooks/usePlan";
 
 const ROL_STYLE = {
     superadmin:    { color: "#f88533", bg: "rgba(248,133,51,0.10)", glow: "rgba(248,133,51,0.35)" },
@@ -20,6 +21,7 @@ const ACCESOS_SUPERADMIN = [
     { key: "reportes",   icon: "solar:chart-square-bold-duotone",         label: "Clientes",   to: "/reportes",   accent: "#60a5fa", big: false },
     { key: "finanzas",   icon: "solar:dollar-minimalistic-bold-duotone",  label: "Finanzas",   to: "/finanzas",   accent: "#34d399", big: false },
     { key: "prospectos", icon: "solar:user-speak-bold-duotone",           label: "Leads",      to: "/prospectos", accent: "#818cf8", big: false },
+    { key: "chat",       icon: "solar:chat-round-bold-duotone",           label: "Chat",       to: "/chat",       accent: "#f88533", big: false },
     { key: "perfil",     icon: "solar:user-bold-duotone",                 label: "Mi Perfil",  to: "/perfil",     accent: "#60a5fa", big: false },
 ];
 
@@ -29,6 +31,7 @@ const ACCESOS_ADMIN = [
     { key: "reportes",   icon: "solar:chart-square-bold-duotone",         label: "Clientes",   to: "/reportes",   accent: "#60a5fa", big: false },
     { key: "kardex",     icon: "solar:clipboard-list-bold-duotone",       label: "Kardex",     to: "/kardex",     accent: "#f59e0b", big: false },
     { key: "arqueo",     icon: "solar:wallet-money-bold-duotone",         label: "Arqueo",     to: "/arqueo",     accent: "#ec4899", big: false },
+    { key: "soporte",    icon: "solar:chat-round-dots-bold-duotone",      label: "Soporte",    to: "/soporte",    accent: "#34d399", big: false },
     { key: "perfil",     icon: "solar:user-bold-duotone",                 label: "Mi Perfil",  to: "/perfil",     accent: "#60a5fa", big: false },
 ];
 
@@ -58,6 +61,7 @@ export function HomeTemplates() {
     const { datausuarios }  = useUsuariosStore();
     const { dataSucursales } = useSucursalesStore();
     const { dataAlmacenes }  = useAlmacenesConfigStore();
+    const { diasMora, suspendido, esSuperadmin, suscripcion } = usePlan();
 
     const tipo   = datausuarios?.tipo ?? "cajero";
     const rol    = ROL_STYLE[tipo] ?? ROL_STYLE.cajero;
@@ -93,6 +97,14 @@ export function HomeTemplates() {
         weekday: "short", day: "numeric", month: "short",
     });
 
+    const alertaPlan = !esSuperadmin && suscripcion ? (() => {
+        if (suspendido) return { nivel: "critico", msg: "Cuenta suspendida — Contacta a soporte para reactivar tu suscripción.", icono: "🔴" };
+        if (diasMora > 0) return { nivel: "mora", msg: `Tu suscripción venció hace ${diasMora} día${diasMora !== 1 ? "s" : ""}. Contacta a soporte para regularizarla.`, icono: "🟠" };
+        if (diasMora === 0) return { nivel: "mora", msg: "Tu suscripción vence hoy. Contáctanos para renovar y no perder el acceso.", icono: "🟡" };
+        if (diasMora >= -5) return { nivel: "aviso", msg: `Tu suscripción vence en ${-diasMora} día${-diasMora !== 1 ? "s" : ""}. Prepárate para renovar.`, icono: "🔔" };
+        return null;
+    })() : null;
+
     return (
         <Page>
             <Inner>
@@ -109,6 +121,14 @@ export function HomeTemplates() {
                         <Contexto>{contexto}</Contexto>
                     </RolRow>
                 </HeaderSection>
+
+                {/* ── Banner vencimiento ── */}
+                {alertaPlan && (
+                    <AlertaBanner $nivel={alertaPlan.nivel}>
+                        <AlertaIcono>{alertaPlan.icono}</AlertaIcono>
+                        <AlertaMsg>{alertaPlan.msg}</AlertaMsg>
+                    </AlertaBanner>
+                )}
 
                 {/* ── Bento Grid ── */}
                 <BentoGrid $count={accesos.length}>
@@ -299,4 +319,25 @@ const BentoArrow = styled.span`
         opacity: 1;
         transform: none;
     }
+`;
+
+const COLORES_ALERTA = {
+    critico: { bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.35)", color: "#f87171" },
+    mora:    { bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.35)",  color: "#f59e0b" },
+    aviso:   { bg: "rgba(251,191,36,0.10)",  border: "rgba(251,191,36,0.30)",  color: "#fbbf24" },
+};
+
+const AlertaBanner = styled.div`
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px; border-radius: 14px;
+    background: ${({ $nivel }) => COLORES_ALERTA[$nivel]?.bg ?? "rgba(245,158,11,0.12)"};
+    border: 1px solid ${({ $nivel }) => COLORES_ALERTA[$nivel]?.border ?? "rgba(245,158,11,0.35)"};
+    animation: ${fadeUp} 0.4s ease both;
+`;
+
+const AlertaIcono = styled.span`font-size: 20px; flex-shrink: 0;`;
+
+const AlertaMsg = styled.span`
+    font-size: 13px; font-weight: 600; line-height: 1.4;
+    color: rgba(255,255,255,0.85);
 `;

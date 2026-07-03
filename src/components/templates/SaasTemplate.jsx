@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "react-router-dom";
 import { MostrarSuscripciones, InsertarSuscripcion, EditarSuscripcion, EliminarSuscripcion, RegistrarPago, MostrarPagosCliente, EximirPago, ReactivarCuenta } from "../../supabase/crudSuscripciones";
 import { MostrarConfigPlanes } from "../../supabase/crudConfigPlanes";
-import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine, RiShieldLine, RiPercentLine, RiRefreshLine, RiShieldCheckLine, RiArrowDownSLine } from "react-icons/ri";
+import { RiEditLine, RiDeleteBin2Line, RiAddLine, RiCloseLine, RiShieldLine, RiPercentLine, RiRefreshLine, RiShieldCheckLine, RiArrowDownSLine, RiWhatsappLine } from "react-icons/ri";
 import { Icon } from "@iconify/react";
 import { toastExito, confirmar } from "../../utils/toast";
 import ConfettiExplosion from "react-confetti-explosion";
@@ -44,6 +45,7 @@ const ACTIVIDADES = [
 
 export function SaasTemplate() {
     const queryClient = useQueryClient();
+    const location = useLocation();
     const [modal, setModal] = useState(false);
     const [editando, setEditando] = useState(null);
     const [historialId, setHistorialId] = useState(null);
@@ -86,6 +88,29 @@ export function SaasTemplate() {
 
     const invalidar = () => queryClient.invalidateQueries({ queryKey: ["suscripciones"] });
 
+    useEffect(() => {
+        const p = location.state?.prospecto;
+        if (!p) return;
+        setForm({
+            nombre_cliente: p.nombre ?? "",
+            apellido_cliente: p.apellido ?? "",
+            cedula_cliente: "",
+            telefono: p.telefono ?? "",
+            plan: p.plan_elegido ?? "mensual",
+            tipo_plan: "chispa",
+            valor_mensual: String(preciosPlanes.find(x => x.tier === "chispa")?.precio_base ?? ""),
+            estado: "al_dia",
+            fecha_proximo_pago: "",
+            notas: p.notas ?? "",
+            actividad_economica: p.actividad_economica ?? "retail_ropa",
+            gracia_hasta: "",
+            descuento_pct: 0,
+        });
+        setEditando(null);
+        setModal(true);
+        window.history.replaceState({}, "");
+    }, [location.state?.prospecto]);
+
     function estadoAuto(s) {
         if (s.estado === "suspendido" || s.estado === "cancelado") return s.estado;
         if (!s.fecha_proximo_pago) return "al_dia";
@@ -121,6 +146,7 @@ export function SaasTemplate() {
                 nombre_cliente: form.nombre_cliente,
                 apellido_cliente: form.apellido_cliente,
                 cedula_cliente: form.cedula_cliente,
+                telefono: form.telefono,
                 plan: form.plan,
                 tipo_plan: form.tipo_plan,
                 valor_mensual: Number(form.valor_mensual) || 0,
@@ -178,7 +204,7 @@ export function SaasTemplate() {
     }
 
     function abrirNuevo() {
-        setForm({ nombre_cliente: "", apellido_cliente: "", cedula_cliente: "", plan: "mensual", tipo_plan: "chispa", valor_mensual: getPrecioTier("chispa"), estado: "al_dia", fecha_proximo_pago: "", notas: "", actividad_economica: "retail_ropa", gracia_hasta: "", descuento_pct: 0 });
+        setForm({ nombre_cliente: "", apellido_cliente: "", cedula_cliente: "", telefono: "", plan: "mensual", tipo_plan: "chispa", valor_mensual: getPrecioTier("chispa"), estado: "al_dia", fecha_proximo_pago: "", notas: "", actividad_economica: "retail_ropa", gracia_hasta: "", descuento_pct: 0 });
         setEditando(null);
         setModal(true);
     }
@@ -188,6 +214,7 @@ export function SaasTemplate() {
             nombre_cliente: s.nombre_cliente ?? "",
             apellido_cliente: s.apellido_cliente ?? "",
             cedula_cliente: s.cedula_cliente ?? "",
+            telefono: s.telefono ?? "",
             plan: s.plan ?? "mensual",
             tipo_plan: s.tipo_plan ?? "chispa",
             valor_mensual: String(s.valor_mensual ?? ""),
@@ -207,6 +234,18 @@ export function SaasTemplate() {
     function handleGuardar(e) {
         e.preventDefault();
         editando ? mutEditar.mutate() : mutCrear.mutate();
+    }
+
+    function waRecordatorio(s, diasRestantes) {
+        const tel = s.telefono?.replace(/\D/g, "");
+        if (!tel) return null;
+        const fecha = s.fecha_proximo_pago
+            ? new Date(s.fecha_proximo_pago).toLocaleDateString("es-CO", { day: "2-digit", month: "long" })
+            : "";
+        const msg = diasRestantes <= 0
+            ? `Hola ${s.nombre_cliente}, tu suscripción al *POS DL* venció el ${fecha}. Para renovarla y seguir usando el sistema, contáctanos. 🙌`
+            : `Hola ${s.nombre_cliente}, te recordamos que tu suscripción al *POS DL* vence el ${fecha} (en ${diasRestantes} día${diasRestantes !== 1 ? "s" : ""}). Si tienes dudas, escríbenos. ✅`;
+        return `https://wa.me/57${tel}?text=${encodeURIComponent(msg)}`;
     }
 
     // Stats
@@ -282,25 +321,33 @@ export function SaasTemplate() {
                             <Icon icon="solar:bell-bold-duotone" style={{ fontSize: 20, color: "#f59e0b" }} />
                             Próximos vencimientos
                         </AlertasTitulo>
-                        {alertas.map(s => (
-                            <AlertaItem key={s.id} $vencido={s.dias <= 0}>
-                                <AlertaIcono $vencido={s.dias <= 0}>
-                                    {s.dias <= 0 ? "🔴" : s.dias <= 3 ? "🟠" : "🟡"}
-                                </AlertaIcono>
-                                <AlertaInfo>
-                                    <AlertaNombre>{s.nombre_cliente} {s.apellido_cliente}</AlertaNombre>
-                                    <AlertaDetalle>
-                                        {s.dias <= 0
-                                            ? `Venció hace ${Math.abs(s.dias)} día${Math.abs(s.dias) !== 1 ? "s" : ""}`
-                                            : s.dias === 0
-                                            ? "Vence hoy"
-                                            : `Vence en ${s.dias} día${s.dias !== 1 ? "s" : ""}`
-                                        } · {new Date(s.fecha_proximo_pago).toLocaleDateString("es-CO")}
-                                    </AlertaDetalle>
-                                </AlertaInfo>
-                                <AlertaMonto>{formatCOP(s.valor_mensual)}</AlertaMonto>
-                            </AlertaItem>
-                        ))}
+                        {alertas.map(s => {
+                            const waUrl = waRecordatorio(s, s.dias);
+                            return (
+                                <AlertaItem key={s.id} $vencido={s.dias <= 0}>
+                                    <AlertaIcono $vencido={s.dias <= 0}>
+                                        {s.dias <= 0 ? "🔴" : s.dias <= 3 ? "🟠" : "🟡"}
+                                    </AlertaIcono>
+                                    <AlertaInfo>
+                                        <AlertaNombre>{s.nombre_cliente} {s.apellido_cliente}</AlertaNombre>
+                                        <AlertaDetalle>
+                                            {s.dias <= 0
+                                                ? `Venció hace ${Math.abs(s.dias)} día${Math.abs(s.dias) !== 1 ? "s" : ""}`
+                                                : s.dias === 0
+                                                ? "Vence hoy"
+                                                : `Vence en ${s.dias} día${s.dias !== 1 ? "s" : ""}`
+                                            } · {new Date(s.fecha_proximo_pago).toLocaleDateString("es-CO")}
+                                        </AlertaDetalle>
+                                    </AlertaInfo>
+                                    <AlertaMonto>{formatCOP(s.valor_mensual)}</AlertaMonto>
+                                    {waUrl && (
+                                        <BtnWA as="a" href={waUrl} target="_blank" rel="noopener noreferrer" title="Enviar recordatorio por WhatsApp">
+                                            <RiWhatsappLine />
+                                        </BtnWA>
+                                    )}
+                                </AlertaItem>
+                            );
+                        })}
                     </AlertasSection>
                 );
             })()}
@@ -473,6 +520,17 @@ export function SaasTemplate() {
                                     </BtnReactivar>
                                 )}
 
+                                {s.telefono && (() => {
+                                    const diasRest = s.fecha_proximo_pago
+                                        ? Math.ceil((new Date(s.fecha_proximo_pago) - new Date()) / 86400000)
+                                        : 0;
+                                    const url = waRecordatorio(s, diasRest);
+                                    return url ? (
+                                        <BtnWA as="a" href={url} target="_blank" rel="noopener noreferrer" title="Recordatorio WhatsApp">
+                                            <RiWhatsappLine />
+                                        </BtnWA>
+                                    ) : null;
+                                })()}
                                 <BtnIco onClick={() => abrirEditar(s)}><RiEditLine /></BtnIco>
                                 <BtnIco $rojo onClick={() => confirmar({
                                     titulo: "¿Eliminar cliente?",
@@ -505,9 +563,21 @@ export function SaasTemplate() {
                                 </Campo>
                             </FilaDos>
                             {!editando && (
+                                <FilaDos>
+                                    <Campo>
+                                        <label>Cédula (será la contraseña)</label>
+                                        <Input value={form.cedula_cliente} onChange={e => setForm({ ...form, cedula_cliente: e.target.value })} placeholder="Número de cédula" required />
+                                    </Campo>
+                                    <Campo>
+                                        <label>Teléfono / WhatsApp</label>
+                                        <Input value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} placeholder="3001234567" />
+                                    </Campo>
+                                </FilaDos>
+                            )}
+                            {editando && (
                                 <Campo>
-                                    <label>Cédula (será la contraseña)</label>
-                                    <Input value={form.cedula_cliente} onChange={e => setForm({ ...form, cedula_cliente: e.target.value })} placeholder="Número de cédula" required />
+                                    <label>Teléfono / WhatsApp</label>
+                                    <Input value={form.telefono} onChange={e => setForm({ ...form, telefono: e.target.value })} placeholder="3001234567" />
                                 </Campo>
                             )}
                             <Campo>
@@ -846,6 +916,15 @@ const BtnIco = styled.button`
     border-radius: 6px; display: flex; align-items: center;
     color: ${({ $rojo, theme }) => $rojo ? "#f87171" : theme.colorsubtitlecard};
     &:hover { background: rgba(255,255,255,0.08); }
+`;
+
+const BtnWA = styled.button`
+    display: flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 8px; border: none; flex-shrink: 0;
+    background: rgba(37,211,102,0.12); color: #25d366;
+    font-size: 16px; cursor: pointer; text-decoration: none;
+    transition: background 0.15s;
+    &:hover { background: rgba(37,211,102,0.24); }
 `;
 
 /* ── Modal ── */

@@ -1,8 +1,9 @@
 import { useState } from "react";
 import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { MostrarProspectos, ActualizarProspecto, EliminarProspecto } from "../../supabase/crudProspectos";
-import { RiDeleteBin2Line, RiWhatsappLine, RiPhoneLine, RiCloseLine, RiCheckLine, RiSearchLine, RiUserAddLine } from "react-icons/ri";
+import { RiDeleteBin2Line, RiWhatsappLine, RiPhoneLine, RiCloseLine, RiCheckLine, RiSearchLine, RiUserAddLine, RiUserStarLine } from "react-icons/ri";
 
 const ESTADOS = [
     { key: "nuevo",          label: "Nuevo",          color: "#818cf8" },
@@ -20,8 +21,11 @@ const formatFecha = (iso) => {
     return d.toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 };
 
+const LABEL_PLAN = { mensual: "Mensual", bimestral: "Bimestral", trimestral: "Trimestral" };
+
 export function ProspectosTemplate() {
     const qc = useQueryClient();
+    const nav = useNavigate();
     const [filtro, setFiltro]           = useState("todos");
     const [busqueda, setBusqueda]       = useState("");
     const [detalle, setDetalle]         = useState(null);
@@ -220,6 +224,27 @@ export function ProspectosTemplate() {
                         <DrawerVal style={{ textTransform: "capitalize" }}>{detalle.contacto_preferido}</DrawerVal>
                     </DrawerSection>
 
+                    {detalle.email && (
+                        <DrawerSection>
+                            <DrawerLabel>Email</DrawerLabel>
+                            <DrawerVal>{detalle.email}</DrawerVal>
+                        </DrawerSection>
+                    )}
+
+                    {detalle.plan_elegido && (
+                        <DrawerSection>
+                            <DrawerLabel>Plan elegido</DrawerLabel>
+                            <DrawerVal>{LABEL_PLAN[detalle.plan_elegido] ?? detalle.plan_elegido}</DrawerVal>
+                        </DrawerSection>
+                    )}
+
+                    {detalle.actividad_economica && (
+                        <DrawerSection>
+                            <DrawerLabel>Actividad económica</DrawerLabel>
+                            <DrawerVal>{detalle.actividad_economica.replace(/_/g, " ")}</DrawerVal>
+                        </DrawerSection>
+                    )}
+
                     <DrawerSection>
                         <DrawerLabel>Registrado</DrawerLabel>
                         <DrawerVal>{formatFecha(detalle.created_at)}</DrawerVal>
@@ -251,6 +276,12 @@ export function ProspectosTemplate() {
                             rows={4}
                         />
                     </DrawerSection>
+
+                    <BtnCrearCliente
+                        onClick={() => nav("/saas", { state: { prospecto: detalle } })}
+                    >
+                        <RiUserStarLine /> Crear como cliente
+                    </BtnCrearCliente>
 
                     <DrawerActions>
                         <BtnGuardar onClick={guardar} disabled={mutUpdate.isPending}>
@@ -589,4 +620,14 @@ const BtnEliminar = styled.button`
     transition: all 0.15s;
     &:hover:not(:disabled) { background: rgba(248,113,113,0.2); border-color: #f87171; }
     &:disabled { opacity: 0.5; cursor: not-allowed; }
+`;
+
+const BtnCrearCliente = styled.button`
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 13px; border-radius: 12px;
+    border: 2px solid #4f46e5; background: rgba(79,70,229,0.12);
+    color: #818cf8; font-size: 14px; font-weight: 800;
+    font-family: "Poppins", sans-serif; cursor: pointer;
+    transition: all 0.15s;
+    &:hover { background: rgba(79,70,229,0.22); border-color: #818cf8; color: #a5b4fc; }
 `;

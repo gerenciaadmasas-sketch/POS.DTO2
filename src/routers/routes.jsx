@@ -9,6 +9,8 @@ import { Landing } from "../pages/Landing";
 import { Planes } from "../pages/Planes";
 import { Finanzas } from "../pages/Finanzas";
 import { Prospectos } from "../pages/Prospectos";
+import { Soporte } from "../pages/Soporte";
+import { Chat } from "../pages/Chat";
 import { useQuery } from "@tanstack/react-query";
 import { Spinner1 } from "../components/moleculas/Spinner1";
 import { MostrarEmpresaPorId } from "../supabase/crudEmpresa";
@@ -85,6 +87,8 @@ export function Myroutes() {
         <Route path="/configuracion/version" element={<Version />} />
         <Route path="/finanzas" element={<Finanzas />} />
         <Route path="/prospectos" element={<Prospectos />} />
+        <Route path="/soporte"    element={<Soporte />} />
+        <Route path="/chat"       element={<Chat />} />
 
         <Route path="/configurar" element={<Navigate to="/configuracion" replace />} />
         <Route path="/configurar/categorias" element={<Navigate to="/configuracion/categorias" replace />} />

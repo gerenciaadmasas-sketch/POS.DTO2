@@ -73,6 +73,18 @@ export const LinksArray = [
     icon: "solar:wallet-money-bold-duotone",
     to: "/arqueo",
   },
+  {
+    label: "Soporte",
+    icon: "solar:chat-round-dots-bold-duotone",
+    to: "/soporte",
+    color: "#34d399",
+  },
+  {
+    label: "Chat",
+    icon: "solar:chat-round-bold-duotone",
+    to: "/chat",
+    color: "#f88533",
+  },
 ];
 export const SecondarylinksArray = [
   {

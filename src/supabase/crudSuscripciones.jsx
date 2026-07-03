@@ -82,6 +82,7 @@ export async function InsertarSuscripcion(p) {
         nombre_cliente: p.nombre_cliente,
         apellido_cliente: apellido,
         cedula_cliente: p.cedula_cliente ?? "",
+        telefono: p.telefono ?? "",
         plan: p.plan,
         tipo_plan: p.tipo_plan ?? "chispa",
         valor_mensual: p.valor_mensual,

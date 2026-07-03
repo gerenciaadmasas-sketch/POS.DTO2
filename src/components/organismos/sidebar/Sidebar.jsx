@@ -13,8 +13,8 @@ import Swal from "sweetalert2";
 import { usePlan } from "../../../hooks/usePlan";
 
 const LINKS_CAJERO     = ["/home", "/pos", "/inventario", "/reportes"];
-const LINKS_ADMIN      = ["/home", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo"];
-const LINKS_SUPERADMIN = ["/home", "/saas", "/reportes", "/finanzas", "/prospectos"];
+const LINKS_ADMIN      = ["/home", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo", "/soporte"];
+const LINKS_SUPERADMIN = ["/home", "/saas", "/reportes", "/finanzas", "/prospectos", "/chat"];
 const LINKS_COMERCIAL  = ["/home", "/prospectos"];
 
 export function Sidebar({ state, setState, onNavClick }) {
