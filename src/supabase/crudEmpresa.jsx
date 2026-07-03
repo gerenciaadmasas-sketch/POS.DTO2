@@ -16,8 +16,14 @@ export async function MostrarEmpresaXidusuario(p) {
     return data;
 }
 export async function MostrarEmpresaPorId(id) {
-    const { data } = await supabase.from(tabla).select().eq("id", id).maybeSingle();
-    return data ?? null;
+    const { data } = await supabase
+        .from(tabla)
+        .select("*, suscripciones(actividad_economica)")
+        .eq("id", id)
+        .maybeSingle();
+    if (!data) return null;
+    const { suscripciones: sus, ...empresa } = data;
+    return { ...empresa, actividad_economica: sus?.[0]?.actividad_economica ?? null };
 }
 
 export async function MostrarTodasEmpresas() {
