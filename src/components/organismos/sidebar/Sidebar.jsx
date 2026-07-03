@@ -11,6 +11,9 @@ import { ObtenerSesionAbierta } from "../../../supabase/crudSesionesCaja";
 import { useAlmacenesConfigStore } from "../../../store/AlmacenesConfigStore";
 import Swal from "sweetalert2";
 import { usePlan } from "../../../hooks/usePlan";
+import { useState, useEffect } from "react";
+import { supabase } from "../../../supabase/supabase.config";
+import { ContarNoLeidosCliente } from "../../../supabase/crudSoporte";
 
 const LINKS_CAJERO     = ["/home", "/pos", "/inventario", "/reportes"];
 const LINKS_ADMIN      = ["/home", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo", "/soporte"];
@@ -54,6 +57,43 @@ export function Sidebar({ state, setState, onNavClick }) {
     const esSuperAdmin = tipo === "superadmin";
     const esComercial  = tipo === "comercial";
 
+    // Badge mensajes no leídos en Soporte (para admins y supervisores)
+    const [unreadSoporte, setUnreadSoporte] = useState(0);
+    const id_empresa = dataempresa?.id;
+    const necesitaBadge = !esSuperAdmin && !esCajero && !esComercial;
+
+    useEffect(() => {
+        if (!id_empresa || !necesitaBadge) return;
+        let channel = null;
+        let idSus = null;
+
+        const refrescar = async () => {
+            if (!idSus) return;
+            const c = await ContarNoLeidosCliente({ id_suscripcion: idSus });
+            setUnreadSoporte(c);
+        };
+
+        const init = async () => {
+            const { data: sus } = await supabase
+                .from("suscripciones").select("id")
+                .eq("id_empresa", id_empresa).maybeSingle();
+            if (!sus) return;
+            idSus = sus.id;
+            await refrescar();
+            channel = supabase
+                .channel(`sidebar-badge-${idSus}`)
+                .on("postgres_changes", {
+                    event: "*", schema: "public",
+                    table: "mensajes_soporte",
+                    filter: `id_suscripcion=eq.${idSus}`,
+                }, refrescar)
+                .subscribe();
+        };
+
+        init();
+        return () => { if (channel) supabase.removeChannel(channel); };
+    }, [id_empresa, necesitaBadge]);
+
     const linksBase = esCajero
         ? LinksArray.filter(l => LINKS_CAJERO.includes(l.to))
         : esSuperAdmin
@@ -88,14 +128,19 @@ export function Sidebar({ state, setState, onNavClick }) {
 
             {/* Links primarios */}
             <Nav $isopen={state}>
-                {linksVisibles.map(({ icon, label, to }) => (
+                {linksVisibles.map(({ icon, label, to, color }) => (
                     <NavLink
                         key={label}
                         to={to}
                         onClick={onNavClick}
                         className={({ isActive }) => isActive ? "link active" : "link"}
                     >
-                        <Icon icon={icon} className="icon" />
+                        <IconWrap>
+                            <Icon icon={icon} className="icon" color={color} />
+                            {to === "/soporte" && unreadSoporte > 0 && (
+                                <BadgeDot>{unreadSoporte > 9 ? "9+" : unreadSoporte}</BadgeDot>
+                            )}
+                        </IconWrap>
                         <span className="link-label">{label}</span>
                     </NavLink>
                 ))}
@@ -334,6 +379,31 @@ const Divider = styled.div`
     height: 1px;
     background: ${({ theme }) => theme.color2};
     margin: 8px 4px;
+`;
+
+const IconWrap = styled.span`
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+`;
+
+const BadgeDot = styled.span`
+    position: absolute;
+    top: -5px; right: -7px;
+    min-width: 16px; height: 16px;
+    padding: 0 3px;
+    border-radius: 10px;
+    background: #f87171;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 900;
+    font-family: "Poppins", sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid ${({ theme }) => theme.bgcards};
+    line-height: 1;
+    pointer-events: none;
 `;
 
 const BtnSalir = styled.button`

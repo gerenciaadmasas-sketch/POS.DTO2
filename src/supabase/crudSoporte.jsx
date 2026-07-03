@@ -27,6 +27,16 @@ export async function MarcarLeidos({ id_suscripcion, remitente }) {
         .eq("leido", false);
 }
 
+export async function ContarNoLeidosCliente({ id_suscripcion }) {
+    const { count } = await supabase
+        .from("mensajes_soporte")
+        .select("id", { count: "exact", head: true })
+        .eq("id_suscripcion", id_suscripcion)
+        .eq("remitente", "superadmin")
+        .eq("leido", false);
+    return count ?? 0;
+}
+
 export async function MostrarResumenChats() {
     const { data: suscripciones } = await supabase
         .from("suscripciones")
