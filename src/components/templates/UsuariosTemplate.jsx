@@ -1,7 +1,8 @@
 import { useState } from "react";
 import styled, { keyframes } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
+import { supabase } from "../../supabase/supabase.config";
 import { useEmpresaStore } from "../../store/EmpresaStore";
 import { useSucursalesStore } from "../../store/SucursalesStore";
 import { useAlmacenesConfigStore } from "../../store/AlmacenesConfigStore";
@@ -10,7 +11,7 @@ import {
     ListarUsuariosEmpresa, CrearUsuarioEmpleado,
     ActualizarUsuario, EliminarUsuarioEmpleado,
 } from "../../supabase/crudUsuarios";
-import { RiDeleteBin2Line, RiEditLine, RiAddLine, RiCloseLine, RiUserLine, RiShieldLine, RiErrorWarningLine } from "react-icons/ri";
+import { RiDeleteBin2Line, RiEditLine, RiAddLine, RiCloseLine, RiUserLine, RiErrorWarningLine } from "react-icons/ri";
 import { toastExito } from "../../utils/toast";
 import { usePlan } from "../../hooks/usePlan";
 
@@ -109,28 +110,35 @@ export function UsuariosTemplate() {
         : (dataAlmacenes ?? []);
 
     const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm({
-        defaultValues: { usuario: "", password: "", nombres: "", apellidos: "", nro_doc: "", telefono: "", id_sucursal: "", id_almacen: "", tipo: "cajero" },
+        defaultValues: { nombres: "", apellidos: "", nro_doc: "", telefono: "", id_sucursal: "", id_almacen: "", tipo: "cajero" },
     });
 
-    const tipoWatched = watch("tipo");
+    const tipoWatched   = watch("tipo");
+    const nombresVal    = watch("nombres");
+    const apellidosVal  = watch("apellidos");
+    const nroDocVal     = watch("nro_doc");
+
+    const primerNombre  = (nombresVal ?? "").trim().split(" ")[0];
+    const primerApellido = (apellidosVal ?? "").trim().split(" ")[0];
+    const prevUsuario   = primerNombre && primerApellido
+        ? primerNombre[0].toUpperCase() +
+          primerApellido.charAt(0).toUpperCase() + primerApellido.slice(1).toLowerCase()
+        : "";
+    const prevPassword  = nroDocVal?.trim() || "123456";
 
     function abrirNuevo() {
-        const tipo = esSupervisor ? "cajero" : "cajero";
         reset({
-            usuario: "", password: "", nombres: "", apellidos: "",
-            nro_doc: "", telefono: "", id_almacen: "",
+            nombres: "", apellidos: "", nro_doc: "", telefono: "", id_almacen: "",
             id_sucursal: esSupervisor ? sucursalCreador : "",
-            tipo,
+            tipo: "cajero",
         });
-        setPermisos(permisosFromTipo(tipo));
+        setPermisos(permisosFromTipo("cajero"));
         setEditando(null);
         setModalAbierto(true);
     }
 
     function abrirEditar(u) {
         reset({
-            usuario:     u.usuario     ?? "",
-            password:    "",
             nombres:     u.nombres     ?? "",
             apellidos:   u.apellidos   ?? "",
             nro_doc:     u.nro_doc     ?? "",
@@ -146,10 +154,6 @@ export function UsuariosTemplate() {
 
     function cerrarModal() { setModalAbierto(false); setEditando(null); }
 
-    function togglePermiso(key) {
-        setPermisos(prev => ({ ...prev, [key]: !prev[key] }));
-    }
-
     function aplicarTipo(tipo) {
         setValue("tipo", tipo);
         setPermisos(permisosFromTipo(tipo));
@@ -159,16 +163,41 @@ export function UsuariosTemplate() {
         dataAlmacenes?.find(a => String(a.id) === String(id_almacen))?.id_sucursal ?? null;
 
     const mutCrear = useMutation({
-        mutationFn: (vals) => CrearUsuarioEmpleado({
-            ...vals,
-            id_empresa,
-            permisos,
-            email:       `${vals.usuario}@emp${id_empresa}.pos`,
-            id_almacen:  vals.tipo === "cajero"      ? (vals.id_almacen  || null) : null,
-            id_sucursal: vals.tipo === "supervisor"  ? (vals.id_sucursal || null)
-                       : vals.tipo === "cajero"      ? getSucursalDeAlmacen(vals.id_almacen)
-                       : sucursalCreador,
-        }),
+        mutationFn: async (vals) => {
+            // Generar usuario: primera letra nombre + apellido (ej: JPérez)
+            const nom = (vals.nombres?.trim().split(" ")[0] ?? "");
+            const ape = (vals.apellidos?.trim().split(" ")[0] ?? "");
+            const base = nom[0]?.toUpperCase() +
+                (ape.charAt(0).toUpperCase() + ape.slice(1).toLowerCase());
+
+            // Verificar unicidad dentro de la empresa
+            let usuario = base;
+            let intento = 1;
+            while (true) {
+                const { data: existe } = await supabase
+                    .from("usuarios").select("id")
+                    .eq("usuario", usuario)
+                    .maybeSingle();
+                if (!existe) break;
+                intento++;
+                usuario = `${base}${intento}`;
+            }
+
+            const password = vals.nro_doc?.trim() || "123456";
+
+            return CrearUsuarioEmpleado({
+                ...vals,
+                usuario,
+                password,
+                id_empresa,
+                permisos,
+                email:       `${usuario}@emp${id_empresa}.pos`,
+                id_almacen:  vals.tipo === "cajero"     ? (vals.id_almacen  || null) : null,
+                id_sucursal: vals.tipo === "supervisor" ? (vals.id_sucursal || null)
+                           : vals.tipo === "cajero"     ? getSucursalDeAlmacen(vals.id_almacen)
+                           : sucursalCreador,
+            });
+        },
         onSuccess: () => {
             toastExito("Usuario creado", "Usuarios");
             queryClient.invalidateQueries({ queryKey: ["usuarios-empresa", id_empresa] });
@@ -286,53 +315,44 @@ export function UsuariosTemplate() {
                         </ModalHeader>
 
                         <ModalBody onSubmit={handleSubmit(onSubmit)}>
-                            {/* ── Columna izquierda: datos personales ── */}
                             <ColForm>
-                                <ColTitle><RiUserLine /> Datos personales</ColTitle>
-
+                                {/* Tipo de usuario */}
                                 <Campo>
-                                    <label>Usuario</label>
-                                    <Input
-                                        placeholder="ej: cajero1, jperez"
-                                        disabled={!!editando}
-                                        {...register("usuario", {
-                                            required: !editando,
-                                            pattern: { value: /^[a-zA-Z0-9_.-]+$/, message: "Sin espacios ni caracteres especiales" }
+                                    <label>Tipo de usuario</label>
+                                    <TiposRow>
+                                        {TIPOS.map(t => {
+                                            const tc = TIPO_COLORS[t];
+                                            return (
+                                                <TipoBtn key={t} type="button"
+                                                    $active={tipoWatched === t}
+                                                    $color={tc.color}
+                                                    onClick={() => aplicarTipo(t)}>
+                                                    {t === "cajero" ? "Cajero" : t === "supervisor" ? "Supervisor" : "Administrador"}
+                                                </TipoBtn>
+                                            );
                                         })}
-                                        $error={!!errors.usuario}
-                                    />
-                                    {errors.usuario?.message && <ErrMsg>{errors.usuario.message}</ErrMsg>}
+                                    </TiposRow>
+                                    <TipoDesc $color={TIPO_COLORS[tipoWatched]?.color}>
+                                        {tipoWatched === "cajero"
+                                            ? "Accede al POS e inventario de su almacén asignado."
+                                            : tipoWatched === "supervisor"
+                                            ? "Ve todos los almacenes de su sucursal y reportes."
+                                            : "Gestión completa de la empresa."}
+                                    </TipoDesc>
                                 </Campo>
 
-                                {!editando && (
-                                    <Campo>
-                                        <label>Contraseña</label>
-                                        <Input
-                                            type="password"
-                                            placeholder="••••••••"
-                                            {...register("password", { required: true, minLength: 6 })}
-                                            $error={!!errors.password}
-                                        />
-                                        {errors.password?.type === "minLength" && <ErrMsg>Mínimo 6 caracteres</ErrMsg>}
-                                    </Campo>
-                                )}
+                                <Divider />
+
+                                <ColTitle><RiUserLine /> Datos personales</ColTitle>
 
                                 <FilaDos>
                                     <Campo>
                                         <label>Nombre</label>
-                                        <Input
-                                            placeholder="Ej: Juan"
-                                            {...register("nombres", { required: true })}
-                                            $error={!!errors.nombres}
-                                        />
+                                        <Input placeholder="Ej: Juan" {...register("nombres", { required: true })} $error={!!errors.nombres} />
                                     </Campo>
                                     <Campo>
                                         <label>Apellido</label>
-                                        <Input
-                                            placeholder="Ej: Pérez"
-                                            {...register("apellidos", { required: true })}
-                                            $error={!!errors.apellidos}
-                                        />
+                                        <Input placeholder="Ej: Pérez" {...register("apellidos", { required: true })} $error={!!errors.apellidos} />
                                     </Campo>
                                 </FilaDos>
 
@@ -347,17 +367,16 @@ export function UsuariosTemplate() {
                                     </Campo>
                                 </FilaDos>
 
-                                {/* Cajero → almacén | Supervisor → sucursal | Admin → sin asignación */}
                                 {tipoWatched === "cajero" && (
                                     <Campo>
-                                        <label>Asignación de almacén</label>
+                                        <label>Almacén asignado</label>
                                         <Select {...register("id_almacen")}>
                                             <option value="">— Sin almacén —</option>
                                             {almacenesVisibles.map(a => {
                                                 const suc = dataSucursales?.find(s => s.id === a.id_sucursal);
                                                 return (
                                                     <option key={a.id} value={a.id}>
-                                                        {esSupervisor ? a.nombre : `${suc ? `${suc.nombre} › ` : ""}${a.nombre}`}
+                                                        {esSupervisor ? a.nombre : `${suc ? `${suc.razon_social} › ` : ""}${a.nombre}`}
                                                     </option>
                                                 );
                                             })}
@@ -367,7 +386,7 @@ export function UsuariosTemplate() {
 
                                 {tipoWatched === "supervisor" && (
                                     <Campo>
-                                        <label>Asignación de sucursal</label>
+                                        <label>Sucursal asignada</label>
                                         <Select {...register("id_sucursal")}>
                                             <option value="">— Sin sucursal —</option>
                                             {(dataSucursales ?? []).map(s => (
@@ -383,44 +402,24 @@ export function UsuariosTemplate() {
                                     </AsignacionInfo>
                                 )}
 
+                                {!editando && prevUsuario && (
+                                    <CredPrev>
+                                        <CredFila>
+                                            <CredLbl>Usuario</CredLbl>
+                                            <CredVal>{prevUsuario}</CredVal>
+                                        </CredFila>
+                                        <CredFila>
+                                            <CredLbl>Contraseña</CredLbl>
+                                            <CredVal>{prevPassword}</CredVal>
+                                        </CredFila>
+                                        <CredNota>Se asignan automáticamente al crear el usuario</CredNota>
+                                    </CredPrev>
+                                )}
+
                                 <BtnGuardar type="submit" disabled={pending}>
                                     {pending ? "Guardando..." : editando ? "Guardar cambios" : "Crear usuario"}
                                 </BtnGuardar>
                             </ColForm>
-
-                            {/* ── Columna derecha: permisos ── */}
-                            <ColPermisos>
-                                <ColTitle><RiShieldLine /> Permisos</ColTitle>
-
-                                <Campo>
-                                    <label>Tipo de usuario</label>
-                                    <TiposRow>
-                                        {TIPOS.map(t => {
-                                            const tc = TIPO_COLORS[t];
-                                            return (
-                                                <TipoBtn key={t}
-                                                    type="button"
-                                                    $active={tipoWatched === t}
-                                                    $color={tc.color}
-                                                    onClick={() => aplicarTipo(t)}>
-                                                    {t}
-                                                </TipoBtn>
-                                            );
-                                        })}
-                                    </TiposRow>
-                                </Campo>
-
-                                <PermisosScroll>
-                                    {PERMISOS.map(p => (
-                                        <PermisoFila key={p.key} onClick={() => togglePermiso(p.key)}>
-                                            <Checkbox $checked={permisos[p.key]}>
-                                                {permisos[p.key] && <span>✓</span>}
-                                            </Checkbox>
-                                            <span>{p.label}</span>
-                                        </PermisoFila>
-                                    ))}
-                                </PermisosScroll>
-                            </ColPermisos>
                         </ModalBody>
                     </ModalWrap>
                 </Overlay>
@@ -542,7 +541,7 @@ const Overlay = styled.div`
 const ModalWrap = styled.div`
     background: ${({ theme }) => theme.bgcards};
     border: 1px solid ${({ theme }) => theme.color2};
-    border-radius: 20px; width: 820px; max-width: 100%;
+    border-radius: 20px; width: 500px; max-width: 100%;
     max-height: 90vh; overflow: hidden;
     box-shadow: 0 28px 70px rgba(0,0,0,0.4);
     animation: ${slideUp} 0.25s cubic-bezier(0.34,1.56,0.64,1);
@@ -564,18 +563,25 @@ const BtnCerrarModal = styled.button`
 `;
 
 const ModalBody = styled.form`
-    display: grid; grid-template-columns: 1fr 1fr;
+    display: flex; flex-direction: column;
     overflow-y: auto; flex: 1;
-    @media (max-width: 640px) { grid-template-columns: 1fr; }
 `;
 
 const ColForm = styled.div`
-    padding: 24px; border-right: 1px solid ${({ theme }) => theme.color2};
+    padding: 24px;
     display: flex; flex-direction: column; gap: 14px;
 `;
 
-const ColPermisos = styled.div`
-    padding: 24px; display: flex; flex-direction: column; gap: 14px;
+const Divider = styled.div`
+    width: 100%; height: 1px;
+    background: ${({ theme }) => theme.color2};
+    margin: 2px 0;
+`;
+
+const TipoDesc = styled.p`
+    font-size: 12px; margin: 4px 0 0;
+    color: ${({ $color }) => $color ?? "#94a3b8"};
+    line-height: 1.4;
 `;
 
 const ColTitle = styled.div`
@@ -590,7 +596,10 @@ const Campo = styled.div`
     label { font-size: 11px; font-weight: 700; color: ${({ theme }) => theme.colorsubtitlecard}; text-transform: uppercase; letter-spacing: 0.5px; }
 `;
 
-const FilaDos = styled.div`display: grid; grid-template-columns: 1fr 1fr; gap: 12px;`;
+const FilaDos = styled.div`
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    @media (max-width: 480px) { grid-template-columns: 1fr; }
+`;
 
 const Input = styled.input`
     padding: 10px 12px; border-radius: 9px;
@@ -621,42 +630,45 @@ const BtnGuardar = styled.button`
     &:disabled { opacity: 0.4; cursor: not-allowed; }
 `;
 
-/* ── Permisos ── */
-const TiposRow = styled.div`display: flex; gap: 6px; flex-wrap: wrap;`;
+const TiposRow = styled.div`display: flex; gap: 8px; flex-wrap: wrap;`;
 
 const TipoBtn = styled.button`
-    flex: 1; min-width: 80px; padding: 8px; border-radius: 8px;
-    font-size: 12px; font-weight: 700; cursor: pointer; text-transform: capitalize;
+    flex: 1; min-width: 90px; padding: 10px 8px; border-radius: 10px;
+    font-size: 13px; font-weight: 700; cursor: pointer; text-transform: capitalize;
     font-family: "Poppins", sans-serif;
     border: 1.5px solid ${({ $active, $color, theme }) => $active ? $color : theme.color2};
     background: ${({ $active, $color }) => $active ? `${$color}18` : "transparent"};
-    color: ${({ $active, $color, theme }) => $active ? $color : theme.text};
+    color: ${({ $active, $color, theme }) => $active ? $color : theme.colorsubtitlecard};
     transition: all 0.15s;
+    &:hover { border-color: ${({ $color }) => $color}; color: ${({ $color }) => $color}; }
 `;
 
-const PermisosScroll = styled.div`
-    flex: 1; overflow-y: auto;
-    display: flex; flex-direction: column; gap: 2px;
-    max-height: 380px;
-    &::-webkit-scrollbar { width: 4px; }
-    &::-webkit-scrollbar-thumb { background: ${({ theme }) => theme.colorScroll}; border-radius: 10px; }
+const CredPrev = styled.div`
+    border: 1px solid rgba(248,133,51,0.25);
+    background: rgba(248,133,51,0.06);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex; flex-direction: column; gap: 6px;
 `;
 
-const PermisoFila = styled.div`
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 10px; border-radius: 8px; cursor: pointer;
-    font-size: 13px; color: ${({ theme }) => theme.text};
-    transition: background 0.12s;
-    &:hover { background: ${({ theme }) => theme.bgtotal}; }
+const CredFila = styled.div`
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px;
 `;
 
-const Checkbox = styled.div`
-    width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0;
-    border: 2px solid ${({ $checked }) => $checked ? "#2563eb" : "#64748b"};
-    background: ${({ $checked }) => $checked ? "#2563eb" : "transparent"};
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; font-weight: 800; color: #fff;
-    transition: all 0.15s;
+const CredLbl = styled.span`
+    color: ${({ theme }) => theme.colorsubtitlecard};
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+`;
+
+const CredVal = styled.span`
+    color: #f88533; font-weight: 800; font-size: 14px;
+    font-family: "Courier New", monospace;
+`;
+
+const CredNota = styled.span`
+    font-size: 10px; color: ${({ theme }) => theme.colorsubtitlecard};
+    margin-top: 2px; text-align: center;
 `;
 
 const AsignacionInfo = styled.div`
