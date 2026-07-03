@@ -87,7 +87,7 @@ export function SoporteTemplate() {
     return (
         <Wrap>
             <ChatHeader>
-                <AvatarSoporte><Icon icon="solar:headphones-bold-duotone" /></AvatarSoporte>
+                <AvatarSoporte><Icon icon="ri:customer-service-2-fill" /></AvatarSoporte>
                 <HeaderInfo>
                     <HeaderNombre>Soporte POS DL</HeaderNombre>
                     <HeaderSub>Tiempo de respuesta: mismo día · {datausuarios?.nombres?.split(" ")[0]}</HeaderSub>
@@ -100,7 +100,7 @@ export function SoporteTemplate() {
                     <EmptyWrap><span>Conectando...</span></EmptyWrap>
                 ) : mensajes.length === 0 ? (
                     <EmptyWrap>
-                        <Icon icon="solar:headphones-bold-duotone" style={{ fontSize: 44, opacity: 0.15, color: "#f88533" }} />
+                        <Icon icon="ri:customer-service-2-fill" style={{ fontSize: 44, opacity: 0.15, color: "#f88533" }} />
                         <span>Aún no hay mensajes.<br />¡Escríbenos, estamos aquí para ayudarte!</span>
                     </EmptyWrap>
                 ) : (() => {
