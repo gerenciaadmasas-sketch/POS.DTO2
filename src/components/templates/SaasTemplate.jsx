@@ -40,7 +40,8 @@ const ACTIVIDADES = [
     { key: "ferreteria",     label: "Ferretería" },
     { key: "salon_belleza",  label: "Salón de belleza" },
     { key: "veterinaria",    label: "Veterinaria" },
-    { key: "construccion",   label: "Construcción / Inmobiliaria" },
+    { key: "construccion",       label: "Construcción / Inmobiliaria" },
+    { key: "suscripciones_tv",   label: "Suscripciones de TV / Streaming" },
 ];
 
 export function SaasTemplate() {
@@ -721,7 +722,7 @@ const StatVal = styled.span`font-size: 18px; font-weight: 900; color: ${({ $gree
 
 /* ── Grid ── */
 const Grid = styled.div`
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr)); gap: 16px;
 `;
 
 const Vacio = styled.div`
@@ -951,7 +952,10 @@ const BtnCerrar = styled.button`
 `;
 
 const ModalForm = styled.form`display: flex; flex-direction: column; gap: 14px;`;
-const FilaDos = styled.div`display: grid; grid-template-columns: 1fr 1fr; gap: 12px;`;
+const FilaDos = styled.div`
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    @media (max-width: 480px) { grid-template-columns: 1fr; }
+`;
 
 const Campo = styled.div`
     display: flex; flex-direction: column; gap: 5px;

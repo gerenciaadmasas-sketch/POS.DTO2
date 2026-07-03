@@ -23,15 +23,16 @@ import {
 } from "react-icons/ri";
 
 const ACTIVIDADES = [
-    { key: "retail_ropa",   label: "Retail — Ropa y accesorios",   emoji: "👗" },
-    { key: "restaurante",   label: "Restaurante",                   emoji: "🍽️" },
-    { key: "cafeteria",     label: "Cafetería",                     emoji: "☕" },
-    { key: "tienda",        label: "Tienda / Minimarket",           emoji: "🛒" },
-    { key: "farmacia",      label: "Farmacia / Droguería",          emoji: "💊" },
-    { key: "ferreteria",    label: "Ferretería",                    emoji: "🔧" },
-    { key: "salon_belleza", label: "Salón de belleza",              emoji: "💇" },
-    { key: "veterinaria",   label: "Veterinaria",                   emoji: "🐾" },
-    { key: "construccion",  label: "Construcción / Inmobiliaria",   emoji: "🏗️" },
+    { key: "retail_ropa",        label: "Retail — Ropa y accesorios",              emoji: "👗" },
+    { key: "restaurante",        label: "Restaurante",                              emoji: "🍽️" },
+    { key: "cafeteria",          label: "Cafetería",                                emoji: "☕" },
+    { key: "tienda",             label: "Tienda / Minimarket",                      emoji: "🛒" },
+    { key: "farmacia",           label: "Farmacia / Droguería",                     emoji: "💊" },
+    { key: "ferreteria",         label: "Ferretería",                               emoji: "🔧" },
+    { key: "salon_belleza",      label: "Salón de belleza",                         emoji: "💇" },
+    { key: "veterinaria",        label: "Veterinaria",                              emoji: "🐾" },
+    { key: "construccion",       label: "Construcción / Inmobiliaria",              emoji: "🏗️" },
+    { key: "suscripciones_tv",   label: "Suscripciones de TV / Streaming",         emoji: "📺" },
 ];
 
 /* ─────────────────────────────────────────
