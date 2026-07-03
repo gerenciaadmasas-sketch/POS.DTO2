@@ -81,13 +81,13 @@ export const LinksArray = [
   },
   {
     label: "Soporte",
-    icon: "solar:chat-round-dots-bold-duotone",
+    icon: "solar:headphones-round-bold-duotone",
     to: "/soporte",
     color: "#34d399",
   },
   {
     label: "Soporte",
-    icon: "solar:chat-round-dots-bold-duotone",
+    icon: "solar:headphones-round-bold-duotone",
     to: "/chat",
     color: "#f88533",
   },
