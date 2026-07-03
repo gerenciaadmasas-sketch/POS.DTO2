@@ -63,22 +63,24 @@ serve(async (req) => {
 
     // Determinar tipo de documento
     const docType = cedula && cedula.replace(/\D/g, "").length >= 9 ? "NIT" : "CC";
+    const cedulaLimpia = cedula ? cedula.replace(/\D/g, "") : "";
 
-    const params = new URLSearchParams({
-      "public-key":               publicKey,
-      "currency":                 "COP",
-      "amount-in-cents":          String(amountInCents),
-      "reference":                reference,
-      "signature:integrity":      hash,
-      "redirect-url":             redirectUrl,
-      "customer-data:email":      email ?? "",
-      "customer-data:full-name":  `${nombre} ${apellido}`.trim(),
-      "customer-data:phone-number": telefono ?? "",
-      "customer-data:legal-id":   cedula ? cedula.replace(/\D/g, "") : "",
-      "customer-data:legal-id-type": docType,
-    });
+    // Construir URL manualmente — URLSearchParams codifica los ":" en "%3A" y Wompi no lo acepta
+    const qs = [
+      `public-key=${encodeURIComponent(publicKey)}`,
+      `currency=COP`,
+      `amount-in-cents=${amountInCents}`,
+      `reference=${encodeURIComponent(reference)}`,
+      `signature:integrity=${hash}`,
+      `redirect-url=${encodeURIComponent(redirectUrl)}`,
+      `customer-data:email=${encodeURIComponent(email ?? "")}`,
+      `customer-data:full-name=${encodeURIComponent(`${nombre} ${apellido}`.trim())}`,
+      `customer-data:phone-number=${encodeURIComponent(telefono ?? "")}`,
+      `customer-data:legal-id=${encodeURIComponent(cedulaLimpia)}`,
+      `customer-data:legal-id-type=${docType}`,
+    ].join("&");
 
-    const checkoutUrl = `https://checkout.wompi.co/p/?${params.toString()}`;
+    const checkoutUrl = `https://checkout.wompi.co/p/?${qs}`;
 
     return new Response(JSON.stringify({ checkoutUrl, reference }), {
       headers: { ...CORS, "Content-Type": "application/json" },
