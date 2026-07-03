@@ -22,7 +22,6 @@ const ACCESOS_SUPERADMIN = [
     { key: "finanzas",   icon: "solar:dollar-minimalistic-bold-duotone",  label: "Finanzas",   to: "/finanzas",   accent: "#34d399", big: false },
     { key: "prospectos", icon: "solar:user-speak-bold-duotone",           label: "Leads",      to: "/prospectos", accent: "#818cf8", big: false },
     { key: "chat",       icon: "solar:chat-round-bold-duotone",           label: "Chat",       to: "/chat",       accent: "#f88533", big: false },
-    { key: "perfil",     icon: "solar:user-bold-duotone",                 label: "Mi Perfil",  to: "/perfil",     accent: "#60a5fa", big: false },
 ];
 
 const ACCESOS_ADMIN = [
@@ -32,7 +31,6 @@ const ACCESOS_ADMIN = [
     { key: "kardex",     icon: "solar:clipboard-list-bold-duotone",       label: "Kardex",     to: "/kardex",     accent: "#f59e0b", big: false },
     { key: "arqueo",     icon: "solar:wallet-money-bold-duotone",         label: "Arqueo",     to: "/arqueo",     accent: "#ec4899", big: false },
     { key: "soporte",    icon: "solar:chat-round-dots-bold-duotone",      label: "Soporte",    to: "/soporte",    accent: "#34d399", big: false },
-    { key: "perfil",     icon: "solar:user-bold-duotone",                 label: "Mi Perfil",  to: "/perfil",     accent: "#60a5fa", big: false },
 ];
 
 const ACCESOS_SUPERVISOR = [
@@ -41,7 +39,6 @@ const ACCESOS_SUPERVISOR = [
     { key: "reportes",   icon: "solar:chart-square-bold-duotone",         label: "Clientes",   to: "/reportes",   accent: "#60a5fa", big: false },
     { key: "kardex",     icon: "solar:clipboard-list-bold-duotone",       label: "Kardex",     to: "/kardex",     accent: "#f59e0b", big: false },
     { key: "arqueo",     icon: "solar:wallet-money-bold-duotone",         label: "Arqueo",     to: "/arqueo",     accent: "#ec4899", big: false },
-    { key: "perfil",     icon: "solar:user-bold-duotone",                 label: "Mi Perfil",  to: "/perfil",     accent: "#60a5fa", big: false },
 ];
 
 const ACCESOS_CAJERO = [
@@ -52,7 +49,6 @@ const ACCESOS_CAJERO = [
 
 const ACCESOS_COMERCIAL = [
     { key: "prospectos", icon: "solar:user-speak-bold-duotone",           label: "Leads",      to: "/prospectos", accent: "#818cf8", big: true  },
-    { key: "perfil",     icon: "solar:user-bold-duotone",                 label: "Mi Perfil",  to: "/perfil",     accent: "#60a5fa", big: false },
 ];
 
 export function HomeTemplates() {
