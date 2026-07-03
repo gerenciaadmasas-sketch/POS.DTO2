@@ -1,5 +1,6 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { ClientesTemplate } from "../components/templates/ClientesTemplate";
+import { SuscriptoresTVTemplate } from "../components/templates/SuscriptoresTVTemplate";
 import { Spinner1 } from "../index";
 import { useEmpresaStore } from "../store/EmpresaStore";
 import { useClientesStore } from "../store/ClientesStore";
@@ -26,5 +27,6 @@ export function Clientes() {
     if (isLoading) return <Spinner1 />;
     if (error) return <span>error...</span>;
 
+    if (dataempresa?.actividad_economica === "suscripciones_tv") return <SuscriptoresTVTemplate />;
     return <ClientesTemplate />;
 }
