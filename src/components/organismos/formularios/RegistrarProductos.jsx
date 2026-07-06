@@ -140,7 +140,6 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                     id_almacen_nuevo:  sucursalesItemSelect.id,
                     id_almacen_actual: dataSelect.id_almacen_actual ?? null,
                     id_sucursal_nuevo: sucursalesItemSelect.id_sucursal,
-                    id_empresa:        dataempresa.id,
                 });
             }
             if (imgFile) {

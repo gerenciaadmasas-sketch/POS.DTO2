@@ -3,12 +3,11 @@ import { supabase } from "../index";
 import { InsertarMovimientoKardex } from "./crudKardex";
 const tabla = "almacen";
 
-export async function MoverProductoAlmacen({ id_producto, id_almacen_nuevo, id_almacen_actual, id_sucursal_nuevo, id_empresa }) {
+export async function MoverProductoAlmacen({ id_producto, id_almacen_nuevo, id_almacen_actual, id_sucursal_nuevo }) {
     if (!id_almacen_actual) {
-        // No tenía registro → insertar en el nuevo almacén con stock 0
         const { error } = await supabase.from(tabla).insert({
             id_producto, id_almacen: id_almacen_nuevo,
-            id_sucursal: id_sucursal_nuevo, id_empresa, stock: 0, stock_minimo: 0,
+            id_sucursal: id_sucursal_nuevo, stock: 0, stock_minimo: 0,
         });
         if (error) { toastError(error.message, "Almacén › Asignar"); throw new Error(error.message); }
         return;
@@ -17,8 +16,7 @@ export async function MoverProductoAlmacen({ id_producto, id_almacen_nuevo, id_a
         .from(tabla)
         .update({ id_almacen: id_almacen_nuevo, id_sucursal: id_sucursal_nuevo })
         .eq("id_producto", id_producto)
-        .eq("id_almacen", id_almacen_actual)
-        .eq("id_empresa", id_empresa);
+        .eq("id_almacen", id_almacen_actual);
     if (error) { toastError(error.message, "Almacén › Mover"); throw new Error(error.message); }
 }
 
