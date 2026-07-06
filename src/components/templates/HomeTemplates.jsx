@@ -8,6 +8,7 @@ import { Icon } from "@iconify/react";
 import { useQuery } from "@tanstack/react-query";
 import { MostrarVersion } from "../../supabase/crudVersion";
 import { usePlan } from "../../hooks/usePlan";
+import { HomeSuscripcionesTVTemplate } from "./HomeSuscripcionesTVTemplate";
 
 const ROL_STYLE = {
     superadmin:    { color: "#f88533", bg: "rgba(248,133,51,0.10)", glow: "rgba(248,133,51,0.35)" },
@@ -91,6 +92,8 @@ export function HomeTemplates() {
         : dataempresa?.razon_social ?? "Empresa";
 
     const esSuscripcionesTV = dataempresa?.actividad_economica === "suscripciones_tv";
+
+    if (esSuscripcionesTV) return <HomeSuscripcionesTVTemplate />;
 
     const accesos = esSuscripcionesTV       ? ACCESOS_SUSCRIPCIONES
                   : tipo === "cajero"       ? ACCESOS_CAJERO

@@ -127,7 +127,7 @@ const PROCESS_MSGS = [
 ];
 
 const STATS = [
-    { val: "200+", label: "negocios activos" },
+    { val: "25+", label: "negocios activos" },
     { val: "99.9%", label: "uptime garantizado" },
     { val: "< 2min", label: "tiempo de activación" },
     { val: "5★", label: "calificación promedio" },

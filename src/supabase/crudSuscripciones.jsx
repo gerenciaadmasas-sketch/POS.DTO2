@@ -77,6 +77,28 @@ export async function InsertarSuscripcion(p) {
         await supabase.from("empresa").update({ id_usuario: adminUser.id }).eq("id", empresa.id);
     }
 
+    // Crear sucursal y almacén principales, y asignarlos al admin
+    const { data: sucursal } = await supabase
+        .from("sucursales")
+        .insert({ id_empresa: empresa.id, razon_social: nombreEmpresa, direccion: "" })
+        .select()
+        .maybeSingle();
+
+    if (sucursal) {
+        const { data: almacen } = await supabase
+            .from("almacenes")
+            .insert({ id_empresa: empresa.id, id_sucursal: sucursal.id, nombre: "Principal" })
+            .select()
+            .maybeSingle();
+
+        if (adminUser && almacen) {
+            await supabase
+                .from("usuarios")
+                .update({ id_sucursal: sucursal.id, id_almacen: almacen.id })
+                .eq("id", adminUser.id);
+        }
+    }
+
     // 3. Crear suscripción con credenciales guardadas
     const { error } = await supabase.from(tabla).insert({
         nombre_cliente: p.nombre_cliente,

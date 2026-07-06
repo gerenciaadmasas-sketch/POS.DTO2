@@ -9,11 +9,19 @@ import {
 } from "react-icons/ri";
 
 /* ── Constantes financieras ── */
-const TRM          = 4200;          // COP por 1 USD (aprox)
-const VERCEL_USD   = 20;            // Vercel Pro mensual
-const DOMINIO_USD  = 1.5;           // Dominio .com prorrateado mensual
-const COSTOS_USD   = VERCEL_USD + DOMINIO_USD;
-const COSTOS_COP   = Math.round(COSTOS_USD * TRM);
+const TRM = 4200; // COP por 1 USD (aprox)
+
+// Costos ACTUALES (lo que pagas hoy)
+const CLAUDE_USD  = 20;   // Claude Pro — desarrollo y mantenimiento IA
+const DOMINIO_USD = 1.5;  // Dominio .com prorrateado mensual
+const COSTOS_USD  = CLAUDE_USD + DOMINIO_USD;  // $21.50
+const COSTOS_COP  = Math.round(COSTOS_USD * TRM);
+
+// Costos A ESCALA (50+ clientes — servicios que hay que pagar)
+const VERCEL_USD   = 20;  // Vercel Pro — hosting comercial
+const SUPABASE_USD = 25;  // Supabase Pro — BD a escala (100 clientes)
+const COSTOS_ESCALA_USD = CLAUDE_USD + DOMINIO_USD + VERCEL_USD + SUPABASE_USD; // $66.50
+const COSTOS_ESCALA_COP = Math.round(COSTOS_ESCALA_USD * TRM);
 
 const PLANES_REF = [
     { nombre: "Chispa ⚡", precio: 49000,  color: "#818cf8" },
@@ -105,7 +113,7 @@ export function FinanzasTemplate() {
                     <MetricIcon $color="#f87171"><RiSubtractLine /></MetricIcon>
                     <MetricVal>{fmtCOP(COSTOS_COP)}</MetricVal>
                     <MetricLabel>Costos fijos / mes</MetricLabel>
-                    <MetricSub>Vercel Pro + Dominio</MetricSub>
+                    <MetricSub>Claude Pro + Dominio · hoy</MetricSub>
                 </MetricCard>
 
                 <MetricCard $color={gananciaNeta >= 0 ? "#34d399" : "#f87171"}>
@@ -129,38 +137,213 @@ export function FinanzasTemplate() {
                     <thead>
                         <tr>
                             <CostoTh>Servicio</CostoTh>
-                            <CostoTh $right>USD / mes</CostoTh>
-                            <CostoTh $right>COP / mes</CostoTh>
-                            <CostoTh $right>COP / año</CostoTh>
+                            <CostoTh>Descripción</CostoTh>
+                            <CostoTh $right $green>Ahora (USD/mes)</CostoTh>
+                            <CostoTh $right $yellow>A escala (USD/mes)</CostoTh>
+                            <CostoTh $right>COP / mes (escala)</CostoTh>
                         </tr>
                     </thead>
                     <tbody>
                         {[
-                            { nombre: "Vercel Pro",        usd: VERCEL_USD,   cop: Math.round(VERCEL_USD * TRM),   anio: Math.round(VERCEL_USD * TRM * 12)   },
-                            { nombre: "Dominio .com",      usd: DOMINIO_USD,  cop: Math.round(DOMINIO_USD * TRM),  anio: Math.round(DOMINIO_USD * TRM * 12)  },
+                            {
+                                nombre: "Claude Pro",
+                                desc:   "IA para desarrollo y mantenimiento continuo",
+                                ahora:  CLAUDE_USD,
+                                escala: CLAUDE_USD,
+                                color:  "#f88533",
+                            },
+                            {
+                                nombre: "Vercel",
+                                desc:   "Hosting · Hobby gratis hoy → Pro al crecer",
+                                ahora:  0,
+                                escala: VERCEL_USD,
+                                color:  "#60a5fa",
+                                nota:   "Hobby → Pro",
+                            },
+                            {
+                                nombre: "Supabase",
+                                desc:   "Base de datos · Free tier hoy → Pro a 50+ clientes",
+                                ahora:  0,
+                                escala: SUPABASE_USD,
+                                color:  "#34d399",
+                                nota:   "Free → Pro",
+                            },
+                            {
+                                nombre: "Dominio .com",
+                                desc:   "Dominio web prorrateado mensual",
+                                ahora:  DOMINIO_USD,
+                                escala: DOMINIO_USD,
+                                color:  "#a78bfa",
+                            },
                         ].map((c, i) => (
                             <CostoTr key={i}>
-                                <CostoTd>{c.nombre}</CostoTd>
-                                <CostoTd $right>${c.usd.toFixed(2)}</CostoTd>
-                                <CostoTd $right>{fmtCOP(c.cop)}</CostoTd>
-                                <CostoTd $right>{fmtCOP(c.anio)}</CostoTd>
+                                <CostoTd>
+                                    <CostoNombre $color={c.color}>{c.nombre}</CostoNombre>
+                                    {c.nota && <CostoTag>{c.nota}</CostoTag>}
+                                </CostoTd>
+                                <CostoTd $sub>{c.desc}</CostoTd>
+                                <CostoTd $right $green>{c.ahora === 0 ? "Gratis" : `$${c.ahora.toFixed(2)}`}</CostoTd>
+                                <CostoTd $right $yellow>${c.escala.toFixed(2)}</CostoTd>
+                                <CostoTd $right>{fmtCOP(Math.round(c.escala * TRM))}</CostoTd>
                             </CostoTr>
                         ))}
                         <CostoTrTotal>
                             <CostoTd><b>TOTAL</b></CostoTd>
-                            <CostoTd $right><b>${COSTOS_USD.toFixed(2)}</b></CostoTd>
-                            <CostoTd $right><b>{fmtCOP(COSTOS_COP)}</b></CostoTd>
-                            <CostoTd $right><b>{fmtCOP(COSTOS_COP * 12)}</b></CostoTd>
+                            <CostoTd $sub />
+                            <CostoTd $right $green><b>${COSTOS_USD.toFixed(2)}</b></CostoTd>
+                            <CostoTd $right $yellow><b>${COSTOS_ESCALA_USD.toFixed(2)}</b></CostoTd>
+                            <CostoTd $right><b>{fmtCOP(COSTOS_ESCALA_COP)}</b></CostoTd>
                         </CostoTrTotal>
                     </tbody>
                 </CostosTable>
                 <CostoNota>
                     <RiInformationLine /> TRM usada: $1 USD = ${TRM.toLocaleString("es-CO")} COP · Actualiza si cambia el dólar.
+                    &nbsp;|&nbsp; <span style={{ color: "#34d399" }}>Verde = hoy</span> &nbsp;·&nbsp; <span style={{ color: "#f59e0b" }}>Amarillo = a 50+ clientes</span>
                 </CostoNota>
             </CostosCard>
 
             {/* ══════════════════════════════
-                SECCIÓN 3 — PUNTO DE EQUILIBRIO
+                SECCIÓN 3 — FASES DE COSTO
+            ══════════════════════════════ */}
+            <SectionLabel>🗺️ Fases de costo — cómo evoluciona el gasto</SectionLabel>
+            <FasesGrid>
+                {[
+                    {
+                        fase: "Fase 1",
+                        rango: "Hoy · 1 – 30 clientes",
+                        color: "#34d399",
+                        totalUsd: 20,
+                        items: [
+                            { nombre: "Claude Pro",     usd: 20, estado: "activo" },
+                            { nombre: "Vercel Hobby",   usd: 0,  estado: "gratis" },
+                            { nombre: "Supabase Free",  usd: 0,  estado: "gratis" },
+                            { nombre: "Dominio .com",   usd: 0,  estado: "pendiente" },
+                        ],
+                        nota: "Con 1 cliente Fuego ya eres rentable ✓",
+                    },
+                    {
+                        fase: "Fase 2",
+                        rango: "30 – 50 clientes",
+                        color: "#f59e0b",
+                        totalUsd: 21,
+                        items: [
+                            { nombre: "Claude Pro",    usd: 20, estado: "activo" },
+                            { nombre: "Vercel Hobby",  usd: 0,  estado: "gratis" },
+                            { nombre: "Supabase Free", usd: 0,  estado: "vigilar" },
+                            { nombre: "Dominio .com",  usd: 1,  estado: "activo" },
+                        ],
+                        nota: "Monitorear uso de BD — puede acercarse al límite",
+                    },
+                    {
+                        fase: "Fase 3",
+                        rango: "50 – 100 clientes",
+                        color: "#f88533",
+                        totalUsd: 66,
+                        items: [
+                            { nombre: "Claude Pro",    usd: 20, estado: "activo" },
+                            { nombre: "Vercel Pro",    usd: 20, estado: "pagar" },
+                            { nombre: "Supabase Pro",  usd: 25, estado: "pagar" },
+                            { nombre: "Dominio .com",  usd: 1,  estado: "activo" },
+                        ],
+                        nota: "Costos = 1.8% de tus ingresos a 100 clientes",
+                    },
+                ].map((f) => (
+                    <FaseCard key={f.fase} $color={f.color}>
+                        <FaseHeader $color={f.color}>
+                            <FaseTitulo $color={f.color}>{f.fase}</FaseTitulo>
+                            <FaseRango>{f.rango}</FaseRango>
+                        </FaseHeader>
+                        <FaseItems>
+                            {f.items.map((item) => (
+                                <FaseItem key={item.nombre}>
+                                    <FaseItemNombre>{item.nombre}</FaseItemNombre>
+                                    <FaseItemVal $estado={item.estado}>
+                                        {item.usd === 0 ? "Gratis" : `$${item.usd} USD`}
+                                    </FaseItemVal>
+                                </FaseItem>
+                            ))}
+                        </FaseItems>
+                        <FaseTotalRow $color={f.color}>
+                            <span>Total / mes</span>
+                            <FaseTotalVal $color={f.color}>${f.totalUsd} USD · {fmtCOP(f.totalUsd * TRM)}</FaseTotalVal>
+                        </FaseTotalRow>
+                        <FaseNota>{f.nota}</FaseNota>
+                    </FaseCard>
+                ))}
+            </FasesGrid>
+
+            {/* ══════════════════════════════
+                SECCIÓN 4 — LÍMITES GRATUITOS
+            ══════════════════════════════ */}
+            <SectionLabel>⚠️ Límites de los servicios gratuitos</SectionLabel>
+            <LimitesGrid>
+                {[
+                    {
+                        servicio:    "Vercel Hobby",
+                        color:       "#60a5fa",
+                        icon:        "🌐",
+                        limites: [
+                            { label: "Bandwidth",  valor: "100 GB/mes",      ok: true  },
+                            { label: "Uso",        valor: "No comercial",    ok: false },
+                            { label: "Builds",     valor: "6.000 min/mes",   ok: true  },
+                        ],
+                        clientesOk:  "~70 clientes técnicamente",
+                        riesgo:      "Los términos prohíben uso comercial — Vercel puede suspender tu proyecto si detecta ingresos.",
+                        accion:      "Pasa a Pro ($20/mes) cuando tengas 30+ clientes o ingresos regulares.",
+                    },
+                    {
+                        servicio:    "Supabase Free",
+                        color:       "#34d399",
+                        icon:        "🗄️",
+                        limites: [
+                            { label: "Base de datos", valor: "500 MB",        ok: true  },
+                            { label: "Bandwidth",     valor: "5 GB/mes",      ok: true  },
+                            { label: "Pausa",         valor: "7 días sin uso",ok: false },
+                        ],
+                        clientesOk:  "~50-60 clientes (6+ meses de datos)",
+                        riesgo:      "El proyecto se PAUSA si no hay actividad por 7 días — crítico en producción. A 100 clientes activos no se pausa, pero el storage sí puede llegar al límite.",
+                        accion:      "Pasa a Pro ($25/mes) al llegar a 40 clientes o antes si los datos crecen rápido.",
+                    },
+                    {
+                        servicio:    "Dominio .com",
+                        color:       "#a78bfa",
+                        icon:        "🔗",
+                        limites: [
+                            { label: "Costo",      valor: "~$12 USD/año",    ok: null  },
+                            { label: "Mensual",    valor: "~$1 USD/mes",     ok: null  },
+                            { label: "En COP",     valor: `~${fmtCOP(4200)}/mes`, ok: null },
+                        ],
+                        clientesOk:  "No aplica — es un costo fijo pequeño",
+                        riesgo:      "Sin dominio propio tu URL es posdto2.vercel.app — no es profesional para clientes de pago. Proveedor recomendado: Namecheap o Porkbun (~$9-11 USD/año).",
+                        accion:      "Comprarlo YA — es el menor costo del negocio y da imagen profesional.",
+                    },
+                ].map((s) => (
+                    <LimiteCard key={s.servicio} $color={s.color}>
+                        <LimiteHeader>
+                            <LimiteIcono>{s.icon}</LimiteIcono>
+                            <LimiteTitulo $color={s.color}>{s.servicio}</LimiteTitulo>
+                        </LimiteHeader>
+                        <LimitePills>
+                            {s.limites.map((l) => (
+                                <LimitePill key={l.label} $ok={l.ok}>
+                                    <span>{l.label}</span>
+                                    <b>{l.valor}</b>
+                                </LimitePill>
+                            ))}
+                        </LimitePills>
+                        <LimiteSeccion $label="Aguanta hasta">
+                            <LimiteTexto $verde>{s.clientesOk}</LimiteTexto>
+                        </LimiteSeccion>
+                        <LimiteSeccion $label="Riesgo">
+                            <LimiteTexto>{s.riesgo}</LimiteTexto>
+                        </LimiteSeccion>
+                        <LimiteAccion $color={s.color}>{s.accion}</LimiteAccion>
+                    </LimiteCard>
+                ))}
+            </LimitesGrid>
+
+            {/* ══════════════════════════════
+                SECCIÓN 5 — PUNTO DE EQUILIBRIO
             ══════════════════════════════ */}
             <SectionLabel>⚖️ Punto de equilibrio</SectionLabel>
             <BECard>
@@ -366,7 +549,7 @@ const Wrap = styled.div`
     gap: 12px;
     animation: ${fadeUp} 0.4s ease both;
 
-    @media (max-width: 767px) { padding: 16px 14px 60px; }
+    @media (max-width: 767px) { padding: 68px 14px 60px; }
 `;
 
 const PageHead = styled.div`
@@ -454,7 +637,8 @@ const CostoTh = styled.th`
     text-align: ${({ $right }) => $right ? "right" : "left"};
     font-size: 11px; font-weight: 700; text-transform: uppercase;
     letter-spacing: 0.4px;
-    color: ${({ theme }) => theme.colorsubtitlecard};
+    color: ${({ $green, $yellow, theme }) =>
+        $green ? "#34d399" : $yellow ? "#f59e0b" : theme.colorsubtitlecard};
     padding: 0 12px 12px;
     border-bottom: 1px solid ${({ theme }) => theme.color2};
 `;
@@ -470,10 +654,25 @@ const CostoTrTotal = styled.tr`
 
 const CostoTd = styled.td`
     padding: 11px 12px;
-    font-size: 13px;
+    font-size: ${({ $sub }) => $sub ? "12px" : "13px"};
     text-align: ${({ $right }) => $right ? "right" : "left"};
-    color: ${({ theme }) => theme.text};
+    color: ${({ $green, $yellow, $sub, theme }) =>
+        $green ? "#34d399" : $yellow ? "#f59e0b" : $sub ? theme.colorsubtitlecard : theme.text};
     border-bottom: 1px solid ${({ theme }) => theme.color2};
+`;
+
+const CostoNombre = styled.span`
+    font-weight: 700;
+    color: ${({ $color }) => $color};
+    display: block;
+`;
+
+const CostoTag = styled.span`
+    font-size: 10px; font-weight: 600;
+    padding: 2px 7px; border-radius: 999px;
+    background: rgba(255,255,255,0.06);
+    color: ${({ theme }) => theme.colorsubtitlecard};
+    margin-top: 2px; display: inline-block;
 `;
 
 const CostoNota = styled.div`
@@ -536,6 +735,7 @@ const ProyectorCard = styled.div`
     border-radius: 18px;
     padding: 24px;
     display: flex; flex-direction: column; gap: 20px;
+    overflow-x: auto;
 `;
 
 const ProyHead = styled.div`
@@ -723,4 +923,146 @@ const LoadingMsg = styled.div`
     text-align: center; padding: 40px;
     color: ${({ theme }) => theme.colorsubtitlecard};
     font-size: 14px;
+`;
+
+/* ── Fases de costo ── */
+const FasesGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    @media (max-width: 860px) { grid-template-columns: 1fr; }
+`;
+
+const FaseCard = styled.div`
+    background: ${({ theme }) => theme.bgcards};
+    border: 1px solid ${({ $color }) => $color}30;
+    border-radius: 18px;
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 12px;
+    position: relative; overflow: hidden;
+    &::before {
+        content: '';
+        position: absolute; top: 0; left: 0; right: 0; height: 3px;
+        background: ${({ $color }) => $color};
+    }
+`;
+
+const FaseHeader = styled.div`display: flex; flex-direction: column; gap: 2px;`;
+
+const FaseTitulo = styled.div`
+    font-size: 13px; font-weight: 900; text-transform: uppercase;
+    letter-spacing: 0.8px; color: ${({ $color }) => $color};
+`;
+
+const FaseRango = styled.div`
+    font-size: 12px; color: ${({ theme }) => theme.colorsubtitlecard};
+`;
+
+const FaseItems = styled.div`display: flex; flex-direction: column; gap: 0;`;
+
+const FaseItem = styled.div`
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid ${({ theme }) => theme.color2};
+    font-size: 13px;
+    &:last-child { border-bottom: none; }
+`;
+
+const FaseItemNombre = styled.span`color: ${({ theme }) => theme.text};`;
+
+const ESTADO_COLORS = {
+    activo:    "#34d399",
+    gratis:    "#60a5fa",
+    vigilar:   "#f59e0b",
+    pagar:     "#f87171",
+    pendiente: "#94a3b8",
+};
+
+const FaseItemVal = styled.span`
+    font-weight: 700; font-size: 12px;
+    color: ${({ $estado }) => ESTADO_COLORS[$estado] ?? "#94a3b8"};
+`;
+
+const FaseTotalRow = styled.div`
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 10px; margin-top: 2px;
+    border-top: 2px solid ${({ $color }) => $color}40;
+    font-size: 12px; color: ${({ theme }) => theme.colorsubtitlecard};
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+`;
+
+const FaseTotalVal = styled.span`
+    font-size: 13px; font-weight: 900; color: ${({ $color }) => $color};
+`;
+
+const FaseNota = styled.div`
+    font-size: 11px; color: ${({ theme }) => theme.colorsubtitlecard};
+    font-style: italic; line-height: 1.4;
+`;
+
+/* ── Límites gratuitos ── */
+const LimitesGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    @media (max-width: 860px) { grid-template-columns: 1fr; }
+`;
+
+const LimiteCard = styled.div`
+    background: ${({ theme }) => theme.bgcards};
+    border: 1px solid ${({ theme }) => theme.color2};
+    border-radius: 18px;
+    padding: 20px;
+    display: flex; flex-direction: column; gap: 12px;
+`;
+
+const LimiteHeader = styled.div`display: flex; align-items: center; gap: 10px;`;
+
+const LimiteIcono = styled.span`font-size: 22px;`;
+
+const LimiteTitulo = styled.div`
+    font-size: 15px; font-weight: 900; color: ${({ $color }) => $color};
+`;
+
+const LimitePills = styled.div`display: flex; flex-direction: column; gap: 6px;`;
+
+const LimitePill = styled.div`
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 10px; border-radius: 8px;
+    background: ${({ $ok, theme }) =>
+        $ok === true  ? "rgba(52,211,153,0.08)" :
+        $ok === false ? "rgba(248,113,113,0.08)" :
+        theme.bgtotal};
+    border: 1px solid ${({ $ok, theme }) =>
+        $ok === true  ? "rgba(52,211,153,0.2)" :
+        $ok === false ? "rgba(248,113,113,0.2)" :
+        theme.color2};
+    font-size: 12px;
+    span { color: ${({ theme }) => theme.colorsubtitlecard}; }
+    b { color: ${({ $ok, theme }) =>
+        $ok === true  ? "#34d399" :
+        $ok === false ? "#f87171" :
+        theme.text}; }
+`;
+
+const LimiteSeccion = styled.div`
+    display: flex; flex-direction: column; gap: 4px;
+    &::before {
+        content: "${({ $label }) => $label}";
+        font-size: 10px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.5px; color: #94a3b8;
+    }
+`;
+
+const LimiteTexto = styled.p`
+    font-size: 12px; line-height: 1.5; margin: 0;
+    color: ${({ $verde, theme }) => $verde ? "#34d399" : theme.colorsubtitlecard};
+`;
+
+const LimiteAccion = styled.div`
+    font-size: 12px; font-weight: 700; line-height: 1.5;
+    padding: 10px 12px; border-radius: 10px;
+    background: ${({ $color }) => $color}12;
+    border: 1px solid ${({ $color }) => $color}30;
+    color: ${({ $color }) => $color};
 `;

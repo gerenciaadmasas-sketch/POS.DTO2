@@ -9,7 +9,14 @@ import { useAlmacenesConfigStore } from "../store/AlmacenesConfigStore";
 import { ActualizarUsuario } from "../supabase/crudUsuarios";
 import { supabase } from "../supabase/supabase.config";
 import { toastExito, toastError } from "../utils/toast";
-import { RiUserLine, RiShieldLine, RiBuildingLine, RiStoreLine, RiEditLine, RiSaveLine, RiCloseLine, RiLockLine } from "react-icons/ri";
+import { RiUserLine, RiBuildingLine, RiStoreLine, RiEditLine, RiSaveLine, RiCloseLine, RiLockLine, RiMedalLine, RiCalendarLine } from "react-icons/ri";
+import { usePlan, LIMITES_PLAN } from "../hooks/usePlan";
+
+const PLAN_COLORS = {
+    chispa: { bg: "rgba(96,165,250,0.12)",  color: "#60a5fa", glow: "rgba(96,165,250,0.25)"  },
+    fuego:  { bg: "rgba(248,133,51,0.12)",  color: "#f88533", glow: "rgba(248,133,51,0.25)"  },
+    cosmos: { bg: "rgba(167,139,250,0.12)", color: "#a78bfa", glow: "rgba(167,139,250,0.25)" },
+};
 
 const TIPO_COLORS = {
     superadmin:    { bg: "rgba(248,133,51,0.12)",  color: "#f88533" },
@@ -18,31 +25,14 @@ const TIPO_COLORS = {
     supervisor:    { bg: "rgba(74,222,128,0.12)",  color: "#4ade80" },
 };
 
-const PERMISOS_LABELS = {
-    ventas:           "Ventas",
-    cobrar_venta:     "Cobrar venta",
-    configuracion:    "Configuración",
-    impresoras:       "Impresoras",
-    empresa:          "Empresa",
-    categorias:       "Categorías de productos",
-    productos:        "Productos",
-    clientes:         "Clientes",
-    proveedores:      "Proveedores",
-    sucursales_cajas: "Sucursales y cajas",
-    usuarios:         "Usuarios",
-    almacenes:        "Almacenes",
-    inventario:       "Inventario",
-    kardex:           "Kardex",
-    dashboard:        "Dashboard",
-    config_ticket:    "Config. ticket",
-    serializacion:    "Serialización",
-};
 
 export function MiPerfil() {
     const { datausuarios, mostrarusuarios } = useUsuariosStore();
     const { dataempresa }    = useEmpresaStore();
     const { dataSucursales } = useSucursalesStore();
     const { dataAlmacenes }  = useAlmacenesConfigStore();
+
+    const { tipoPlan, suscripcion, diasMora, suspendido } = usePlan();
 
     const [editandoDatos, setEditandoDatos] = useState(false);
     const [editandoClave, setEditandoClave] = useState(false);
@@ -61,9 +51,6 @@ export function MiPerfil() {
         ? (dataSucursales?.find(s => s.id === u?.id_sucursal)?.razon_social ?? "Sin sucursal")
         : dataempresa?.razon_social ?? "Empresa";
 
-    const permisosActivos = Object.entries(u?.permisos ?? {})
-        .filter(([, v]) => v)
-        .map(([k]) => PERMISOS_LABELS[k] ?? k);
 
     /* ── Formulario datos personales ── */
     const { register: regDatos, handleSubmit: hdDatos, formState: { errors: errDatos } } = useForm({
@@ -214,21 +201,44 @@ export function MiPerfil() {
                         )}
                     </Card>
 
-                    {/* Permisos (no superadmin) */}
-                {!esSuperAdmin && (
-                    <Card $wide>
-                        <CardTitle><RiShieldLine /> Mis permisos</CardTitle>
-                        {permisosActivos.length === 0 ? (
-                            <MsgVacio>Sin permisos asignados</MsgVacio>
-                        ) : (
-                            <PermisosGrid>
-                                {permisosActivos.map(p => (
-                                    <PermisoPill key={p}>{p}</PermisoPill>
-                                ))}
-                            </PermisosGrid>
-                        )}
-                    </Card>
-                )}
+
+                    {/* Membresía (no superadmin) */}
+                    {!esSuperAdmin && suscripcion && (() => {
+                        const pc = PLAN_COLORS[tipoPlan] ?? PLAN_COLORS.chispa;
+                        const lim = LIMITES_PLAN[tipoPlan] ?? LIMITES_PLAN.chispa;
+                        const fechaStr = suscripcion.fecha_proximo_pago
+                            ? new Date(suscripcion.fecha_proximo_pago + "T00:00:00")
+                                .toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" })
+                            : "—";
+                        const estadoLabel = suspendido ? "Suspendida" : diasMora > 0 ? "En mora" : "Al día";
+                        const estadoColor = suspendido ? "#f87171" : diasMora > 0 ? "#f59e0b" : "#4ade80";
+                        return (
+                            <PlanCard $color={pc.color} $bg={pc.bg} $glow={pc.glow}>
+                                <PlanCardHeader>
+                                    <CardTitle><RiMedalLine /> Mi membresía</CardTitle>
+                                    <PlanBadge $color={pc.color} $bg={pc.bg}>{lim.label}</PlanBadge>
+                                </PlanCardHeader>
+                                <PlanGrid>
+                                    <PlanItem>
+                                        <span>Estado</span>
+                                        <PlanEstado $color={estadoColor}>{estadoLabel}</PlanEstado>
+                                    </PlanItem>
+                                    <PlanItem>
+                                        <span><RiCalendarLine style={{ verticalAlign: "middle", marginRight: 4 }} />Próximo pago</span>
+                                        <strong>{fechaStr}</strong>
+                                    </PlanItem>
+                                    <PlanItem>
+                                        <span>Usuarios incluidos</span>
+                                        <strong>{lim.max_usuarios === Infinity ? "Ilimitados" : lim.max_usuarios}</strong>
+                                    </PlanItem>
+                                    <PlanItem>
+                                        <span>Almacenes incluidos</span>
+                                        <strong>{lim.max_almacenes === Infinity ? "Ilimitados" : lim.max_almacenes}</strong>
+                                    </PlanItem>
+                                </PlanGrid>
+                            </PlanCard>
+                        );
+                    })()}
                 </ColDer>
             </Contenido>
         </Page>
@@ -391,11 +401,41 @@ const InfoItem = styled.div`
 
 const MsgVacio = styled.div`font-size: 13px; color: ${({ theme }) => theme.colorsubtitlecard};`;
 
-const PermisosGrid = styled.div`display: flex; flex-wrap: wrap; gap: 8px;`;
+const PlanCard = styled.div`
+    background: ${({ theme }) => theme.bgcards};
+    border: 1px solid ${({ $color }) => $color}30;
+    border-radius: 20px; padding: 28px;
+    display: flex; flex-direction: column; gap: 16px;
+    box-shadow: 0 0 24px ${({ $glow }) => $glow};
+    transition: box-shadow 0.2s;
+    &:hover { box-shadow: 0 0 36px ${({ $glow }) => $glow}; }
+`;
 
-const PermisoPill = styled.span`
-    padding: 5px 12px; border-radius: 20px;
-    font-size: 12px; font-weight: 600;
-    background: rgba(37,99,235,0.12); color: #60a5fa;
-    border: 1px solid rgba(37,99,235,0.2);
+const PlanCardHeader = styled.div`
+    display: flex; align-items: center; justify-content: space-between;
+`;
+
+const PlanBadge = styled.span`
+    padding: 5px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 800; letter-spacing: 0.5px;
+    background: ${({ $bg }) => $bg}; color: ${({ $color }) => $color};
+    border: 1px solid ${({ $color }) => $color}40;
+`;
+
+const PlanGrid = styled.div`
+    display: flex; flex-direction: column; gap: 0;
+`;
+
+const PlanItem = styled.div`
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; padding: 8px 0;
+    border-bottom: 1px solid ${({ theme }) => theme.color2};
+    span { color: ${({ theme }) => theme.colorsubtitlecard}; }
+    strong { color: ${({ theme }) => theme.text}; font-weight: 700; }
+    &:last-child { border-bottom: none; }
+`;
+
+const PlanEstado = styled.strong`
+    color: ${({ $color }) => $color} !important;
+    font-weight: 700;
 `;

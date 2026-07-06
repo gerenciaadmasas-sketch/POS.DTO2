@@ -312,8 +312,10 @@ const Wrap = styled.div`
     background: ${({ theme }) => theme.bgtotal};
     animation: ${fadeUp} 0.3s ease both;
 
-    @media (max-width: 768px) { padding: 16px; }
+    @media (max-width: 768px) { padding: 68px 14px 28px; }
 `;
+
+
 
 const Header = styled.div`
     display: flex; align-items: center; justify-content: space-between;
@@ -338,6 +340,7 @@ const StatsRow = styled.div`
     margin-bottom: 24px;
 
     @media (max-width: 640px) { grid-template-columns: repeat(2,1fr); }
+    @media (max-width: 360px) { grid-template-columns: 1fr; }
 `;
 
 const StatCard = styled.div`
