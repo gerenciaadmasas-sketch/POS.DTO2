@@ -76,6 +76,13 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
     }
 
     useEffect(() => {
+        if (accion === "Nuevo") {
+            const codigo = generarCodigo();
+            setValue("codigo_barra", codigo);
+        }
+    }, [accion]);
+
+    useEffect(() => {
         if (accion === "Editar" && dataSelect) {
             setImgPreview(dataSelect.imagen && dataSelect.imagen !== "-" ? dataSelect.imagen : null);
             setAplicaIva(dataSelect.aplica_iva ?? false);
@@ -220,22 +227,16 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                                     </InputText>
                                 )}
 
-                                <div className="fila-generar">
-                                    <InputText icono={<v.iconocodigobarras />}>
+                                <InputText icono={<v.iconocodigobarras />}>
                                         <input className="form__field" type="text" placeholder="codigo de barras"
+                                            readOnly={accion !== "Editar"}
                                             {...register("codigo_barra", {
                                                 required: true,
-                                                onChange: (e) => verificarCodigoBarra(e.target.value)
+                                                onChange: (e) => accion === "Editar" && verificarCodigoBarra(e.target.value)
                                             })} />
                                         <label className="form__label">codigo de barras</label>
                                         {errors.codigo_barra && <p>Campo requerido</p>}
                                     </InputText>
-                                    <BtnGenerar type="button" onClick={() => {
-                                        const codigo = generarCodigo();
-                                        setValue("codigo_barra", codigo);
-                                        setProductoExistente(null);
-                                    }}>Generar</BtnGenerar>
-                                </div>
                                 {productoExistente && (
                                     <Aviso>⚠️ Ya existe: <strong>{productoExistente.nombre}</strong></Aviso>
                                 )}
