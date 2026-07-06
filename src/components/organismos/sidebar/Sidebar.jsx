@@ -16,10 +16,10 @@ import { supabase } from "../../../supabase/supabase.config";
 import { ContarNoLeidosCliente } from "../../../supabase/crudSoporte";
 import { ContarNoLeidosInternos } from "../../../supabase/crudMensajesInternos";
 
-const LINKS_CAJERO        = ["/home", "/pos", "/inventario", "/reportes", "/mensajes"];
-const LINKS_ADMIN         = ["/home", "/pos", "/inventario", "/kardex", "/reportes", "/arqueo", "/mensajes", "/soporte"];
-const LINKS_SUPERADMIN    = ["/home", "/saas", "/reportes", "/finanzas", "/prospectos", "/chat", "/mensajes"];
-const LINKS_COMERCIAL     = ["/home", "/prospectos"];
+const LINKS_CAJERO        = ["/home", "/mensajes"];
+const LINKS_ADMIN         = ["/home", "/mensajes", "/soporte"];
+const LINKS_SUPERADMIN    = ["/home", "/mensajes", "/chat"];
+const LINKS_COMERCIAL     = ["/home", "/mensajes"];
 const LINKS_SUSCRIPCIONES = ["/home", "/mensajes", "/soporte"];
 
 export function Sidebar({ state, setState, onNavClick }) {
