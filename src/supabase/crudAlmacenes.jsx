@@ -73,37 +73,23 @@ export async function EliminarStockAlmacen(p) {
 }
 
 export async function MostrarInventarioPorAlmacen({ id_empresa, id_almacen }) {
-    // Traer todos los productos de la empresa
-    const { data: productos, error: errorProd } = await supabase
-        .from("productos")
-        .select("id, nombre, precio_venta, precio_compra, maneja_inventarios")
-        .eq("id_empresa", id_empresa);
-    if (errorProd) {
-        toastError(errorProd.message, "Inventario › Mostrar productos");
-        return [];
-    }
-
-    // Traer stock del almacén activo (puede no haber registros aún)
-    const { data: stockData, error: errorStock } = await supabase
+    const { data: stockData, error } = await supabase
         .from(tabla)
-        .select("id, id_producto, stock, stock_minimo")
+        .select("id, id_producto, stock, stock_minimo, productos(id, nombre, precio_venta, precio_compra, maneja_inventarios)")
         .eq("id_almacen", id_almacen);
-    if (errorStock) {
-        toastError(errorStock.message, "Inventario › Mostrar stock");
+    if (error) {
+        toastError(error.message, "Inventario › Mostrar stock");
         return [];
     }
-
-    const stockMap = Object.fromEntries((stockData ?? []).map(s => [s.id_producto, s]));
-
-    return (productos ?? []).map(p => ({
-        id: p.id,
-        nombre: p.nombre ?? "—",
-        precio_venta: p.precio_venta ?? 0,
-        precio_compra: p.precio_compra ?? 0,
-        maneja_inventarios: p.maneja_inventarios ?? true,
-        stock: stockMap[p.id]?.stock ?? 0,
-        stock_minimo: stockMap[p.id]?.stock_minimo ?? 0,
-        id_stock: stockMap[p.id]?.id ?? null,
+    return (stockData ?? []).map(s => ({
+        id: s.productos?.id ?? s.id_producto,
+        nombre: s.productos?.nombre ?? "—",
+        precio_venta: s.productos?.precio_venta ?? 0,
+        precio_compra: s.productos?.precio_compra ?? 0,
+        maneja_inventarios: s.productos?.maneja_inventarios ?? true,
+        stock: s.stock ?? 0,
+        stock_minimo: s.stock_minimo ?? 0,
+        id_stock: s.id,
     })).sort((a, b) => a.nombre.localeCompare(b.nombre));
 }
 
