@@ -177,6 +177,7 @@ export function UsuariosTemplate() {
                 const { data: existe } = await supabase
                     .from("usuarios").select("id")
                     .eq("usuario", usuario)
+                    .eq("id_empresa", dataempresa?.id)
                     .maybeSingle();
                 if (!existe) break;
                 intento++;

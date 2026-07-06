@@ -32,7 +32,8 @@ export async function MostrarStockAlmacen(p) {
     const { data, error } = await supabase
         .from(tabla)
         .select()
-        .eq("id_producto", p.id_producto);
+        .eq("id_producto", p.id_producto)
+        .eq("id_sucursal", p.id_sucursal);
     if (error) {
         toastError(error.message, "Almacén › Mostrar stock");
         return;
@@ -65,7 +66,8 @@ export async function EliminarStockAlmacen(p) {
     const { error } = await supabase
         .from(tabla)
         .delete()
-        .eq("id_producto", p.id_producto);
+        .eq("id_producto", p.id_producto)
+        .eq("id_almacen", p.id_almacen);
     if (error) {
         toastError(error.message, "Almacén › Eliminar stock");
         throw new Error(error.message);

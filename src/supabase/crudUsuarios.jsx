@@ -79,6 +79,7 @@ export async function ActualizarUsuario(p) {
         .from(tabla)
         .update(campos)
         .eq("id", id)
+        .eq("id_empresa", id_empresa)
         .select()
         .maybeSingle();
     if (error) { toastError(error.message, "Usuarios › Actualizar"); throw new Error(error.message); }
@@ -86,7 +87,7 @@ export async function ActualizarUsuario(p) {
 }
 
 export async function EliminarUsuarioEmpleado(p) {
-    const { error } = await supabase.from(tabla).delete().eq("id", p.id);
+    const { error } = await supabase.from(tabla).delete().eq("id", p.id).eq("id_empresa", p.id_empresa);
     if (error) { toastError(error.message, "Usuarios › Eliminar"); throw new Error(error.message); }
 }
 

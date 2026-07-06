@@ -33,11 +33,12 @@ export async function MostrarComprobantes({ id_empresa }) {
     return data;
 }
 
-export async function EditarComprobante({ id, serie, correlativo }) {
+export async function EditarComprobante({ id, id_empresa, serie, correlativo }) {
     const { error } = await supabase
         .from(tabla)
         .update({ serie, correlativo })
-        .eq("id", id);
+        .eq("id", id)
+        .eq("id_empresa", id_empresa);
     if (error) {
         toastError(error.message, "Comprobantes › Editar");
         throw new Error(error.message);
@@ -52,7 +53,8 @@ export async function SetDefaultComprobante({ id, id_empresa }) {
     const { error } = await supabase
         .from(tabla)
         .update({ por_default: true })
-        .eq("id", id);
+        .eq("id", id)
+        .eq("id_empresa", id_empresa);
     if (error) {
         toastError(error.message, "Comprobantes › Default");
     }

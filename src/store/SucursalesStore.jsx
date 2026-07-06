@@ -7,9 +7,9 @@ export const useSucursalesStore = create((set) => ({
     },
     dataSucursales: [],
     mostrarSucursales: async (p) => {
-        const response = await MostrarSucursales(p)
-        set({ dataSucursales: response });
-        set({sucursalesItemSelect:response[0]})
+        const response = await MostrarSucursales(p);
+        set({ dataSucursales: response ?? [] });
+        if (response?.length) set({ sucursalesItemSelect: response[0] });
         return response;
     }
 }))

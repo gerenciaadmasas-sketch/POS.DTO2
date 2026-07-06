@@ -61,10 +61,15 @@ export async function GetInversionInventario({ id_empresa, id_almacen }) {
         });
         return { costo, valor, productos: rows.length, unidades };
     }
+    if (!id_empresa) return { costo: 0, valor: 0, productos: 0, unidades: 0 };
+    const { data: almsExtra } = await supabase.from("almacenes").select("id").eq("id_empresa", id_empresa);
+    const idsExtra = (almsExtra ?? []).map(a => a.id);
+    if (idsExtra.length === 0) return { costo: 0, valor: 0, productos: 0, unidades: 0 };
     let query = supabase
         .from("almacen")
         .select("stock, id_producto, productos!almacen_id_producto_fkey(precio_compra, precio_venta)")
-        .gt("stock", 0);
+        .gt("stock", 0)
+        .in("id_almacen", idsExtra);
     if (id_almacen) query = query.eq("id_almacen", id_almacen);
     const { data, error } = await query;
     if (error) { toastError(error.message, "Reportes › Inversión"); return { costo: 0, valor: 0, productos: 0, unidades: 0 }; }
