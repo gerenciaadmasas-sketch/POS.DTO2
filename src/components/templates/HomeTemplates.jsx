@@ -9,6 +9,7 @@ import { Icon } from "@iconify/react";
 import { useQuery } from "@tanstack/react-query";
 import { MostrarVersion } from "../../supabase/crudVersion";
 import { MostrarClientes } from "../../supabase/crudClientes";
+import { MostrarSuscripciones } from "../../supabase/crudSuscripciones";
 import { usePlan } from "../../hooks/usePlan";
 
 /* ── helpers TV stats ── */
@@ -89,11 +90,18 @@ const ACCESOS_SUSCRIPCIONES = [
     { key: "config",       icon: "solar:settings-bold-duotone",            label: "Configuración",   sub: "Mi empresa",         to: "/configuracion", accent: "#f59e0b", glow: "rgba(245,158,11,0.35)",  big: false },
 ];
 
-const STATS_CFG = [
+const STATS_TV_CFG = [
     { key: "total",     label: "Total",      accent: "#60a5fa" },
     { key: "activos",   label: "Activos",    accent: "#4ade80" },
     { key: "porVencer", label: "Por vencer", accent: "#f59e0b" },
     { key: "vencidos",  label: "Vencidos",   accent: "#f87171" },
+];
+
+const STATS_SAAS_CFG = [
+    { key: "total",      label: "Clientes",    accent: "#60a5fa" },
+    { key: "alDia",      label: "Al día",      accent: "#4ade80" },
+    { key: "porVencer",  label: "Por vencer",  accent: "#f59e0b" },
+    { key: "suspendidos",label: "Suspendidos", accent: "#f87171" },
 ];
 
 export function HomeTemplates() {
@@ -138,6 +146,28 @@ export function HomeTemplates() {
         });
         return { total: clientes.length, activos, porVencer, vencidos };
     }, [clientes]);
+
+    /* stats SaaS para superadmin */
+    const { data: suscripciones = [] } = useQuery({
+        queryKey: ["suscripciones-home-saas"],
+        queryFn: MostrarSuscripciones,
+        enabled: tipo === "superadmin",
+        staleTime: 60000,
+    });
+
+    const statsSaaS = useMemo(() => {
+        const hoy = new Date();
+        let alDia = 0, porVencer = 0, suspendidos = 0;
+        suscripciones.forEach((s) => {
+            if (s.estado === "suspendido") { suspendidos++; return; }
+            if (!s.fecha_proximo_pago) { alDia++; return; }
+            const dias = Math.ceil((new Date(s.fecha_proximo_pago) - hoy) / 86400000);
+            if (dias < 0) suspendidos++;
+            else if (dias <= 5) porVencer++;
+            else alDia++;
+        });
+        return { total: suscripciones.length, alDia, porVencer, suspendidos };
+    }, [suscripciones]);
 
     /* contexto subtítulo */
     const sucursal = dataSucursales?.find(s => s.id === datausuarios?.id_sucursal);
@@ -198,13 +228,13 @@ export function HomeTemplates() {
                     </AlertaBanner>
                 )}
 
-                {/* ── Stats TV (solo suscripciones_tv) ── */}
-                {esSuscripcionesTV && (
+                {/* ── Stats (TV y superadmin) ── */}
+                {(esSuscripcionesTV || tipo === "superadmin") && (
                     <StatsRow>
-                        {STATS_CFG.map(({ key, label, accent }, i) => (
+                        {(tipo === "superadmin" ? STATS_SAAS_CFG : STATS_TV_CFG).map(({ key, label, accent }, i) => (
                             <StatCard key={key} $accent={accent} $i={i}>
                                 <StatNum $accent={accent}>
-                                    <AnimatedNumber value={statsTV[key]} />
+                                    <AnimatedNumber value={tipo === "superadmin" ? statsSaaS[key] : statsTV[key]} />
                                 </StatNum>
                                 <StatLabel>{label}</StatLabel>
                                 <StatGlow $accent={accent} />
