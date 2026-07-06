@@ -1055,6 +1055,19 @@ const SliderWrap = styled.div`
     }
 `;
 
+const SliderTrack = styled.div`
+    height: 3px;
+    border-radius: 4px;
+    background: linear-gradient(
+        to right,
+        #f88533 0%,
+        #f88533 ${({ $pct }) => $pct ?? 0}%,
+        rgba(255,255,255,0.12) ${({ $pct }) => $pct ?? 0}%,
+        rgba(255,255,255,0.12) 100%
+    );
+    margin-top: -2px;
+`;
+
 const DescuentoPreview = styled.div`
     display: flex; flex-direction: column; gap: 3px;
     font-size: 12px; font-family: "Poppins", sans-serif;
