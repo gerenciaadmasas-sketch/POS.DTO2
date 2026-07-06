@@ -245,17 +245,13 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                             {/* Columna derecha */}
                             <div className="seccion2">
 
-                                {/* Se vende por */}
+                                {/* Se vende por — solo Unidad */}
                                 <div className="grupo">
                                     <label className="grupo-label">Se vende por:</label>
                                     <div className="checkboxes">
                                         <ContainerSelector>
-                                            <Checkbox1 isChecked={seVendePorUnidad} onChange={seleccionarUnidad} />
+                                            <Checkbox1 isChecked={true} onChange={() => {}} />
                                             <span>UNIDAD</span>
-                                        </ContainerSelector>
-                                        <ContainerSelector>
-                                            <Checkbox1 isChecked={seVendePorGranel} onChange={seleccionarGranel} />
-                                            <span>GRANEL(decimales)</span>
                                         </ContainerSelector>
                                     </div>
                                 </div>
