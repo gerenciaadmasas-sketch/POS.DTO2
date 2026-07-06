@@ -492,7 +492,7 @@ export function SaasTemplate() {
                                 )}
 
                                 {/* Eximir pago — resetea el reloj sin cobrar */}
-                                {(estadoCalc === "mora" || estadoCalc === "proximo" || estadoCalc === "al_dia") && (
+                                {(estadoCalc === "mora" || estadoCalc === "proximo") && (
                                     <BtnEximir
                                         title="Eximir pago — extender fecha sin cobrar"
                                         disabled={mutEximir.isPending}
