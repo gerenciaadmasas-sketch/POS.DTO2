@@ -14,7 +14,7 @@ export async function InsertarProducto(p) {
 export async function MostrarProductos(p) {
     const { data, error } = await supabase
         .from(tabla)
-        .select("*, categorias(nombre)")
+        .select("*, categorias(nombre), almacen(almacenes(nombre))")
         .eq("id_empresa", p.id_empresa)
         .order("nombre");
     if (error) { console.error("Mostrar productos:", error.message); return []; }
@@ -23,13 +23,14 @@ export async function MostrarProductos(p) {
         categoria: prod.categorias?.nombre ?? "Sin categoría",
         p_venta: `$ ${Number(prod.precio_venta).toLocaleString("es-CO")}`,
         p_compra: `$ ${Number(prod.precio_compra).toLocaleString("es-CO")}`,
+        almacenes_txt: [...new Set((prod.almacen ?? []).map(a => a.almacenes?.nombre).filter(Boolean))].join(", ") || "—",
     }));
 }
 
 export async function BuscarProductos(p) {
     const { data, error } = await supabase
         .from(tabla)
-        .select("*, categorias(nombre)")
+        .select("*, categorias(nombre), almacen(almacenes(nombre))")
         .eq("id_empresa", p.id_empresa)
         .ilike("nombre", `%${p.descripcion}%`)
         .order("nombre")
@@ -40,6 +41,7 @@ export async function BuscarProductos(p) {
         categoria: prod.categorias?.nombre ?? "Sin categoría",
         p_venta: `$ ${Number(prod.precio_venta).toLocaleString("es-CO")}`,
         p_compra: `$ ${Number(prod.precio_compra).toLocaleString("es-CO")}`,
+        almacenes_txt: [...new Set((prod.almacen ?? []).map(a => a.almacenes?.nombre).filter(Boolean))].join(", ") || "—",
     }));
 }
 

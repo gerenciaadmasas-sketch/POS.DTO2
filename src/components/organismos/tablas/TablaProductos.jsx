@@ -66,8 +66,8 @@ export function TablaProductos({ data, SetopenRegistro, setdataSelect, setAccion
             cell: (info) => <span>{info.getValue()}</span>,
         },
         {
-            accessorKey: "sevende_por",
-            header: "Vende por",
+            accessorKey: "almacenes_txt",
+            header: "Almacén",
             cell: (info) => <span>{info.getValue()}</span>,
         },
         {
