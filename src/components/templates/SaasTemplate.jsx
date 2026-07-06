@@ -447,8 +447,8 @@ export function SaasTemplate() {
                             </CardBody>
 
                             <CardActions>
-                                {/* Pago manual — solo cuando está en mora o próximo a vencer */}
-                                {(estadoCalc === "mora" || estadoCalc === "proximo") && (
+                                {/* Pago manual — siempre visible para registrar pagos no reportados por Wompi */}
+                                {estadoCalc !== "cancelado" && (
                                     <BtnPago onClick={async () => {
                                         const { default: Swal } = await import("sweetalert2");
                                         const { value: metodo } = await Swal.fire({
@@ -491,8 +491,8 @@ export function SaasTemplate() {
                                     </BtnPago>
                                 )}
 
-                                {/* Eximir pago — resetea el reloj sin cobrar (mora o próximo) */}
-                                {(estadoCalc === "mora" || estadoCalc === "proximo") && (
+                                {/* Eximir pago — resetea el reloj sin cobrar */}
+                                {(estadoCalc === "mora" || estadoCalc === "proximo" || estadoCalc === "al_dia") && (
                                     <BtnEximir
                                         title="Eximir pago — extender fecha sin cobrar"
                                         disabled={mutEximir.isPending}
