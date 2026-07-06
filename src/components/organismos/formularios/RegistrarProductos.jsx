@@ -278,16 +278,7 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                                     </ContainerSelector>
                                 </div>
 
-                                {/* Aplica IVA */}
-                                <div className="grupo">
-                                    <ContainerSelector>
-                                        <label className="grupo-label">Aplica IVA (19%):</label>
-                                        <Switch1
-                                            state={aplicaIva}
-                                            setState={() => setAplicaIva(!aplicaIva)}
-                                        />
-                                    </ContainerSelector>
-                                </div>
+                                {/* Aplica IVA — oculto por ahora */}
 
                                 {/* Stock — siempre visible */}
                                 <ContainerStock>
