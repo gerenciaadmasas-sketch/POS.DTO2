@@ -8,6 +8,7 @@ import {
     ContainerSelector, useSucursalesStore, ListaDesplegable, Selector, Checkbox1,
     BuscarProductoPorCodigo, Switch1
 } from "../../../index";
+import { MoverProductoAlmacen } from "../../../supabase/crudAlmacenes";
 import { toastWarning } from "../../../utils/toast";
 import { useForm } from "react-hook-form";
 import { useEmpresaStore } from "../../../store/EmpresaStore";
@@ -82,6 +83,11 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
             setSeVendePorGranel(dataSelect.sevende_por === "Granel");
             const cat = datacategorias?.find(c => c.id === dataSelect.id_categoria);
             if (cat) setCategoriaSelect(cat);
+            // Pre-popular el almacén actual del producto
+            if (dataSelect.id_almacen_actual) {
+                const alm = dataAlmacenes.find(a => a.id === dataSelect.id_almacen_actual);
+                if (alm) selectSucursal(alm);
+            }
             reset({
                 nombre: dataSelect.nombre,
                 precio_venta: dataSelect.precio_venta,
@@ -127,6 +133,16 @@ export function RegistrarProductos({ onClose, dataSelect, accion, setIsExploding
                 _id: dataSelect.id,
             };
             await editarProducto(p);
+            // Actualizar almacén si cambió
+            if (sucursalesItemSelect?.id && sucursalesItemSelect.id !== dataSelect.id_almacen_actual) {
+                await MoverProductoAlmacen({
+                    id_producto:       dataSelect.id,
+                    id_almacen_nuevo:  sucursalesItemSelect.id,
+                    id_almacen_actual: dataSelect.id_almacen_actual ?? null,
+                    id_sucursal_nuevo: sucursalesItemSelect.id_sucursal,
+                    id_empresa:        dataempresa.id,
+                });
+            }
             if (imgFile) {
                 await SubirImagenProducto({ id: dataSelect.id, id_empresa: dataempresa.id, file: imgFile });
                 await mostrarProductos(parametros);
