@@ -22,7 +22,7 @@ export function TablaProductos({ data, SetopenRegistro, setdataSelect, setAccion
         confirmar({
             titulo: "¿Eliminar producto?",
             texto: `Se eliminará "${p.nombre}". ¡Esta acción no se puede deshacer!`,
-            onConfirmar: () => eliminarProducto({ id: p.id }),
+            onConfirmar: () => eliminarProducto({ id: p.id, id_empresa: p.id_empresa }),
         });
     }
 
