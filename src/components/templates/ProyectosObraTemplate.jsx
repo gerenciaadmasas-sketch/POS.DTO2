@@ -15,9 +15,9 @@ const formatCOP = (n) =>
 
 /* ── catálogos ── */
 const TIPOS_PROYECTO = [
-    { key: "remodelacion",  label: "Remodelación",        icon: "solar:spanner-minimalistic-bold-duotone", color: "#f59e0b" },
-    { key: "reparacion",    label: "Reparación locativa",  icon: "solar:settings-bold-duotone",        color: "#60a5fa" },
-    { key: "construccion",  label: "Construcción",         icon: "solar:buildings-2-bold-duotone",     color: "#f88533" },
+    { key: "remodelacion",  label: "Remodelación",        icon: "mdi:wrench",                              color: "#f59e0b" },
+    { key: "reparacion",    label: "Reparación locativa",  icon: "mdi:toolbox",                        color: "#60a5fa" },
+    { key: "construccion",  label: "Construcción",         icon: "mdi:hard-hat",                       color: "#f88533" },
     { key: "administracion",label: "Administración",       icon: "solar:clipboard-list-bold-duotone",  color: "#a78bfa" },
 ];
 
