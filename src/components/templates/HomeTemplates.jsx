@@ -85,7 +85,7 @@ const ACCESOS_COMERCIAL = [
 ];
 
 const ACCESOS_INMOBILIARIA = [
-    { key: "propiedades",    icon: "solar:home-smile-bold-duotone",        label: "Propiedades",    sub: "Aptos · Casas · Lotes · Fincas",     to: "/propiedades",    accent: "#f59e0b", glow: "rgba(245,158,11,0.35)",  big: true  },
+    { key: "propiedades",    icon: "solar:home-smile-bold-duotone",        label: "Gestión Inmobiliaria", sub: "Inmuebles · Proyectos · Gestión Adm.", to: "/propiedades", accent: "#f59e0b", glow: "rgba(245,158,11,0.35)", big: true },
     { key: "proyectos",      icon: "mdi:hard-hat",                         label: "Proyectos",      sub: "Obras · Remodelación · Reparación",  to: "/proyectos",      accent: "#60a5fa", glow: "rgba(96,165,250,0.35)",  big: false },
     { key: "administracion", icon: "solar:clipboard-list-bold-duotone",    label: "Administración", sub: "Gestión de propiedades",             to: "/administracion", accent: "#a78bfa", glow: "rgba(167,139,250,0.35)", big: false },
 ];

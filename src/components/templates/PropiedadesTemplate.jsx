@@ -219,9 +219,9 @@ export function PropiedadesTemplate() {
                 <HeaderInfo>
                     <PageTitle>
                         <Icon icon="solar:home-smile-bold-duotone" />
-                        Propiedades &amp; Proyectos
+                        Gestión Inmobiliaria
                     </PageTitle>
-                    <PageSub>Organización completa de inmuebles y trabajos</PageSub>
+                    <PageSub>Inmuebles propios, gestión administrativa y proyectos</PageSub>
                 </HeaderInfo>
                 <BtnNuevoInmueble onClick={abrirNuevo}>
                     <Icon icon="solar:add-circle-bold-duotone" />
