@@ -8,7 +8,8 @@ import {
     MostrarPersonal, InsertarPersonal, EditarPersonal, EliminarPersonal,
     MostrarActividades, InsertarActividad, EditarActividad, EliminarActividad,
     MostrarMovimientos, InsertarMovimiento, EditarMovimiento, EliminarMovimiento,
-    BuscarProveedorPorNit,
+    BuscarProveedorPorDocumento,
+    BuscarPersonalPorDocumento,
 } from "../../supabase/crudInmobiliaria";
 import { Icon } from "@iconify/react";
 import { RiDeleteBin2Line, RiAddLine, RiEditLine, RiArrowLeftLine } from "react-icons/ri";
@@ -52,7 +53,7 @@ const CATEGORIAS_INGRESO = [
 ];
 
 /* ── Blanks ── */
-const P_BLANK  = { nombre: "", rol: "", telefono: "", fecha_inicio: "", fecha_fin: "", estado: "activo" };
+const P_BLANK  = { nombre: "", cedula: "", rol: "", telefono: "", fecha_inicio: "", fecha_fin: "", estado: "activo" };
 const A_BLANK  = { nombre: "", descripcion: "", responsable_id: "", responsable: "", fecha_inicio: "", fecha_fin: "", estado: "pendiente", orden: 0 };
 const M_BLANK  = { tipo: "egreso", categoria: "materiales", descripcion: "", monto: "", fecha: new Date().toISOString().slice(0,10), proveedor_id: null, proveedor_nit: "", proveedor_nombre: "" };
 
@@ -112,23 +113,38 @@ export function ProyectoDetalleTemplate() {
     const abrirM  = (item = null) => { setEditM(item); setFormM(item ? { ...item, monto: String(item.monto) } : { ...M_BLANK }); setModalM(true); };
     const cerrarM = () => { setModalM(false); setEditM(null); setFormM(M_BLANK); setProvError(""); setBuscandoProv(false); };
 
-    const onNitChange = (nit) => {
-        setM("proveedor_nit", nit);
+    // se recalcula en render (depende de formM.categoria)
+    const esNomina = formM.categoria === "mano_obra";
+
+    const onDocumentoChange = (doc) => {
+        setM("proveedor_nit", doc);
         setM("proveedor_id", null);
         setM("proveedor_nombre", "");
         setProvError("");
         clearTimeout(nitTimer.current);
-        if (!nit.trim()) return;
+        if (!doc.trim()) return;
         setBuscandoProv(true);
         nitTimer.current = setTimeout(async () => {
-            const prov = await BuscarProveedorPorNit({ nit, id_empresa });
-            setBuscandoProv(false);
-            if (prov) {
-                setM("proveedor_id", prov.id);
-                setM("proveedor_nombre", prov.nombre);
-                setProvError("");
+            if (esNomina) {
+                const persona = await BuscarPersonalPorDocumento({ cedula: doc, proyecto_id: id, id_empresa });
+                setBuscandoProv(false);
+                if (persona) {
+                    setM("proveedor_id", persona.id);
+                    setM("proveedor_nombre", `${persona.nombre}${persona.rol ? ` — ${persona.rol}` : ""}`);
+                    setProvError("");
+                } else {
+                    setProvError("Cédula no encontrada en el personal contratado de este proyecto");
+                }
             } else {
-                setProvError("NIT no encontrado en tus proveedores registrados");
+                const prov = await BuscarProveedorPorDocumento({ documento: doc, id_empresa });
+                setBuscandoProv(false);
+                if (prov) {
+                    setM("proveedor_id", prov.id);
+                    setM("proveedor_nombre", prov.nombre);
+                    setProvError("");
+                } else {
+                    setProvError("Documento no encontrado en tus proveedores registrados");
+                }
             }
         }, 600);
     };
@@ -420,8 +436,12 @@ export function ProyectoDetalleTemplate() {
                             <MClose onClick={cerrarP}><Icon icon="solar:close-circle-bold-duotone"/></MClose>
                         </MHead>
                         <MBody onSubmit={submitP}>
-                            <MField><label>Nombre completo *</label>
-                                <input required value={formP.nombre} onChange={e => setP("nombre", e.target.value)} placeholder="Nombre completo"/></MField>
+                            <MRow>
+                                <MField><label>Nombre completo *</label>
+                                    <input required value={formP.nombre} onChange={e => setP("nombre", e.target.value)} placeholder="Nombre completo"/></MField>
+                                <MField><label>Cédula</label>
+                                    <input value={formP.cedula} onChange={e => setP("cedula", e.target.value)} placeholder="Número de cédula"/></MField>
+                            </MRow>
                             <MRow>
                                 <MField><label>Rol / Cargo</label>
                                     <select value={formP.rol} onChange={e => setP("rol", e.target.value)}>
@@ -538,7 +558,7 @@ export function ProyectoDetalleTemplate() {
                                 <CatSelector>
                                     {(formM.tipo === "ingreso" ? CATEGORIAS_INGRESO : CATEGORIAS_EGRESO).map(c => (
                                         <CatOpt key={c.key} $active={formM.categoria === c.key} $c={c.color}
-                                            onClick={() => setM("categoria", c.key)}>
+                                            onClick={() => { setM("categoria", c.key); setM("proveedor_nit",""); setM("proveedor_id",null); setM("proveedor_nombre",""); setProvError(""); }}>
                                             <Icon icon={c.icon}/>
                                             <span>{c.label}</span>
                                         </CatOpt>
@@ -550,16 +570,23 @@ export function ProyectoDetalleTemplate() {
                                 <input required value={formM.descripcion} onChange={e => setM("descripcion", e.target.value)}
                                     placeholder="Ej: Compra de cemento y varilla"/></MField>
 
-                            {/* Proveedor solo en egresos */}
+                            {/* Lookup dinámico según categoría */}
                             {formM.tipo === "egreso" && (
-                                <ProveedorWrap>
+                                <ProveedorWrap $nomina={esNomina}>
+                                    <ProveedorTitle>
+                                        <Icon icon={esNomina ? "solar:user-bold-duotone" : "solar:shop-bold-duotone"} />
+                                        {esNomina ? "Personal contratado" : "Proveedor"}
+                                    </ProveedorTitle>
                                     <MField>
-                                        <label>NIT del proveedor <span style={{color:"rgba(255,255,255,.3)",fontWeight:400}}>(opcional)</span></label>
+                                        <label>
+                                            {esNomina ? "CC del trabajador" : "NIT / CC del proveedor"}
+                                            <span style={{color:"rgba(255,255,255,.3)",fontWeight:400,marginLeft:6}}>(opcional)</span>
+                                        </label>
                                         <NitInputWrap>
                                             <input
                                                 value={formM.proveedor_nit}
-                                                onChange={e => onNitChange(e.target.value)}
-                                                placeholder="Ej: 900123456"
+                                                onChange={e => onDocumentoChange(e.target.value)}
+                                                placeholder={esNomina ? "Ej: 1234567890" : "Ej: 900123456 o 1234567890"}
                                             />
                                             {buscandoProv && <NitSpinner><Icon icon="solar:refresh-bold-duotone"/></NitSpinner>}
                                             {formM.proveedor_nombre && <NitOk><Icon icon="solar:check-circle-bold-duotone"/></NitOk>}
@@ -567,11 +594,11 @@ export function ProyectoDetalleTemplate() {
                                         {provError && <NitError>{provError}</NitError>}
                                     </MField>
                                     <MField>
-                                        <label>Proveedor</label>
+                                        <label>{esNomina ? "Trabajador encontrado" : "Nombre registrado"}</label>
                                         <ProvNombreInput
                                             readOnly
                                             value={formM.proveedor_nombre}
-                                            placeholder="Se autocompleta al ingresar el NIT"
+                                            placeholder={esNomina ? "Se autocompleta con la cédula" : "Se autocompleta con el NIT / Cédula"}
                                         />
                                     </MField>
                                 </ProveedorWrap>
@@ -706,7 +733,8 @@ const NoPersonal       = styled.p`font-size:12px;color:rgba(255,255,255,.3);padd
 
 /* proveedor lookup */
 const spin = keyframes`from{transform:rotate(0deg)}to{transform:rotate(360deg)}`;
-const ProveedorWrap  = styled.div`display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);`;
+const ProveedorWrap  = styled.div`display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;background:${p=>p.$nomina?"rgba(96,165,250,.06)":"rgba(255,255,255,.03)"};border:1px solid ${p=>p.$nomina?"rgba(96,165,250,.2)":"rgba(255,255,255,.07)"};`;
+const ProveedorTitle = styled.p`display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#60a5fa;margin:0;svg{font-size:15px;}`;
 const NitInputWrap   = styled.div`position:relative;input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:9px 36px 9px 11px;color:#fff;font-size:13px;font-family:"Poppins",sans-serif;outline:none;box-sizing:border-box;&:focus{border-color:#60a5fa;}}`;
 const NitSpinner     = styled.span`position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:16px;animation:${spin} .8s linear infinite;display:flex;`;
 const NitOk          = styled.span`position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#4ade80;font-size:16px;display:flex;`;

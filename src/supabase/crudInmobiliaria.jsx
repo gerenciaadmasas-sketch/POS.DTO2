@@ -189,14 +189,26 @@ export async function EditarMovimiento({ id, id_empresa, ...campos }) {
     if (error) { toastError(error.message, "Contabilidad › Editar"); throw error; }
 }
 
-export async function BuscarProveedorPorNit({ nit, id_empresa }) {
+export async function BuscarProveedorPorDocumento({ documento, id_empresa }) {
     const { data, error } = await supabase
         .from("proveedores")
-        .select("id, nombre, nit")
+        .select("id, nombre, nit, tipo_documento")
         .eq("id_empresa", id_empresa)
-        .eq("nit", nit.trim())
+        .eq("nit", documento.trim())
         .maybeSingle();
     if (error) { toastError(error.message, "Proveedor › Buscar"); return null; }
+    return data;
+}
+
+export async function BuscarPersonalPorDocumento({ cedula, proyecto_id, id_empresa }) {
+    const { data, error } = await supabase
+        .from("proyecto_personal")
+        .select("id, nombre, rol, cedula")
+        .eq("id_empresa", id_empresa)
+        .eq("proyecto_id", proyecto_id)
+        .eq("cedula", cedula.trim())
+        .maybeSingle();
+    if (error) { toastError(error.message, "Personal › BuscarPorDoc"); return null; }
     return data;
 }
 

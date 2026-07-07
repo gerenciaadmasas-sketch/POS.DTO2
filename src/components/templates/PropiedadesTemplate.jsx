@@ -15,12 +15,12 @@ const formatCOP = (n) =>
 
 /* ── catálogos ── */
 export const TIPOS_PROP = [
-    { key: "apartamento",    label: "Apartamento",     icon: "solar:building-bold-duotone",    color: "#60a5fa" },
+    { key: "apartamento",    label: "Apartamento",     icon: "solar:buildings-bold-duotone",   color: "#60a5fa" },
     { key: "casa",           label: "Casa",            icon: "solar:home-2-bold-duotone",      color: "#4ade80" },
     { key: "lote",           label: "Lote",            icon: "solar:map-point-bold-duotone",   color: "#f59e0b" },
-    { key: "finca",          label: "Finca",           icon: "solar:trees-bold-duotone",       color: "#34d399" },
+    { key: "finca",          label: "Finca",           icon: "mdi:home-group",                 color: "#34d399" },
     { key: "local_comercial",label: "Local Comercial", icon: "solar:shop-bold-duotone",        color: "#a78bfa" },
-    { key: "edificio",       label: "Edificio",        icon: "solar:buildings-bold-duotone",   color: "#f88533" },
+    { key: "edificio",       label: "Bodega",          icon: "mdi:warehouse",                  color: "#f88533" },
 ];
 
 const ESTADOS_PROP = [
