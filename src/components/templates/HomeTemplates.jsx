@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { MostrarVersion } from "../../supabase/crudVersion";
 import { MostrarClientes } from "../../supabase/crudClientes";
 import { MostrarSuscripciones } from "../../supabase/crudSuscripciones";
+import { MostrarPropiedades, MostrarProyectos } from "../../supabase/crudInmobiliaria";
 import { usePlan } from "../../hooks/usePlan";
 
 /* ── helpers TV stats ── */
@@ -83,6 +84,21 @@ const ACCESOS_COMERCIAL = [
     { key: "prospectos", icon: "solar:user-speak-bold-duotone",          label: "Leads",       sub: "Seguimiento clientes",to: "/prospectos", accent: "#818cf8", glow: "rgba(129,140,248,0.35)",  big: true  },
 ];
 
+const ACCESOS_INMOBILIARIA = [
+    { key: "propiedades", icon: "solar:home-smile-bold-duotone",         label: "Propiedades",    sub: "Aptos · Casas · Lotes · Fincas", to: "/propiedades", accent: "#f59e0b", glow: "rgba(245,158,11,0.35)",   big: true  },
+    { key: "proyectos",   icon: "solar:hammer-bold-duotone",             label: "Proyectos",      sub: "Obras y servicios",             to: "/proyectos",   accent: "#60a5fa", glow: "rgba(96,165,250,0.35)",   big: false },
+    { key: "mensajes",    icon: "solar:chat-round-bold-duotone",         label: "Mensajes",       sub: "Equipo interno",                to: "/mensajes",    accent: "#a78bfa", glow: "rgba(167,139,250,0.35)",  big: false },
+    { key: "soporte",     icon: "solar:headphones-round-bold-duotone",   label: "Soporte",        sub: "Canal de ayuda",                to: "/soporte",     accent: "#34d399", glow: "rgba(52,211,153,0.35)",   big: false },
+    { key: "config",      icon: "solar:settings-bold-duotone",           label: "Configuración",  sub: "Mi empresa",                    to: "/configuracion",accent: "#94a3b8", glow: "rgba(148,163,184,0.35)", big: false },
+];
+
+const STATS_INMOBILIARIA_CFG = [
+    { key: "disponibles", label: "Disponibles",  accent: "#4ade80" },
+    { key: "reservadas",  label: "Reservadas",   accent: "#f59e0b" },
+    { key: "vendidas",    label: "Vendidas",      accent: "#60a5fa" },
+    { key: "proyectos",   label: "Proyectos",     accent: "#a78bfa" },
+];
+
 const ACCESOS_SUSCRIPCIONES = [
     { key: "suscriptores", icon: "solar:users-group-rounded-bold-duotone", label: "Suscriptores",   sub: "Gestionar clientes", to: "/clientes",      accent: "#60a5fa", glow: "rgba(96,165,250,0.35)",  big: true  },
     { key: "mensajes",     icon: "solar:chat-round-bold-duotone",          label: "Mensajes",        sub: "Equipo interno",     to: "/mensajes",      accent: "#a78bfa", glow: "rgba(167,139,250,0.35)", big: false },
@@ -119,7 +135,8 @@ export function HomeTemplates() {
     const hora   = new Date().getHours();
     const saludo = hora < 12 ? "Buenos días" : hora < 18 ? "Buenas tardes" : "Buenas noches";
 
-    const esSuscripcionesTV = dataempresa?.actividad_economica === "suscripciones_tv";
+    const esSuscripcionesTV  = dataempresa?.actividad_economica === "suscripciones_tv";
+    const esInmobiliaria     = dataempresa?.actividad_economica === "construccion";
 
     /* versión para superadmin */
     const { data: versiones = [] } = useQuery({
@@ -146,6 +163,26 @@ export function HomeTemplates() {
         });
         return { total: clientes.length, activos, porVencer, vencidos };
     }, [clientes]);
+
+    /* stats inmobiliaria */
+    const { data: propiedadesHome = [] } = useQuery({
+        queryKey: ["propiedades-home", dataempresa?.id],
+        queryFn: () => MostrarPropiedades({ id_empresa: dataempresa.id }),
+        enabled: !!dataempresa?.id && esInmobiliaria,
+        staleTime: 60000,
+    });
+    const { data: proyectosHome = [] } = useQuery({
+        queryKey: ["proyectos-home", dataempresa?.id],
+        queryFn: () => MostrarProyectos({ id_empresa: dataempresa.id }),
+        enabled: !!dataempresa?.id && esInmobiliaria,
+        staleTime: 60000,
+    });
+    const statsInmobiliaria = useMemo(() => ({
+        disponibles: propiedadesHome.filter(p => p.estado === "disponible").length,
+        reservadas:  propiedadesHome.filter(p => p.estado === "reservado").length,
+        vendidas:    propiedadesHome.filter(p => p.estado === "vendido").length,
+        proyectos:   proyectosHome.filter(p => p.estado === "en_progreso").length,
+    }), [propiedadesHome, proyectosHome]);
 
     /* stats SaaS para superadmin */
     const { data: suscripciones = [] } = useQuery({
@@ -180,7 +217,8 @@ export function HomeTemplates() {
         ? sucursal?.razon_social ?? "Sin sucursal"
         : dataempresa?.razon_social ?? "Empresa";
 
-    const accesos = esSuscripcionesTV     ? ACCESOS_SUSCRIPCIONES
+    const accesos = esInmobiliaria        ? ACCESOS_INMOBILIARIA
+                  : esSuscripcionesTV     ? ACCESOS_SUSCRIPCIONES
                   : tipo === "cajero"     ? ACCESOS_CAJERO
                   : tipo === "supervisor" ? ACCESOS_SUPERVISOR
                   : tipo === "superadmin" ? ACCESOS_SUPERADMIN
@@ -228,13 +266,22 @@ export function HomeTemplates() {
                     </AlertaBanner>
                 )}
 
-                {/* ── Stats (TV y superadmin) ── */}
-                {(esSuscripcionesTV || tipo === "superadmin") && (
+                {/* ── Stats según actividad ── */}
+                {(esSuscripcionesTV || esInmobiliaria || tipo === "superadmin") && (
                     <StatsRow>
-                        {(tipo === "superadmin" ? STATS_SAAS_CFG : STATS_TV_CFG).map(({ key, label, accent }, i) => (
+                        {(tipo === "superadmin"
+                            ? STATS_SAAS_CFG
+                            : esInmobiliaria
+                            ? STATS_INMOBILIARIA_CFG
+                            : STATS_TV_CFG
+                        ).map(({ key, label, accent }, i) => (
                             <StatCard key={key} $accent={accent} $i={i}>
                                 <StatNum $accent={accent}>
-                                    <AnimatedNumber value={tipo === "superadmin" ? statsSaaS[key] : statsTV[key]} />
+                                    <AnimatedNumber value={
+                                        tipo === "superadmin" ? statsSaaS[key]
+                                        : esInmobiliaria      ? statsInmobiliaria[key]
+                                        : statsTV[key]
+                                    } />
                                 </StatNum>
                                 <StatLabel>{label}</StatLabel>
                                 <StatGlow $accent={accent} />

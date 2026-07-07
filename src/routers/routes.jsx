@@ -12,6 +12,8 @@ import { Prospectos } from "../pages/Prospectos";
 import { Soporte } from "../pages/Soporte";
 import { Chat } from "../pages/Chat";
 import { PagoExitoso } from "../pages/PagoExitoso";
+import { Propiedades } from "../pages/Propiedades";
+import { ProyectosObra } from "../pages/ProyectosObra";
 import { Mensajes } from "../pages/Mensajes";
 import { useQuery } from "@tanstack/react-query";
 import { Spinner1 } from "../components/moleculas/Spinner1";
@@ -93,7 +95,9 @@ export function Myroutes() {
         <Route path="/prospectos" element={<Prospectos />} />
         <Route path="/mensajes"   element={<Mensajes />} />
         <Route path="/soporte"    element={<Soporte />} />
-        <Route path="/chat"       element={<Chat />} />
+        <Route path="/chat"        element={<Chat />} />
+        <Route path="/propiedades" element={<Propiedades />} />
+        <Route path="/proyectos"   element={<ProyectosObra />} />
 
         <Route path="/configurar" element={<Navigate to="/configuracion" replace />} />
         <Route path="/configurar/categorias" element={<Navigate to="/configuracion/categorias" replace />} />

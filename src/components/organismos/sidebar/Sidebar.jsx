@@ -109,8 +109,9 @@ export function Sidebar({ state, setState, onNavClick }) {
     }, [id_empresa, yo_id, necesitaBadgeInternos]);
 
     const esSuscripcionesTV = dataempresa?.actividad_economica === "suscripciones_tv";
+    const esInmobiliaria    = dataempresa?.actividad_economica === "construccion";
 
-    const linksBase = esSuscripcionesTV
+    const linksBase = (esSuscripcionesTV || esInmobiliaria)
         ? LinksArray.filter(l => LINKS_SUSCRIPCIONES.includes(l.to))
         : esCajero
         ? LinksArray.filter(l => LINKS_CAJERO.includes(l.to))
