@@ -73,6 +73,93 @@ export async function EliminarProyecto({ id, id_empresa }) {
     if (error) { toastError(error.message, "Proyectos › Eliminar"); throw error; }
 }
 
+export async function MostrarProyectoPorId({ id, id_empresa }) {
+    const { data, error } = await supabase
+        .from(TABLA_PROY)
+        .select()
+        .eq("id", id)
+        .eq("id_empresa", id_empresa)
+        .single();
+    if (error) { toastError(error.message, "Proyectos › MostrarPorId"); return null; }
+    return data;
+}
+
+/* ─────────────────────── PERSONAL DE PROYECTO ─────────────────────── */
+const TABLA_PERSONAL = "proyecto_personal";
+
+export async function MostrarPersonal({ proyecto_id, id_empresa }) {
+    const { data, error } = await supabase
+        .from(TABLA_PERSONAL)
+        .select()
+        .eq("proyecto_id", proyecto_id)
+        .eq("id_empresa", id_empresa)
+        .order("created_at", { ascending: true });
+    if (error) { toastError(error.message, "Personal › Mostrar"); return []; }
+    return data ?? [];
+}
+
+export async function InsertarPersonal(p) {
+    const { data, error } = await supabase.from(TABLA_PERSONAL).insert(p).select().single();
+    if (error) { toastError(error.message, "Personal › Insertar"); throw error; }
+    return data;
+}
+
+export async function EditarPersonal({ id, id_empresa, ...campos }) {
+    const { error } = await supabase
+        .from(TABLA_PERSONAL)
+        .update(campos)
+        .eq("id", id)
+        .eq("id_empresa", id_empresa);
+    if (error) { toastError(error.message, "Personal › Editar"); throw error; }
+}
+
+export async function EliminarPersonal({ id, id_empresa }) {
+    const { error } = await supabase
+        .from(TABLA_PERSONAL)
+        .delete()
+        .eq("id", id)
+        .eq("id_empresa", id_empresa);
+    if (error) { toastError(error.message, "Personal › Eliminar"); throw error; }
+}
+
+/* ─────────────────────── ACTIVIDADES / CRONOGRAMA ─────────────────────── */
+const TABLA_ACT = "proyecto_actividades";
+
+export async function MostrarActividades({ proyecto_id, id_empresa }) {
+    const { data, error } = await supabase
+        .from(TABLA_ACT)
+        .select()
+        .eq("proyecto_id", proyecto_id)
+        .eq("id_empresa", id_empresa)
+        .order("orden", { ascending: true });
+    if (error) { toastError(error.message, "Actividades › Mostrar"); return []; }
+    return data ?? [];
+}
+
+export async function InsertarActividad(p) {
+    const { data, error } = await supabase.from(TABLA_ACT).insert(p).select().single();
+    if (error) { toastError(error.message, "Actividades › Insertar"); throw error; }
+    return data;
+}
+
+export async function EditarActividad({ id, id_empresa, ...campos }) {
+    const { error } = await supabase
+        .from(TABLA_ACT)
+        .update(campos)
+        .eq("id", id)
+        .eq("id_empresa", id_empresa);
+    if (error) { toastError(error.message, "Actividades › Editar"); throw error; }
+}
+
+export async function EliminarActividad({ id, id_empresa }) {
+    const { error } = await supabase
+        .from(TABLA_ACT)
+        .delete()
+        .eq("id", id)
+        .eq("id_empresa", id_empresa);
+    if (error) { toastError(error.message, "Actividades › Eliminar"); throw error; }
+}
+
 /* ─────────────────────── ARRENDAMIENTOS ─────────────────────── */
 const TABLA_ARREND = "arrendamientos";
 
