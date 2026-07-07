@@ -36,6 +36,7 @@ const FORM_VACIO = {
     tipo: "apartamento", titulo: "", descripcion: "", precio: "",
     area_m2: "", habitaciones: 0, banos: 0, garajes: 0, estrato: 0,
     ciudad: "", sector: "", direccion: "", estado: "disponible",
+    es_administrada: false, propietario: "", tel_propietario: "", porcentaje_admin: 10,
 };
 
 export function PropiedadesTemplate() {
@@ -45,6 +46,7 @@ export function PropiedadesTemplate() {
     const [editando, setEditando] = useState(null);
     const [filtroEstado, setFiltroEstado] = useState("todos");
     const [filtroTipo, setFiltroTipo] = useState("todos");
+    const [filtroGestion, setFiltroGestion] = useState("todos");
     const [form, setForm] = useState(FORM_VACIO);
 
     const { data: propiedades = [], isLoading } = useQuery({
@@ -56,12 +58,12 @@ export function PropiedadesTemplate() {
     const invalidar = () => qc.invalidateQueries({ queryKey: ["propiedades"] });
 
     const mutCrear = useMutation({
-        mutationFn: () => InsertarPropiedad({ ...form, precio: Number(form.precio) || 0, area_m2: Number(form.area_m2) || 0, id_empresa: dataempresa.id }),
+        mutationFn: () => InsertarPropiedad({ ...form, precio: Number(form.precio) || 0, area_m2: Number(form.area_m2) || 0, porcentaje_admin: Number(form.porcentaje_admin) || 10, id_empresa: dataempresa.id }),
         onSuccess: () => { toastExito("Propiedad registrada"); invalidar(); cerrar(); },
     });
 
     const mutEditar = useMutation({
-        mutationFn: () => EditarPropiedad({ ...form, id: editando.id, id_empresa: dataempresa.id, precio: Number(form.precio) || 0, area_m2: Number(form.area_m2) || 0 }),
+        mutationFn: () => EditarPropiedad({ ...form, id: editando.id, id_empresa: dataempresa.id, precio: Number(form.precio) || 0, area_m2: Number(form.area_m2) || 0, porcentaje_admin: Number(form.porcentaje_admin) || 10 }),
         onSuccess: () => { toastExito("Propiedad actualizada"); invalidar(); cerrar(); },
     });
 
@@ -72,7 +74,7 @@ export function PropiedadesTemplate() {
 
     function abrirNuevo() { setForm(FORM_VACIO); setEditando(null); setModal(true); }
     function abrirEditar(p) {
-        setForm({ tipo: p.tipo, titulo: p.titulo, descripcion: p.descripcion ?? "", precio: String(p.precio ?? ""), area_m2: String(p.area_m2 ?? ""), habitaciones: p.habitaciones ?? 0, banos: p.banos ?? 0, garajes: p.garajes ?? 0, estrato: p.estrato ?? 0, ciudad: p.ciudad ?? "", sector: p.sector ?? "", direccion: p.direccion ?? "", estado: p.estado });
+        setForm({ tipo: p.tipo, titulo: p.titulo, descripcion: p.descripcion ?? "", precio: String(p.precio ?? ""), area_m2: String(p.area_m2 ?? ""), habitaciones: p.habitaciones ?? 0, banos: p.banos ?? 0, garajes: p.garajes ?? 0, estrato: p.estrato ?? 0, ciudad: p.ciudad ?? "", sector: p.sector ?? "", direccion: p.direccion ?? "", estado: p.estado, es_administrada: p.es_administrada ?? false, propietario: p.propietario ?? "", tel_propietario: p.tel_propietario ?? "", porcentaje_admin: p.porcentaje_admin ?? 10 });
         setEditando(p); setModal(true);
     }
     function cerrar() { setModal(false); setEditando(null); }
@@ -95,9 +97,10 @@ export function PropiedadesTemplate() {
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
     const visibles = useMemo(() => propiedades.filter(p =>
-        (filtroEstado === "todos" || p.estado === filtroEstado) &&
-        (filtroTipo   === "todos" || p.tipo   === filtroTipo)
-    ), [propiedades, filtroEstado, filtroTipo]);
+        (filtroEstado  === "todos"          || p.estado === filtroEstado) &&
+        (filtroTipo    === "todos"          || p.tipo   === filtroTipo) &&
+        (filtroGestion === "todos"          || (filtroGestion === "administradas" ? p.es_administrada : !p.es_administrada))
+    ), [propiedades, filtroEstado, filtroTipo, filtroGestion]);
 
     return (
         <Page>
@@ -107,20 +110,25 @@ export function PropiedadesTemplate() {
                         <Icon icon="solar:home-smile-bold-duotone" style={{ color: "#f59e0b" }} />
                         Propiedades
                     </PageTitle>
-                    <PageSub>{propiedades.length} inmuebles registrados</PageSub>
+                    <PageSub>{propiedades.length} inmuebles registrados · {propiedades.filter(p=>p.es_administrada).length} en gestión administrativa</PageSub>
                 </HeaderLeft>
-                <BtnNuevo onClick={abrirNuevo}>
-                    <RiAddLine /> Nueva propiedad
-                </BtnNuevo>
             </Header>
 
             {/* ── Filtros ── */}
             <FiltrosWrap>
                 <ChipGroup>
+                    <Chip $active={filtroGestion === "todos"}          $color="#f59e0b" onClick={() => setFiltroGestion("todos")}>Todos</Chip>
+                    <Chip $active={filtroGestion === "propias"}        $color="#4ade80" onClick={() => setFiltroGestion("propias")}>Propias</Chip>
+                    <Chip $active={filtroGestion === "administradas"}  $color="#a78bfa" onClick={() => setFiltroGestion("administradas")}>
+                        <Icon icon="solar:clipboard-list-bold-duotone" style={{fontSize:13,verticalAlign:"middle",marginRight:4}}/>
+                        Gestión Administrativa
+                    </Chip>
+                </ChipGroup>
+                <ChipGroup>
                     {["todos", ...ESTADOS_PROP.map(e => e.key)].map(k => (
                         <Chip key={k} $active={filtroEstado === k} $color={ESTADOS_PROP.find(e => e.key === k)?.color ?? "#60a5fa"}
                             onClick={() => setFiltroEstado(k)}>
-                            {k === "todos" ? "Todos" : ESTADOS_PROP.find(e => e.key === k)?.label}
+                            {k === "todos" ? "Todos los estados" : ESTADOS_PROP.find(e => e.key === k)?.label}
                         </Chip>
                     ))}
                 </ChipGroup>
@@ -154,7 +162,15 @@ export function PropiedadesTemplate() {
                                         <Icon icon={tipo.icon} />
                                         {tipo.label}
                                     </TipoBadge>
-                                    <EstadoBadge $color={est.color} $bg={est.bg}>{est.label}</EstadoBadge>
+                                    <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                                        {p.es_administrada && (
+                                            <AdminBadge>
+                                                <Icon icon="solar:clipboard-list-bold-duotone"/>
+                                                Adm.
+                                            </AdminBadge>
+                                        )}
+                                        <EstadoBadge $color={est.color} $bg={est.bg}>{est.label}</EstadoBadge>
+                                    </div>
                                 </PropCardTop>
 
                                 <PropNombre>{p.titulo || "Sin título"}</PropNombre>
@@ -175,6 +191,14 @@ export function PropiedadesTemplate() {
                                 </PropSpecs>
 
                                 <PropPrecio $color={tipo.color}>{formatCOP(p.precio)}</PropPrecio>
+
+                                {p.es_administrada && p.propietario && (
+                                    <PropietarioRow>
+                                        <Icon icon="solar:user-bold-duotone"/>
+                                        {p.propietario}{p.tel_propietario ? ` · ${p.tel_propietario}` : ""}
+                                        {p.porcentaje_admin ? <span style={{marginLeft:"auto",color:"#a78bfa",fontWeight:800}}>{p.porcentaje_admin}%</span> : null}
+                                    </PropietarioRow>
+                                )}
 
                                 {p.descripcion && <PropDesc>{p.descripcion}</PropDesc>}
 
@@ -205,6 +229,40 @@ export function PropiedadesTemplate() {
                         </ModalHeader>
 
                         <ModalBody>
+                            {/* Gestión */}
+                            <Label>Tipo de gestión</Label>
+                            <GestionToggle>
+                                <GestionOpt $active={!form.es_administrada} type="button" onClick={() => set("es_administrada", false)}>
+                                    <Icon icon="solar:home-smile-bold-duotone"/>
+                                    Propia
+                                    <span>Inmueble de mi empresa</span>
+                                </GestionOpt>
+                                <GestionOpt $active={form.es_administrada} type="button" onClick={() => set("es_administrada", true)}>
+                                    <Icon icon="solar:clipboard-list-bold-duotone"/>
+                                    Gestión Adm.
+                                    <span>Inmueble de tercero</span>
+                                </GestionOpt>
+                            </GestionToggle>
+
+                            {form.es_administrada && (
+                                <>
+                                    <Row2>
+                                        <div>
+                                            <Label>Nombre del propietario</Label>
+                                            <Input value={form.propietario} onChange={e => set("propietario", e.target.value)} placeholder="Nombre completo"/>
+                                        </div>
+                                        <div>
+                                            <Label>Teléfono propietario</Label>
+                                            <Input value={form.tel_propietario} onChange={e => set("tel_propietario", e.target.value)} placeholder="3001234567"/>
+                                        </div>
+                                    </Row2>
+                                    <div>
+                                        <Label>% Comisión de administración</Label>
+                                        <Input type="number" min={0} max={100} value={form.porcentaje_admin} onChange={e => set("porcentaje_admin", e.target.value)} placeholder="10"/>
+                                    </div>
+                                </>
+                            )}
+
                             {/* Tipo */}
                             <Label>Tipo de inmueble</Label>
                             <TiposGrid>
@@ -491,6 +549,28 @@ const EstadoBtn = styled.button`
     color:${({$active,$color})=>$active?$color:"rgba(255,255,255,0.45)"};
 `;
 
+const AdminBadge = styled.span`
+    display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:8px;
+    background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.3);
+    color:#a78bfa;font-size:10px;font-weight:700;
+    svg{font-size:12px;}
+`;
+const PropietarioRow = styled.div`
+    display:flex;align-items:center;gap:6px;font-size:12px;
+    color:rgba(255,255,255,0.45);padding:8px 10px;border-radius:9px;
+    background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.15);
+    svg{font-size:14px;color:#a78bfa;flex-shrink:0;}
+`;
+const GestionToggle = styled.div`display:grid;grid-template-columns:1fr 1fr;gap:8px;`;
+const GestionOpt = styled.button`
+    display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 8px;
+    border-radius:12px;cursor:pointer;font-family:"Poppins",sans-serif;font-size:13px;font-weight:700;
+    border:1px solid ${p=>p.$active?"#a78bfa":"rgba(255,255,255,0.08)"};
+    background:${p=>p.$active?"rgba(167,139,250,0.12)":"rgba(255,255,255,0.03)"};
+    color:${p=>p.$active?"#a78bfa":"rgba(255,255,255,0.4)"};
+    transition:.2s;svg{font-size:20px;}
+    span{font-size:10px;font-weight:400;opacity:.7;}
+`;
 const BtnCancelar = styled.button`
     flex:1;padding:11px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);
     background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.6);

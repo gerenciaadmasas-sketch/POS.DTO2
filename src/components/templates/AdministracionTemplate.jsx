@@ -2,7 +2,7 @@ import { useState } from "react";
 import styled, { keyframes, css } from "styled-components";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEmpresaStore } from "../../store/EmpresaStore";
-import { MostrarAdminInmuebles, InsertarAdminInmueble, EditarAdminInmueble, EliminarAdminInmueble } from "../../supabase/crudInmobiliaria";
+import { MostrarPropiedades, InsertarPropiedad, EditarPropiedad, EliminarPropiedad } from "../../supabase/crudInmobiliaria";
 import { Icon } from "@iconify/react";
 import { RiDeleteBin2Line } from "react-icons/ri";
 
@@ -27,10 +27,12 @@ const ESTADOS = [
 ];
 
 const BLANK = {
-    propietario: "", telefono: "", email: "",
-    tipo_inmueble: "apartamento", direccion: "", ciudad: "", sector: "",
-    canon_mensual: "", porcentaje_admin: "10",
-    estado: "activo", observaciones: "",
+    propietario: "", tel_propietario: "",
+    tipo: "apartamento", titulo: "", direccion: "", ciudad: "", sector: "",
+    precio: "", porcentaje_admin: "10",
+    estado: "disponible", descripcion: "",
+    es_administrada: true,
+    habitaciones: 0, banos: 0, garajes: 0, estrato: 0, area_m2: "",
 };
 
 const fmt = (n) => n ? Number(n).toLocaleString("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }) : "—";
@@ -46,25 +48,27 @@ export function AdministracionTemplate() {
     const [filtro, setFiltro]   = useState("todos");
     const [busq, setBusq]       = useState("");
 
-    const { data: lista = [], isLoading } = useQuery({
-        queryKey: ["admin_inmuebles", id_empresa],
-        queryFn:  () => MostrarAdminInmuebles({ id_empresa }),
+    const { data: todasProp = [], isLoading } = useQuery({
+        queryKey: ["propiedades", id_empresa],
+        queryFn:  () => MostrarPropiedades({ id_empresa }),
         enabled:  !!id_empresa,
         refetchOnWindowFocus: false,
     });
 
+    const lista = todasProp.filter(p => p.es_administrada);
+
     const guardar = useMutation({
-        mutationFn: (p) => editing ? EditarAdminInmueble(p) : InsertarAdminInmueble(p),
-        onSuccess:  () => { qc.invalidateQueries(["admin_inmuebles", id_empresa]); cerrar(); },
+        mutationFn: (p) => editing ? EditarPropiedad(p) : InsertarPropiedad(p),
+        onSuccess:  () => { qc.invalidateQueries(["propiedades", id_empresa]); cerrar(); },
     });
 
     const borrar = useMutation({
-        mutationFn: (p) => EliminarAdminInmueble(p),
-        onSuccess:  () => qc.invalidateQueries(["admin_inmuebles", id_empresa]),
+        mutationFn: (p) => EliminarPropiedad(p),
+        onSuccess:  () => qc.invalidateQueries(["propiedades", id_empresa]),
     });
 
     const abrir = (item = null) => {
-        if (item) { setEditing(item); setForm({ ...item, canon_mensual: item.canon_mensual ?? "", porcentaje_admin: item.porcentaje_admin ?? "10" }); }
+        if (item) { setEditing(item); setForm({ ...BLANK, ...item, porcentaje_admin: item.porcentaje_admin ?? "10", precio: String(item.precio ?? ""), area_m2: String(item.area_m2 ?? "") }); }
         else       { setEditing(null); setForm(BLANK); }
         setModal(true);
     };
@@ -78,7 +82,9 @@ export function AdministracionTemplate() {
         const payload = {
             ...form,
             id_empresa,
-            canon_mensual:    parseFloat(form.canon_mensual)    || 0,
+            es_administrada:  true,
+            precio:           parseFloat(form.precio)           || 0,
+            area_m2:          parseFloat(form.area_m2)          || 0,
             porcentaje_admin: parseFloat(form.porcentaje_admin) || 10,
             ...(editing ? { id: editing.id } : {}),
         };
@@ -88,13 +94,13 @@ export function AdministracionTemplate() {
     const visible = lista.filter(a => {
         const ok = filtro === "todos" || a.estado === filtro;
         const q  = busq.toLowerCase();
-        return ok && (!q || a.propietario?.toLowerCase().includes(q) || a.direccion?.toLowerCase().includes(q));
+        return ok && (!q || a.propietario?.toLowerCase().includes(q) || a.direccion?.toLowerCase().includes(q) || a.titulo?.toLowerCase().includes(q));
     });
 
-    const activos    = lista.filter(a => a.estado === "activo").length;
-    const inactivos  = lista.filter(a => a.estado === "inactivo").length;
-    const suspendidos= lista.filter(a => a.estado === "suspendido").length;
-    const totalCanon = lista.filter(a => a.estado === "activo").reduce((s, a) => s + Number(a.canon_mensual || 0), 0);
+    const activos    = lista.filter(a => a.estado === "disponible").length;
+    const inactivos  = lista.filter(a => a.estado === "reservado").length;
+    const suspendidos= lista.filter(a => a.estado === "vendido").length;
+    const totalCanon = lista.reduce((s, a) => s + Number(a.precio || 0), 0);
 
     return (
         <Wrap>
@@ -140,24 +146,24 @@ export function AdministracionTemplate() {
             ) : (
                 <Grid>
                     {visible.map((a, i) => {
-                        const tipo = TIPOS.find(t => t.key === a.tipo_inmueble) || TIPOS[0];
+                        const tipo = TIPOS.find(t => t.key === a.tipo) || TIPOS[0];
                         const est  = ESTADOS.find(e => e.key === a.estado) || ESTADOS[0];
-                        const comision = (Number(a.canon_mensual || 0) * Number(a.porcentaje_admin || 10)) / 100;
+                        const comision = (Number(a.precio || 0) * Number(a.porcentaje_admin || 10)) / 100;
                         return (
                             <Card key={a.id} $i={i} onClick={() => abrir(a)}>
                                 <CardTop>
                                     <Icon icon={tipo.icon} style={{ fontSize: 24, color: tipo.color }} />
                                     <Badge $c={est.color}>{est.label}</Badge>
                                 </CardTop>
-                                <CardName>{a.propietario}</CardName>
+                                <CardName>{a.propietario || a.titulo || "Sin propietario"}</CardName>
                                 <CardAddr>
                                     <Icon icon="solar:map-point-bold-duotone" />
                                     {a.direccion || "—"}{a.ciudad ? `, ${a.ciudad}` : ""}
                                 </CardAddr>
                                 <CanonRow>
                                     <CanonItem>
-                                        <span>Canon</span>
-                                        <strong style={{ color: "#a78bfa" }}>{fmt(a.canon_mensual)}</strong>
+                                        <span>Canon / Precio</span>
+                                        <strong style={{ color: "#a78bfa" }}>{fmt(a.precio)}</strong>
                                     </CanonItem>
                                     <CanonItem>
                                         <span>Comisión ({a.porcentaje_admin}%)</span>
@@ -188,8 +194,8 @@ export function AdministracionTemplate() {
                             <Section>Tipo de inmueble</Section>
                             <TipoGrid>
                                 {TIPOS.map(t => (
-                                    <TipoBtn key={t.key} type="button" $active={form.tipo_inmueble === t.key} $c={t.color}
-                                        onClick={() => set("tipo_inmueble", t.key)}>
+                                    <TipoBtn key={t.key} type="button" $active={form.tipo === t.key} $c={t.color}
+                                        onClick={() => set("tipo", t.key)}>
                                         <Icon icon={t.icon} style={{ fontSize: 20 }} />
                                         <span>{t.label}</span>
                                     </TipoBtn>
@@ -198,12 +204,12 @@ export function AdministracionTemplate() {
 
                             <Section>Propietario</Section>
                             <Row2>
-                                <Field><label>Nombre completo *</label><input required value={form.propietario} onChange={e => set("propietario", e.target.value)} /></Field>
-                                <Field><label>Teléfono</label><input value={form.telefono} onChange={e => set("telefono", e.target.value)} /></Field>
+                                <Field><label>Nombre del propietario *</label><input required value={form.propietario} onChange={e => set("propietario", e.target.value)} /></Field>
+                                <Field><label>Teléfono propietario</label><input value={form.tel_propietario} onChange={e => set("tel_propietario", e.target.value)} /></Field>
                             </Row2>
-                            <Field><label>Email</label><input type="email" value={form.email} onChange={e => set("email", e.target.value)} /></Field>
 
                             <Section>Inmueble</Section>
+                            <Field><label>Título / Nombre del inmueble</label><input value={form.titulo} onChange={e => set("titulo", e.target.value)} placeholder="Ej: Apto 402 El Poblado" /></Field>
                             <Field><label>Dirección</label><input value={form.direccion} onChange={e => set("direccion", e.target.value)} /></Field>
                             <Row2>
                                 <Field><label>Ciudad</label><input value={form.ciudad} onChange={e => set("ciudad", e.target.value)} /></Field>
@@ -212,7 +218,7 @@ export function AdministracionTemplate() {
 
                             <Section>Condiciones económicas</Section>
                             <Row2>
-                                <Field><label>Canon mensual ($)</label><input type="number" value={form.canon_mensual} onChange={e => set("canon_mensual", e.target.value)} /></Field>
+                                <Field><label>Canon / Precio mensual ($)</label><input type="number" value={form.precio} onChange={e => set("precio", e.target.value)} /></Field>
                                 <Field><label>% Comisión administración</label><input type="number" step="0.5" value={form.porcentaje_admin} onChange={e => set("porcentaje_admin", e.target.value)} /></Field>
                             </Row2>
 
@@ -226,7 +232,7 @@ export function AdministracionTemplate() {
                                 ))}
                             </EstadoRow>
 
-                            <Field><label>Observaciones</label><textarea rows={3} value={form.observaciones} onChange={e => set("observaciones", e.target.value)} /></Field>
+                            <Field><label>Descripción / Observaciones</label><textarea rows={3} value={form.descripcion} onChange={e => set("descripcion", e.target.value)} /></Field>
 
                             <BtnSave type="submit" disabled={guardar.isPending}>
                                 {guardar.isPending ? "Guardando…" : editing ? "Guardar cambios" : "Registrar inmueble"}
