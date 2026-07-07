@@ -30,6 +30,14 @@ const ESTADOS_PROP = [
     { key: "en_construccion",  label: "En construcción",  color: "#f88533", bg: "rgba(248,133,51,0.12)"   },
 ];
 
+const ESTADOS_ADMIN = [
+    { key: "activo",     label: "Activo",      color: "#4ade80", bg: "rgba(74,222,128,0.12)"  },
+    { key: "inactivo",   label: "Inactivo",    color: "#94a3b8", bg: "rgba(148,163,184,0.12)" },
+    { key: "suspendido", label: "Suspendido",  color: "#f87171", bg: "rgba(248,113,113,0.12)" },
+];
+
+const TODOS_ESTADOS = [...ESTADOS_PROP, ...ESTADOS_ADMIN];
+
 const ESTRATOS = [1,2,3,4,5,6];
 
 const FORM_VACIO = {
@@ -47,6 +55,8 @@ export function PropiedadesTemplate() {
     const [filtroEstado, setFiltroEstado] = useState("todos");
     const [filtroTipo, setFiltroTipo] = useState("todos");
     const [filtroGestion, setFiltroGestion] = useState("todos");
+
+    function cambiarGestion(g) { setFiltroGestion(g); setFiltroEstado("todos"); }
     const [form, setForm] = useState(FORM_VACIO);
 
     const { data: propiedades = [], isLoading } = useQuery({
@@ -116,22 +126,34 @@ export function PropiedadesTemplate() {
 
             {/* ── Filtros ── */}
             <FiltrosWrap>
+                {/* Fila 1: Gestión */}
                 <ChipGroup>
-                    <Chip $active={filtroGestion === "todos"}          $color="#f59e0b" onClick={() => setFiltroGestion("todos")}>Todos</Chip>
-                    <Chip $active={filtroGestion === "propias"}        $color="#4ade80" onClick={() => setFiltroGestion("propias")}>Propias</Chip>
-                    <Chip $active={filtroGestion === "administradas"}  $color="#a78bfa" onClick={() => setFiltroGestion("administradas")}>
+                    <Chip $active={filtroGestion === "todos"}         $color="#f59e0b" onClick={() => cambiarGestion("todos")}>Todos</Chip>
+                    <Chip $active={filtroGestion === "propias"}       $color="#4ade80" onClick={() => cambiarGestion("propias")}>Propias</Chip>
+                    <Chip $active={filtroGestion === "administradas"} $color="#a78bfa" onClick={() => cambiarGestion("administradas")}>
                         <Icon icon="solar:clipboard-list-bold-duotone" style={{fontSize:13,verticalAlign:"middle",marginRight:4}}/>
                         Gestión Administrativa
                     </Chip>
                 </ChipGroup>
+
+                {/* Fila 2: Estados — contextuales según gestión */}
                 <ChipGroup>
-                    {["todos", ...ESTADOS_PROP.map(e => e.key)].map(k => (
-                        <Chip key={k} $active={filtroEstado === k} $color={ESTADOS_PROP.find(e => e.key === k)?.color ?? "#60a5fa"}
-                            onClick={() => setFiltroEstado(k)}>
-                            {k === "todos" ? "Todos los estados" : ESTADOS_PROP.find(e => e.key === k)?.label}
+                    <Chip $active={filtroEstado === "todos"} $color="#94a3b8" onClick={() => setFiltroEstado("todos")}>
+                        Todos los estados
+                    </Chip>
+                    {filtroGestion !== "administradas" && ESTADOS_PROP.map(e => (
+                        <Chip key={e.key} $active={filtroEstado === e.key} $color={e.color} onClick={() => setFiltroEstado(e.key)}>
+                            {e.label}
+                        </Chip>
+                    ))}
+                    {filtroGestion !== "propias" && ESTADOS_ADMIN.map(e => (
+                        <Chip key={e.key} $active={filtroEstado === e.key} $color={e.color} onClick={() => setFiltroEstado(e.key)}>
+                            {e.label}
                         </Chip>
                     ))}
                 </ChipGroup>
+
+                {/* Fila 3: Tipos */}
                 <ChipGroup>
                     {["todos", ...TIPOS_PROP.map(t => t.key)].map(k => (
                         <Chip key={k} $active={filtroTipo === k} $color={TIPOS_PROP.find(t => t.key === k)?.color ?? "#94a3b8"}
@@ -154,7 +176,7 @@ export function PropiedadesTemplate() {
                 <Grid>
                     {visibles.map((p, i) => {
                         const tipo = TIPOS_PROP.find(t => t.key === p.tipo) ?? TIPOS_PROP[0];
-                        const est  = ESTADOS_PROP.find(e => e.key === p.estado) ?? ESTADOS_PROP[0];
+                        const est  = TODOS_ESTADOS.find(e => e.key === p.estado) ?? ESTADOS_PROP[0];
                         return (
                             <PropCard key={p.id} $color={tipo.color} $i={i}>
                                 <PropCardTop $color={tipo.color}>
@@ -232,12 +254,12 @@ export function PropiedadesTemplate() {
                             {/* Gestión */}
                             <Label>Tipo de gestión</Label>
                             <GestionToggle>
-                                <GestionOpt $active={!form.es_administrada} type="button" onClick={() => set("es_administrada", false)}>
+                                <GestionOpt $active={!form.es_administrada} type="button" onClick={() => { set("es_administrada", false); set("estado", "disponible"); }}>
                                     <Icon icon="solar:home-smile-bold-duotone"/>
                                     Propia
                                     <span>Inmueble de mi empresa</span>
                                 </GestionOpt>
-                                <GestionOpt $active={form.es_administrada} type="button" onClick={() => set("es_administrada", true)}>
+                                <GestionOpt $active={form.es_administrada} type="button" onClick={() => { set("es_administrada", true); set("estado", "activo"); }}>
                                     <Icon icon="solar:clipboard-list-bold-duotone"/>
                                     Gestión Adm.
                                     <span>Inmueble de tercero</span>
@@ -327,7 +349,7 @@ export function PropiedadesTemplate() {
 
                             <Label>Estado</Label>
                             <EstadosRow>
-                                {ESTADOS_PROP.map(e => (
+                                {(form.es_administrada ? ESTADOS_ADMIN : ESTADOS_PROP).map(e => (
                                     <EstadoBtn key={e.key} $active={form.estado === e.key} $color={e.color}
                                         onClick={() => set("estado", e.key)}>
                                         {e.label}

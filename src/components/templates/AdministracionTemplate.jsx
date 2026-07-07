@@ -30,7 +30,7 @@ const BLANK = {
     propietario: "", tel_propietario: "",
     tipo: "apartamento", titulo: "", direccion: "", ciudad: "", sector: "",
     precio: "", porcentaje_admin: "10",
-    estado: "disponible", descripcion: "",
+    estado: "activo", descripcion: "",
     es_administrada: true,
     habitaciones: 0, banos: 0, garajes: 0, estrato: 0, area_m2: "",
 };
