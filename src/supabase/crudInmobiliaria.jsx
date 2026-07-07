@@ -160,6 +160,44 @@ export async function EliminarActividad({ id, id_empresa }) {
     if (error) { toastError(error.message, "Actividades › Eliminar"); throw error; }
 }
 
+/* ─────────────────────── CONTABILIDAD DEL PROYECTO ─────────────────────── */
+const TABLA_MOV = "proyecto_movimientos";
+
+export async function MostrarMovimientos({ proyecto_id, id_empresa }) {
+    const { data, error } = await supabase
+        .from(TABLA_MOV)
+        .select()
+        .eq("proyecto_id", proyecto_id)
+        .eq("id_empresa", id_empresa)
+        .order("fecha", { ascending: false });
+    if (error) { toastError(error.message, "Contabilidad › Mostrar"); return []; }
+    return data ?? [];
+}
+
+export async function InsertarMovimiento(p) {
+    const { data, error } = await supabase.from(TABLA_MOV).insert(p).select().single();
+    if (error) { toastError(error.message, "Contabilidad › Insertar"); throw error; }
+    return data;
+}
+
+export async function EditarMovimiento({ id, id_empresa, ...campos }) {
+    const { error } = await supabase
+        .from(TABLA_MOV)
+        .update(campos)
+        .eq("id", id)
+        .eq("id_empresa", id_empresa);
+    if (error) { toastError(error.message, "Contabilidad › Editar"); throw error; }
+}
+
+export async function EliminarMovimiento({ id, id_empresa }) {
+    const { error } = await supabase
+        .from(TABLA_MOV)
+        .delete()
+        .eq("id", id)
+        .eq("id_empresa", id_empresa);
+    if (error) { toastError(error.message, "Contabilidad › Eliminar"); throw error; }
+}
+
 /* ─────────────────────── ARRENDAMIENTOS ─────────────────────── */
 const TABLA_ARREND = "arrendamientos";
 
