@@ -242,7 +242,7 @@ export function ProyectosObraTemplate() {
                                     <Icon icon="solar:user-bold-duotone" />
                                     Para cliente
                                 </ToggleOpt>
-                                <ToggleOpt $active={form.es_propio} $own onClick={() => set("es_propio", true)}>
+                                <ToggleOpt $active={form.es_propio} $own onClick={() => { set("es_propio", true); if (form.tipo !== "remodelacion" && form.tipo !== "construccion") set("tipo", "remodelacion"); }}>
                                     <Icon icon="mdi:hard-hat" />
                                     Proyecto propio
                                 </ToggleOpt>
@@ -250,7 +250,10 @@ export function ProyectosObraTemplate() {
 
                             <Label>Tipo de trabajo</Label>
                             <TiposGrid>
-                                {TIPOS_PROYECTO.map(t => (
+                                {(form.es_propio
+                                    ? TIPOS_PROYECTO.filter(t => t.key === "remodelacion" || t.key === "construccion")
+                                    : TIPOS_PROYECTO
+                                ).map(t => (
                                     <TipoBtn key={t.key} $active={form.tipo === t.key} $color={t.color}
                                         onClick={() => set("tipo", t.key)}>
                                         <Icon icon={t.icon} />{t.label}
