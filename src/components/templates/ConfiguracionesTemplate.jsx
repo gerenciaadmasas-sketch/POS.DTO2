@@ -60,6 +60,12 @@ export function ConfiguracionesTemplate() {
     const esAdmin = tipo === "administrador";
     const esSuperAdmin = tipo === "superadmin";
     const esSuscripcionesTV = dataempresa?.actividad_economica === "suscripciones_tv";
+    const esInmobiliaria    = dataempresa?.actividad_economica === "construccion";
+
+    const OCULTOS_INMOBILIARIA = [
+        "/configuracion/categorias",
+        "/configuracion/productos",
+    ];
 
     const VISIBLES_SUPERADMIN = ["/configuracion/planes", "/configuracion/version"];
 
@@ -67,9 +73,13 @@ export function ConfiguracionesTemplate() {
         if (esSuscripcionesTV) return dataModulos.filter((m) => VISIBLES_SUSCRIPCIONES.includes(m.link));
         if (esSuperAdmin) return dataModulos.filter((m) => VISIBLES_SUPERADMIN.includes(m.link));
         if (esSupervisor) return dataModulos.filter((m) => !OCULTOS_SUPERVISOR.includes(m.link));
-        if (esAdmin) return dataModulos.filter((m) => !OCULTOS_ADMIN.includes(m.link));
+        if (esAdmin) {
+            let modulos = dataModulos.filter((m) => !OCULTOS_ADMIN.includes(m.link));
+            if (esInmobiliaria) modulos = modulos.filter((m) => !OCULTOS_INMOBILIARIA.includes(m.link));
+            return modulos;
+        }
         return dataModulos;
-    }, [dataModulos, esSupervisor, esAdmin, esSuperAdmin, esSuscripcionesTV]);
+    }, [dataModulos, esSupervisor, esAdmin, esSuperAdmin, esSuscripcionesTV, esInmobiliaria]);
 
     useEffect(() => {
         const handleMouseMove = (e) => {
