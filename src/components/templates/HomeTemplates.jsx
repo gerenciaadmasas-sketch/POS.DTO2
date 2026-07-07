@@ -85,11 +85,10 @@ const ACCESOS_COMERCIAL = [
 ];
 
 const ACCESOS_INMOBILIARIA = [
-    { key: "propiedades", icon: "solar:home-smile-bold-duotone",         label: "Propiedades",    sub: "Aptos · Casas · Lotes · Fincas", to: "/propiedades", accent: "#f59e0b", glow: "rgba(245,158,11,0.35)",   big: true  },
-    { key: "proyectos",   icon: "solar:hammer-bold-duotone",             label: "Proyectos",      sub: "Obras y servicios",             to: "/proyectos",   accent: "#60a5fa", glow: "rgba(96,165,250,0.35)",   big: false },
-    { key: "mensajes",    icon: "solar:chat-round-bold-duotone",         label: "Mensajes",       sub: "Equipo interno",                to: "/mensajes",    accent: "#a78bfa", glow: "rgba(167,139,250,0.35)",  big: false },
-    { key: "soporte",     icon: "solar:headphones-round-bold-duotone",   label: "Soporte",        sub: "Canal de ayuda",                to: "/soporte",     accent: "#34d399", glow: "rgba(52,211,153,0.35)",   big: false },
-    { key: "config",      icon: "solar:settings-bold-duotone",           label: "Configuración",  sub: "Mi empresa",                    to: "/configuracion",accent: "#94a3b8", glow: "rgba(148,163,184,0.35)", big: false },
+    { key: "propiedades",    icon: "solar:home-smile-bold-duotone",        label: "Propiedades",    sub: "Aptos · Casas · Lotes · Fincas",     to: "/propiedades",    accent: "#f59e0b", glow: "rgba(245,158,11,0.35)",  big: true  },
+    { key: "proyectos",      icon: "solar:hammer-bold-duotone",            label: "Proyectos",      sub: "Obras · Remodelación · Reparación",  to: "/proyectos",      accent: "#60a5fa", glow: "rgba(96,165,250,0.35)",  big: false },
+    { key: "arrendamientos", icon: "solar:key-bold-duotone",               label: "Arrendamientos", sub: "Contratos · Arriendos · Pagos",      to: "/arrendamientos", accent: "#34d399", glow: "rgba(52,211,153,0.35)",  big: false },
+    { key: "administracion", icon: "solar:clipboard-list-bold-duotone",    label: "Administración", sub: "Gestión de propiedades",             to: "/administracion", accent: "#a78bfa", glow: "rgba(167,139,250,0.35)", big: false },
 ];
 
 const STATS_INMOBILIARIA_CFG = [
@@ -548,9 +547,15 @@ const BentoGrid = styled.div`
         grid-column: 1 / -1;
     }
 
+    /* última card sola en su fila (posición par) → span full */
+    & > :last-child:nth-child(even) {
+        grid-column: 1 / -1;
+    }
+
     @media (max-width: 400px) {
         grid-template-columns: 1fr;
-        & > :first-child { grid-column: 1; }
+        & > :first-child,
+        & > :last-child:nth-child(even) { grid-column: 1; }
     }
 `;
 
