@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import styled, { keyframes } from "styled-components";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,6 +8,7 @@ import {
     MostrarPersonal, InsertarPersonal, EditarPersonal, EliminarPersonal,
     MostrarActividades, InsertarActividad, EditarActividad, EliminarActividad,
     MostrarMovimientos, InsertarMovimiento, EditarMovimiento, EliminarMovimiento,
+    BuscarProveedorPorNit,
 } from "../../supabase/crudInmobiliaria";
 import { Icon } from "@iconify/react";
 import { RiDeleteBin2Line, RiAddLine, RiEditLine, RiArrowLeftLine } from "react-icons/ri";
@@ -53,7 +54,7 @@ const CATEGORIAS_INGRESO = [
 /* ── Blanks ── */
 const P_BLANK  = { nombre: "", rol: "", telefono: "", fecha_inicio: "", fecha_fin: "", estado: "activo" };
 const A_BLANK  = { nombre: "", descripcion: "", responsable_id: "", responsable: "", fecha_inicio: "", fecha_fin: "", estado: "pendiente", orden: 0 };
-const M_BLANK  = { tipo: "egreso", categoria: "materiales", descripcion: "", monto: "", fecha: new Date().toISOString().slice(0,10) };
+const M_BLANK  = { tipo: "egreso", categoria: "materiales", descripcion: "", monto: "", fecha: new Date().toISOString().slice(0,10), proveedor_id: null, proveedor_nit: "", proveedor_nombre: "" };
 
 export function ProyectoDetalleTemplate() {
     const { id }       = useParams();
@@ -69,9 +70,12 @@ export function ProyectoDetalleTemplate() {
     const [modalA, setModalA]   = useState(false);
     const [editA, setEditA]     = useState(null);
     const [formA, setFormA]     = useState(A_BLANK);
-    const [modalM, setModalM]   = useState(false);
-    const [editM, setEditM]     = useState(null);
-    const [formM, setFormM]     = useState(M_BLANK);
+    const [modalM, setModalM]       = useState(false);
+    const [editM, setEditM]         = useState(null);
+    const [formM, setFormM]         = useState(M_BLANK);
+    const [buscandoProv, setBuscandoProv] = useState(false);
+    const [provError, setProvError]       = useState("");
+    const nitTimer = useRef(null);
 
     /* ── Queries ── */
     const { data: proyecto }      = useQuery({ queryKey: ["proyecto-detalle", id],       queryFn: () => MostrarProyectoPorId({ id, id_empresa }),             enabled: !!id && !!id_empresa });
@@ -106,7 +110,28 @@ export function ProyectoDetalleTemplate() {
 
     /* ── Handlers movimientos ── */
     const abrirM  = (item = null) => { setEditM(item); setFormM(item ? { ...item, monto: String(item.monto) } : { ...M_BLANK }); setModalM(true); };
-    const cerrarM = () => { setModalM(false); setEditM(null); setFormM(M_BLANK); };
+    const cerrarM = () => { setModalM(false); setEditM(null); setFormM(M_BLANK); setProvError(""); setBuscandoProv(false); };
+
+    const onNitChange = (nit) => {
+        setM("proveedor_nit", nit);
+        setM("proveedor_id", null);
+        setM("proveedor_nombre", "");
+        setProvError("");
+        clearTimeout(nitTimer.current);
+        if (!nit.trim()) return;
+        setBuscandoProv(true);
+        nitTimer.current = setTimeout(async () => {
+            const prov = await BuscarProveedorPorNit({ nit, id_empresa });
+            setBuscandoProv(false);
+            if (prov) {
+                setM("proveedor_id", prov.id);
+                setM("proveedor_nombre", prov.nombre);
+                setProvError("");
+            } else {
+                setProvError("NIT no encontrado en tus proveedores registrados");
+            }
+        }, 600);
+    };
     const submitM = (e) => {
         e.preventDefault();
         mutM.mutate({ ...formM, id_empresa, proyecto_id: id, monto: parseFloat(formM.monto) || 0, ...(editM ? { id: editM.id } : {}) });
@@ -524,6 +549,34 @@ export function ProyectoDetalleTemplate() {
                             <MField><label>Descripción *</label>
                                 <input required value={formM.descripcion} onChange={e => setM("descripcion", e.target.value)}
                                     placeholder="Ej: Compra de cemento y varilla"/></MField>
+
+                            {/* Proveedor solo en egresos */}
+                            {formM.tipo === "egreso" && (
+                                <ProveedorWrap>
+                                    <MField>
+                                        <label>NIT del proveedor <span style={{color:"rgba(255,255,255,.3)",fontWeight:400}}>(opcional)</span></label>
+                                        <NitInputWrap>
+                                            <input
+                                                value={formM.proveedor_nit}
+                                                onChange={e => onNitChange(e.target.value)}
+                                                placeholder="Ej: 900123456"
+                                            />
+                                            {buscandoProv && <NitSpinner><Icon icon="solar:refresh-bold-duotone"/></NitSpinner>}
+                                            {formM.proveedor_nombre && <NitOk><Icon icon="solar:check-circle-bold-duotone"/></NitOk>}
+                                        </NitInputWrap>
+                                        {provError && <NitError>{provError}</NitError>}
+                                    </MField>
+                                    <MField>
+                                        <label>Proveedor</label>
+                                        <ProvNombreInput
+                                            readOnly
+                                            value={formM.proveedor_nombre}
+                                            placeholder="Se autocompleta al ingresar el NIT"
+                                        />
+                                    </MField>
+                                </ProveedorWrap>
+                            )}
+
                             <MRow>
                                 <MField><label>Monto ($) *</label>
                                     <input required type="number" min="0" step="1000" value={formM.monto}
@@ -650,3 +703,12 @@ const PersonalSelector = styled.div`display:flex;flex-direction:column;gap:5px;`
 const PersonalOpt      = styled.button`display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;border:1px solid ${p=>p.$active?"#60a5fa":"rgba(255,255,255,.08)"};background:${p=>p.$active?"rgba(96,165,250,.12)":"rgba(255,255,255,.03)"};color:${p=>p.$active?"#60a5fa":"rgba(255,255,255,.5)"};font-size:12px;font-weight:600;cursor:pointer;font-family:"Poppins",sans-serif;text-align:left;transition:.15s;span{display:flex;flex-direction:column;gap:1px;}small{font-size:10px;color:rgba(255,255,255,.3);display:block;}`;
 const Avatar           = styled.div`width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#60a5fa,#818cf8);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;`;
 const NoPersonal       = styled.p`font-size:12px;color:rgba(255,255,255,.3);padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin:0;`;
+
+/* proveedor lookup */
+const spin = keyframes`from{transform:rotate(0deg)}to{transform:rotate(360deg)}`;
+const ProveedorWrap  = styled.div`display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);`;
+const NitInputWrap   = styled.div`position:relative;input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:9px 36px 9px 11px;color:#fff;font-size:13px;font-family:"Poppins",sans-serif;outline:none;box-sizing:border-box;&:focus{border-color:#60a5fa;}}`;
+const NitSpinner     = styled.span`position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:16px;animation:${spin} .8s linear infinite;display:flex;`;
+const NitOk          = styled.span`position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#4ade80;font-size:16px;display:flex;`;
+const NitError       = styled.p`font-size:11px;color:#f87171;margin:4px 0 0;`;
+const ProvNombreInput= styled.input`width:100%;background:rgba(74,222,128,.06)!important;border:1px solid rgba(74,222,128,.2)!important;border-radius:9px;padding:9px 11px;color:#4ade80!important;font-size:13px;font-family:"Poppins",sans-serif;outline:none;box-sizing:border-box;cursor:default;&::placeholder{color:rgba(255,255,255,.2);}`;

@@ -189,6 +189,17 @@ export async function EditarMovimiento({ id, id_empresa, ...campos }) {
     if (error) { toastError(error.message, "Contabilidad › Editar"); throw error; }
 }
 
+export async function BuscarProveedorPorNit({ nit, id_empresa }) {
+    const { data, error } = await supabase
+        .from("proveedores")
+        .select("id, nombre, nit")
+        .eq("id_empresa", id_empresa)
+        .eq("nit", nit.trim())
+        .maybeSingle();
+    if (error) { toastError(error.message, "Proveedor › Buscar"); return null; }
+    return data;
+}
+
 export async function EliminarMovimiento({ id, id_empresa }) {
     const { error } = await supabase
         .from(TABLA_MOV)
