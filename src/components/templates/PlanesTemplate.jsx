@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from "motion/react";
 import styled, { keyframes, css } from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { v } from "../../styles/variables";
@@ -136,6 +136,63 @@ const STATS = [
 
 const formatCOP = (n) =>
     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n);
+
+/* ─────────────────────────────────────────
+   TILT CARD — 3D hover + flip entrance
+───────────────────────────────────────── */
+function TiltCard({ children, color, idx, popular }) {
+    const cardRef = useRef(null);
+    const xMV = useMotionValue(0);
+    const yMV = useMotionValue(0);
+
+    const rawRotX = useTransform(yMV, [-0.5, 0.5], [12, -12]);
+    const rawRotY = useTransform(xMV, [-0.5, 0.5], [-12, 12]);
+    const rotateX = useSpring(rawRotX, { stiffness: 180, damping: 22 });
+    const rotateY = useSpring(rawRotY, { stiffness: 180, damping: 22 });
+
+    function onMove(e) {
+        if (!cardRef.current) return;
+        const rect = cardRef.current.getBoundingClientRect();
+        xMV.set((e.clientX - rect.left) / rect.width - 0.5);
+        yMV.set((e.clientY - rect.top) / rect.height - 0.5);
+        const xPct = ((e.clientX - rect.left) / rect.width) * 100;
+        const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+        cardRef.current.style.setProperty("--gx", `${xPct}%`);
+        cardRef.current.style.setProperty("--gy", `${yPct}%`);
+    }
+
+    function onLeave() {
+        xMV.set(0);
+        yMV.set(0);
+    }
+
+    return (
+        <div style={{ perspective: 1100 }}>
+            <motion.div
+                initial={{ rotateY: -90, opacity: 0, scale: 0.95 }}
+                whileInView={{ rotateY: 0, opacity: 1, scale: popular ? 1.03 : 1 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.7, delay: idx * 0.15, ease: [0.22, 1, 0.36, 1] }}
+                style={{ transformStyle: "preserve-3d" }}
+            >
+                <motion.div
+                    ref={cardRef}
+                    style={{ rotateX, rotateY, transformStyle: "preserve-3d", position: "relative" }}
+                    onMouseMove={onMove}
+                    onMouseLeave={onLeave}
+                >
+                    {/* Glare que sigue el cursor */}
+                    <div style={{
+                        position: "absolute", inset: 0, borderRadius: 28,
+                        background: `radial-gradient(circle at var(--gx, 50%) var(--gy, 50%), rgba(255,255,255,0.10) 0%, transparent 55%)`,
+                        pointerEvents: "none", zIndex: 10, transition: "background 0.05s",
+                    }} />
+                    {children}
+                </motion.div>
+            </motion.div>
+        </div>
+    );
+}
 
 /* ─────────────────────────────────────────
    COMPONENTE PRINCIPAL
@@ -402,15 +459,7 @@ export function PlanesTemplate() {
             {/* ── Cards ── */}
             <CardsSection>
                 {PLANES.map((plan, idx) => (
-                    <motion.div
-                        key={plan.id}
-                        style={{ position: "relative", borderRadius: 28 }}
-                        initial={{ opacity: 0, y: 48, scale: 0.97 }}
-                        whileInView={{ opacity: 1, y: 0, scale: plan.popular ? 1.03 : 1 }}
-                        viewport={{ once: true, margin: "-80px" }}
-                        transition={{ duration: 0.55, delay: idx * 0.12, ease: [0.22, 1, 0.36, 1] }}
-                        whileHover={{ y: -6, scale: plan.popular ? 1.05 : 1.02, transition: { type: "spring", stiffness: 260, damping: 20 } }}
-                    >
+                    <TiltCard key={plan.id} color={plan.color} idx={idx} popular={plan.popular}>
                     <PlanCard
                         id={plan.id}
                         $color={plan.color}
@@ -486,7 +535,7 @@ export function PlanesTemplate() {
                             </FeatureList>
                         </CardInner>
                     </PlanCard>
-                    </motion.div>
+                    </TiltCard>
                 ))}
             </CardsSection>
 
