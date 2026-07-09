@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import styled, { keyframes, css } from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { v } from "../../styles/variables";
@@ -373,10 +374,16 @@ export function PlanesTemplate() {
                 {/* Stats */}
                 <StatsBar>
                     {STATS.map((s, i) => (
-                        <StatItem key={i}>
+                        <motion.div
+                            key={i}
+                            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "16px 20px", borderRight: i < STATS.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}
+                            initial={{ opacity: 0, y: 14 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.45, delay: 0.2 + i * 0.08, ease: [0.22, 1, 0.36, 1] }}
+                        >
                             <StatVal>{s.val}</StatVal>
                             <StatLabel>{s.label}</StatLabel>
-                        </StatItem>
+                        </motion.div>
                     ))}
                 </StatsBar>
 
@@ -395,14 +402,22 @@ export function PlanesTemplate() {
             {/* ── Cards ── */}
             <CardsSection>
                 {PLANES.map((plan, idx) => (
-                    <PlanCard
+                    <motion.div
                         key={plan.id}
+                        style={{ position: "relative", borderRadius: 28 }}
+                        initial={{ opacity: 0, y: 48, scale: 0.97 }}
+                        whileInView={{ opacity: 1, y: 0, scale: plan.popular ? 1.03 : 1 }}
+                        viewport={{ once: true, margin: "-80px" }}
+                        transition={{ duration: 0.55, delay: idx * 0.12, ease: [0.22, 1, 0.36, 1] }}
+                        whileHover={{ y: -6, scale: plan.popular ? 1.05 : 1.02, transition: { type: "spring", stiffness: 260, damping: 20 } }}
+                    >
+                    <PlanCard
                         id={plan.id}
                         $color={plan.color}
                         $glow={plan.glow}
                         $popular={plan.popular}
                         $delay={`${idx * 0.1}s`}
-                        $visible={visible}
+                        $visible={true}
                     >
                         {/* Borde animado para popular */}
                         {plan.popular && <RotatingBorder $color={plan.color} $colorAlt={plan.colorAlt} />}
@@ -437,6 +452,7 @@ export function PlanesTemplate() {
                             </PrecioBloque>
 
                             {/* CTA */}
+                            <motion.div whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 400, damping: 20 }}>
                             <BtnPlan
                                 $color={plan.color}
                                 $colorAlt={plan.colorAlt}
@@ -446,22 +462,31 @@ export function PlanesTemplate() {
                             >
                                 {plan.popular ? "Comenzar con Fuego 🔥" : `Elegir ${plan.nombre}`}
                             </BtnPlan>
+                            </motion.div>
 
                             <Divisor />
 
                             {/* Features — editables desde /configuracion/planes */}
                             <FeatureList>
                                 {(planFeatures[plan.id] ?? plan.features).map((f, i) => (
-                                    <FeatureRow key={i} $ok={f.ok}>
+                                    <motion.li
+                                        key={i}
+                                        style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, fontWeight: 500, color: f.ok ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.2)", textDecoration: f.ok ? "none" : "line-through", listStyle: "none" }}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        whileInView={{ opacity: 1, x: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ duration: 0.35, delay: i * 0.055, ease: "easeOut" }}
+                                    >
                                         <FeatureIco $ok={f.ok} $color={plan.color}>
                                             {f.ok ? <RiCheckLine /> : <RiCloseLine />}
                                         </FeatureIco>
                                         <span>{f.txt}</span>
-                                    </FeatureRow>
+                                    </motion.li>
                                 ))}
                             </FeatureList>
                         </CardInner>
                     </PlanCard>
+                    </motion.div>
                 ))}
             </CardsSection>
 
@@ -476,11 +501,19 @@ export function PlanesTemplate() {
                         { icon: <RiCustomerService2Line />, title: "Soporte real",              desc: "Personas reales que conocen tu negocio. Nada de bots ni formularios eternos." },
                         { icon: <RiStarLine />,             title: "Sin letra pequeña",         desc: "El precio que ves es lo que pagas. Sin costos ocultos ni sorpresas al final del mes." },
                     ].map((item, i) => (
-                        <CompareItem key={i}>
+                        <motion.div
+                            key={i}
+                            style={{ padding: "24px 20px", borderRadius: 20, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(12px)", display: "flex", flexDirection: "column", gap: 10, textAlign: "left" }}
+                            initial={{ opacity: 0, y: 28 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-40px" }}
+                            transition={{ duration: 0.45, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                            whileHover={{ borderColor: "rgba(248,133,51,0.3)", background: "rgba(248,133,51,0.04)", y: -3, transition: { type: "spring", stiffness: 300, damping: 22 } }}
+                        >
                             <CompareIcon>{item.icon}</CompareIcon>
                             <CompareItemTitle>{item.title}</CompareItemTitle>
                             <CompareItemDesc>{item.desc}</CompareItemDesc>
-                        </CompareItem>
+                        </motion.div>
                     ))}
                 </CompareGrid>
             </CompareSection>
@@ -494,15 +527,30 @@ export function PlanesTemplate() {
                     { q: "¿Necesito instalar algo?", a: "No. POS.DTO2 funciona completamente desde el navegador — en computador, tablet o celular. Sin instalaciones, sin actualizaciones manuales." },
                     { q: "¿Mis datos están seguros en la nube?", a: "Sí. Toda la información está cifrada y almacenada en servidores seguros con backups automáticos cada 24 horas." },
                 ].map((faq, i) => (
-                    <FaqItem key={i}>
+                    <motion.div
+                        key={i}
+                        style={{ textAlign: "left", padding: "20px 24px", borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", marginBottom: 12, cursor: "default" }}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-30px" }}
+                        transition={{ duration: 0.4, delay: i * 0.08, ease: "easeOut" }}
+                        whileHover={{ borderColor: "rgba(248,133,51,0.25)", transition: { duration: 0.2 } }}
+                    >
                         <FaqQ>{faq.q}</FaqQ>
                         <FaqA>{faq.a}</FaqA>
-                    </FaqItem>
+                    </motion.div>
                 ))}
             </FaqSection>
 
             {/* ── CTA Final ── */}
-            <CtaFinal $visible={visible}>
+            <CtaFinal
+                as={motion.section}
+                $visible={true}
+                initial={{ opacity: 0, y: 32 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            >
                 <CtaGlow />
                 <CtaEmoji>👋</CtaEmoji>
                 <CtaTitulo>¿Tienes dudas? Te ayudamos.</CtaTitulo>
@@ -511,12 +559,16 @@ export function PlanesTemplate() {
                     sin presión, sin ventas agresivas, solo la información que necesitas.
                 </CtaDesc>
                 <CtaBtns>
-                    <BtnWA as="a" href="https://wa.me/573118303017" target="_blank" rel="noopener noreferrer">
-                        <RiWhatsappLine size={20} /> Hablar por WhatsApp
-                    </BtnWA>
-                    <BtnLogin onClick={() => setRegistroOpen(true)}>
-                        Regístrate ahora →
-                    </BtnLogin>
+                    <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 300, damping: 18 }}>
+                        <BtnWA as="a" href="https://wa.me/573118303017" target="_blank" rel="noopener noreferrer">
+                            <RiWhatsappLine size={20} /> Hablar por WhatsApp
+                        </BtnWA>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }} transition={{ type: "spring", stiffness: 300, damping: 18 }}>
+                        <BtnLogin onClick={() => setRegistroOpen(true)}>
+                            Regístrate ahora →
+                        </BtnLogin>
+                    </motion.div>
                 </CtaBtns>
             </CtaFinal>
 
