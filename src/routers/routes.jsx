@@ -18,6 +18,8 @@ import { Arrendamientos } from "../pages/Arrendamientos";
 import { Administracion } from "../pages/Administracion";
 import { ProyectoDetalle } from "../pages/ProyectoDetalle";
 import { Mensajes } from "../pages/Mensajes";
+import { Privacidad } from "../pages/Privacidad";
+import { Terminos } from "../pages/Terminos";
 import { useQuery } from "@tanstack/react-query";
 import { Spinner1 } from "../components/moleculas/Spinner1";
 import { MostrarEmpresaPorId } from "../supabase/crudEmpresa";
@@ -71,6 +73,8 @@ export function Myroutes() {
       <Route path="/planes"        element={<Navigate to="/" replace />} />
       <Route path="/login"         element={user ? <Navigate to="/home" replace /> : <Login />} />
       <Route path="/pago-exitoso"  element={<PagoExitoso />} />
+      <Route path="/privacidad"    element={<Privacidad />} />
+      <Route path="/terminos"      element={<Terminos />} />
       <Route element={<ProtectedRoute user={user} redirectTo="/" />}>
         <Route path="/home" element={<Home />} />
         <Route path="/configuracion" element={<Configuraciones />} />

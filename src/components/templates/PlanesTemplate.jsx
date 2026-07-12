@@ -25,16 +25,12 @@ import {
 } from "react-icons/ri";
 
 const ACTIVIDADES = [
-    { key: "retail_ropa",        label: "Retail — Ropa y accesorios",              emoji: "👗" },
-    { key: "restaurante",        label: "Restaurante",                              emoji: "🍽️" },
-    { key: "cafeteria",          label: "Cafetería",                                emoji: "☕" },
-    { key: "tienda",             label: "Tienda / Minimarket",                      emoji: "🛒" },
-    { key: "farmacia",           label: "Farmacia / Droguería",                     emoji: "💊" },
-    { key: "ferreteria",         label: "Ferretería",                               emoji: "🔧" },
-    { key: "salon_belleza",      label: "Salón de belleza",                         emoji: "💇" },
-    { key: "veterinaria",        label: "Veterinaria",                              emoji: "🐾" },
-    { key: "construccion",       label: "Construcción / Inmobiliaria",              emoji: "🏗️" },
-    { key: "suscripciones_tv",   label: "Suscripciones",         emoji: "📺" },
+    { key: "retail_ropa",           label: "Retail — Ropa y accesorios",   emoji: "👗" },
+    { key: "retail_supermercado",   label: "Retail — Supermercado",        emoji: "🛒" },
+    { key: "retail_joyeria",        label: "Retail — Joyería",             emoji: "💎" },
+    { key: "restaurante",           label: "Restaurante",                   emoji: "🍽️" },
+    { key: "construccion",          label: "Construcción / Inmobiliaria",   emoji: "🏗️" },
+    { key: "veterinaria",           label: "Veterinaria",                   emoji: "🐾" },
 ];
 
 /* ─────────────────────────────────────────
@@ -356,6 +352,7 @@ export function PlanesTemplate() {
     const [pagoForm, setPagoForm]       = useState({ nombre: "", apellido: "", cedula: "", email: "", empresa: "", telefono: "", actividad_economica: "" });
     const [pagoMsgIdx, setPagoMsgIdx]   = useState(0);
     const [pagoError, setPagoError]     = useState("");
+    const [aceptaTerminos, setAceptaTerminos] = useState(false);
     const [dropActPago, setDropActPago] = useState(false);
     const dropActPagoRef                = useRef(null);
 
@@ -403,6 +400,7 @@ export function PlanesTemplate() {
         setPasoPago("datos");
         setPagoForm({ nombre: "", apellido: "", cedula: "", email: "", empresa: "", telefono: "", actividad_economica: "" });
         setPagoMsgIdx(0);
+        setAceptaTerminos(false);
         setPagoError("");
         setDropActPago(false);
         setPagoOpen(true);
@@ -1050,6 +1048,11 @@ export function PlanesTemplate() {
                     <img src={v.logo} alt="logo" />
                     <span>POS<b>.DTO2</b></span>
                 </FooterLogo>
+                <FooterLinks>
+                    <FooterLink onClick={() => navigate("/privacidad")}>Política de Privacidad</FooterLink>
+                    <FooterSep>·</FooterSep>
+                    <FooterLink onClick={() => navigate("/terminos")}>Términos y Condiciones</FooterLink>
+                </FooterLinks>
                 <FooterTexto>© {new Date().getFullYear()} ADMA BI · Todos los derechos reservados</FooterTexto>
                 <FooterTexto>Bogotá, Colombia 🇨🇴</FooterTexto>
             </PlanFooter>
@@ -1259,8 +1262,23 @@ export function PlanesTemplate() {
 
                         {pagoError && <MsgError>{pagoError}</MsgError>}
 
+                        <TerminosCheck>
+                            <input
+                                type="checkbox"
+                                id="acepta-terminos"
+                                checked={aceptaTerminos}
+                                onChange={e => setAceptaTerminos(e.target.checked)}
+                            />
+                            <label htmlFor="acepta-terminos">
+                                He leído y acepto la{" "}
+                                <TerminosLink onClick={e => { e.preventDefault(); navigate("/privacidad"); }}>Política de Privacidad</TerminosLink>
+                                {" "}y los{" "}
+                                <TerminosLink onClick={e => { e.preventDefault(); navigate("/terminos"); }}>Términos y Condiciones</TerminosLink>
+                            </label>
+                        </TerminosCheck>
+
                         <BtnPagoSubmit type="submit" $color={planPago.color} $colorAlt={planPago.colorAlt} $glow={planPago.glow}
-                            disabled={!pagoForm.nombre || !pagoForm.apellido || !pagoForm.email || !pagoForm.empresa || !pagoForm.cedula || !pagoForm.actividad_economica}>
+                            disabled={!pagoForm.nombre || !pagoForm.apellido || !pagoForm.email || !pagoForm.empresa || !pagoForm.cedula || !pagoForm.actividad_economica || !aceptaTerminos}>
                             <RiLockLine /> Ir al pago seguro →
                         </BtnPagoSubmit>
                     </LoginForm>
@@ -2213,6 +2231,48 @@ const FooterLogo = styled.button`
 
 const FooterTexto = styled.span`
     font-size: 12px; color: rgba(255,255,255,0.2);
+`;
+
+const FooterLinks = styled.div`
+    display: flex; align-items: center; gap: 10px; margin-bottom: 2px;
+`;
+
+const FooterLink = styled.button`
+    background: none; border: none; cursor: pointer;
+    font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.35);
+    font-family: "Poppins", sans-serif; padding: 0;
+    transition: color 0.15s;
+    &:hover { color: #f88533; }
+`;
+
+const FooterSep = styled.span`
+    font-size: 12px; color: rgba(255,255,255,0.15);
+`;
+
+const TerminosCheck = styled.div`
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+
+    input[type="checkbox"] {
+        width: 16px; height: 16px; flex-shrink: 0;
+        accent-color: #f88533; margin-top: 2px; cursor: pointer;
+    }
+
+    label {
+        font-size: 12px; line-height: 1.6;
+        color: rgba(255,255,255,0.45); cursor: pointer;
+    }
+`;
+
+const TerminosLink = styled.button`
+    background: none; border: none; padding: 0;
+    font-size: 12px; font-weight: 700; color: #f88533;
+    cursor: pointer; font-family: "Poppins", sans-serif;
+    text-decoration: underline; text-underline-offset: 2px;
+    &:hover { color: #ffa05c; }
 `;
 
 /* ══════════════════════════════════════

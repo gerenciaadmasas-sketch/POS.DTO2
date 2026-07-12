@@ -14,7 +14,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { themeStyle } = useThemeStore();
   const { pathname } = useLocation();
-  const isLoginRoute = ["/login", "/"].includes(pathname);
+  const isLoginRoute = ["/login", "/", "/privacidad", "/terminos"].includes(pathname);
 
   return (
     <ThemeProvider theme={themeStyle}>
