@@ -32,16 +32,12 @@ const TIPOS_PLAN = [
 ];
 
 const ACTIVIDADES = [
-    { key: "retail_ropa",    label: "Retail — Ropa y accesorios" },
-    { key: "restaurante",    label: "Restaurante" },
-    { key: "cafeteria",      label: "Cafetería" },
-    { key: "tienda",         label: "Tienda / Minimarket" },
-    { key: "farmacia",       label: "Farmacia / Droguería" },
-    { key: "ferreteria",     label: "Ferretería" },
-    { key: "salon_belleza",  label: "Salón de belleza" },
-    { key: "veterinaria",    label: "Veterinaria" },
-    { key: "construccion",       label: "Construcción / Inmobiliaria" },
-    { key: "suscripciones_tv",   label: "Suscripciones" },
+    { key: "retail_ropa",           label: "Retail — Ropa y accesorios" },
+    { key: "retail_supermercado",   label: "Retail — Supermercado" },
+    { key: "retail_joyeria",        label: "Retail — Joyería" },
+    { key: "restaurante",           label: "Restaurante" },
+    { key: "construccion",          label: "Construcción / Inmobiliaria" },
+    { key: "veterinaria",           label: "Veterinaria" },
 ];
 
 export function SaasTemplate() {
