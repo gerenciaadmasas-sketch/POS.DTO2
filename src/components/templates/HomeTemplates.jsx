@@ -8,21 +8,9 @@ import { useAlmacenesConfigStore } from "../../store/AlmacenesConfigStore";
 import { Icon } from "@iconify/react";
 import { useQuery } from "@tanstack/react-query";
 import { MostrarVersion } from "../../supabase/crudVersion";
-import { MostrarClientes } from "../../supabase/crudClientes";
 import { MostrarSuscripciones } from "../../supabase/crudSuscripciones";
 import { MostrarPropiedades, MostrarProyectos } from "../../supabase/crudInmobiliaria";
 import { usePlan } from "../../hooks/usePlan";
-
-/* ── helpers TV stats ── */
-function calcEstado(c) {
-    if (c?.estado_manual === "suspendido") return "suspendido";
-    if (!c?.fecha_vencimiento) return "sin_fecha";
-    const vence = new Date(c.fecha_vencimiento);
-    const now = new Date();
-    if (vence < now) return "vencido";
-    if (Math.ceil((vence - now) / 86400000) <= 7) return "por_vencer";
-    return "activo";
-}
 
 function AnimatedNumber({ value }) {
     const [n, setN] = useState(0);
@@ -97,20 +85,6 @@ const STATS_INMOBILIARIA_CFG = [
     { key: "proyectos",   label: "Proyectos",     accent: "#a78bfa" },
 ];
 
-const ACCESOS_SUSCRIPCIONES = [
-    { key: "suscriptores", icon: "solar:users-group-rounded-bold-duotone", label: "Suscriptores",   sub: "Gestionar clientes", to: "/clientes",      accent: "#60a5fa", glow: "rgba(96,165,250,0.35)",  big: true  },
-    { key: "mensajes",     icon: "solar:chat-round-bold-duotone",          label: "Mensajes",        sub: "Equipo interno",     to: "/mensajes",      accent: "#a78bfa", glow: "rgba(167,139,250,0.35)", big: false },
-    { key: "soporte",      icon: "solar:headphones-round-bold-duotone",    label: "Soporte",         sub: "Canal de ayuda",     to: "/soporte",       accent: "#34d399", glow: "rgba(52,211,153,0.35)",  big: false },
-    { key: "config",       icon: "solar:settings-bold-duotone",            label: "Configuración",   sub: "Mi empresa",         to: "/configuracion", accent: "#f59e0b", glow: "rgba(245,158,11,0.35)",  big: false },
-];
-
-const STATS_TV_CFG = [
-    { key: "total",     label: "Total",      accent: "#60a5fa" },
-    { key: "activos",   label: "Activos",    accent: "#4ade80" },
-    { key: "porVencer", label: "Por vencer", accent: "#f59e0b" },
-    { key: "vencidos",  label: "Vencidos",   accent: "#f87171" },
-];
-
 const STATS_SAAS_CFG = [
     { key: "total",      label: "Clientes",    accent: "#60a5fa" },
     { key: "alDia",      label: "Al día",      accent: "#4ade80" },
@@ -133,8 +107,7 @@ export function HomeTemplates() {
     const hora   = new Date().getHours();
     const saludo = hora < 12 ? "Buenos días" : hora < 18 ? "Buenas tardes" : "Buenas noches";
 
-    const esSuscripcionesTV  = dataempresa?.actividad_economica === "suscripciones_tv";
-    const esInmobiliaria     = dataempresa?.actividad_economica === "construccion";
+    const esInmobiliaria = dataempresa?.actividad_economica === "construccion";
 
     /* versión para superadmin */
     const { data: versiones = [] } = useQuery({
@@ -142,25 +115,6 @@ export function HomeTemplates() {
         queryFn: MostrarVersion,
         enabled: tipo === "superadmin",
     });
-
-    /* stats suscriptores TV */
-    const { data: clientes = [] } = useQuery({
-        queryKey: ["clientes-home-tv", dataempresa?.id],
-        queryFn: () => MostrarClientes({ id_empresa: dataempresa.id }),
-        enabled: !!dataempresa?.id && esSuscripcionesTV,
-        staleTime: 60000,
-    });
-
-    const statsTV = useMemo(() => {
-        let activos = 0, porVencer = 0, vencidos = 0;
-        clientes.forEach((c) => {
-            const e = calcEstado(c);
-            if (e === "activo") activos++;
-            else if (e === "por_vencer") porVencer++;
-            else if (e === "vencido") vencidos++;
-        });
-        return { total: clientes.length, activos, porVencer, vencidos };
-    }, [clientes]);
 
     /* stats inmobiliaria */
     const { data: propiedadesHome = [] } = useQuery({
@@ -216,7 +170,6 @@ export function HomeTemplates() {
         : dataempresa?.razon_social ?? "Empresa";
 
     const accesos = esInmobiliaria        ? ACCESOS_INMOBILIARIA
-                  : esSuscripcionesTV     ? ACCESOS_SUSCRIPCIONES
                   : tipo === "cajero"     ? ACCESOS_CAJERO
                   : tipo === "supervisor" ? ACCESOS_SUPERVISOR
                   : tipo === "superadmin" ? ACCESOS_SUPERADMIN
@@ -265,20 +218,17 @@ export function HomeTemplates() {
                 )}
 
                 {/* ── Stats según actividad ── */}
-                {(esSuscripcionesTV || esInmobiliaria || tipo === "superadmin") && (
+                {(esInmobiliaria || tipo === "superadmin") && (
                     <StatsRow>
                         {(tipo === "superadmin"
                             ? STATS_SAAS_CFG
-                            : esInmobiliaria
-                            ? STATS_INMOBILIARIA_CFG
-                            : STATS_TV_CFG
+                            : STATS_INMOBILIARIA_CFG
                         ).map(({ key, label, accent }, i) => (
                             <StatCard key={key} $accent={accent} $i={i}>
                                 <StatNum $accent={accent}>
                                     <AnimatedNumber value={
                                         tipo === "superadmin" ? statsSaaS[key]
-                                        : esInmobiliaria      ? statsInmobiliaria[key]
-                                        : statsTV[key]
+                                        : statsInmobiliaria[key]
                                     } />
                                 </StatNum>
                                 <StatLabel>{label}</StatLabel>

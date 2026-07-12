@@ -6,7 +6,7 @@ import { useUsuariosStore } from "../store/UsuariosStore";
 export const LIMITES_PLAN = {
     chispa: { max_usuarios: 2,        max_almacenes: 1,        kardex: false, label: "Chispa ⚡" },
     fuego:  { max_usuarios: 10,       max_almacenes: 3,        kardex: true,  label: "Fuego 🔥"  },
-    cosmos: { max_usuarios: Infinity, max_almacenes: Infinity, kardex: true,  label: "Cosmos 🌌" },
+    cosmos: { max_usuarios: 12,       max_almacenes: 6,        kardex: true,  label: "Cosmos 🌌" },
 };
 
 export function usePlan() {
