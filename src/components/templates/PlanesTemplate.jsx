@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from "motion/react";
+import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, useScroll } from "motion/react";
 import styled, { keyframes, css } from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { v } from "../../styles/variables";
@@ -8,6 +8,7 @@ import { MostrarConfigPlanes } from "../../supabase/crudConfigPlanes";
 import { useAuthStore } from "../../store/AuthStore";
 import { ObtenerEmailPorUsuario } from "../../supabase/crudUsuarios";
 import { CrearProspecto } from "../../supabase/crudProspectos";
+import { VerificarDescuentoWeb, calcularPreciosConDescuento, PRECIOS_WEB } from "../../supabase/crudWebService";
 import { supabase } from "../../supabase/supabase.config";
 import ConfettiExplosion from "react-confetti-explosion";
 import {
@@ -83,7 +84,7 @@ const PLANES = [
         popular: true,
         features: [
             { icon: <RiStore2Line />,       ok: true,  txt: "Hasta 3 almacenes" },
-            { icon: <RiTeamLine />,         ok: true,  txt: "Hasta 10 usuarios" },
+            { icon: <RiTeamLine />,         ok: true,  txt: "Hasta 6 usuarios" },
             { icon: <RiFlashlightLine />,   ok: true,  txt: "POS con roles completos" },
             { icon: <RiArchiveLine />,      ok: true,  txt: "Inventario avanzado" },
             { icon: <RiFileListLine />,     ok: true,  txt: "Kardex y trazabilidad" },
@@ -98,9 +99,9 @@ const PLANES = [
         nombre: "Cosmos",
         emoji: "🌌",
         icon: <RiPlanetLine />,
-        tagline: "Sin límites. Sin fronteras.",
+        tagline: "Potencia real. Escala con seguridad.",
         sub: "Para cadenas y operaciones que piensan en grande — muy en grande.",
-        badge: "Potencia ilimitada",
+        badge: "Potencia tu marca",
         precio_mes: 249000,
         precio_ano: 212000,
         color: "#34d399",
@@ -109,14 +110,15 @@ const PLANES = [
         glow: "rgba(52,211,153,0.4)",
         popular: false,
         features: [
-            { icon: <RiInfinityLine />,             ok: true, txt: "Almacenes ilimitados" },
-            { icon: <RiInfinityLine />,             ok: true, txt: "Usuarios ilimitados" },
+            { icon: <RiStore2Line />,               ok: true, txt: "Hasta 6 almacenes" },
+            { icon: <RiTeamLine />,                 ok: true, txt: "Hasta 12 usuarios" },
             { icon: <RiFlashlightLine />,           ok: true, txt: "Todo del plan Fuego" },
             { icon: <RiSmartphoneLine />,           ok: true, txt: "App móvil optimizada" },
             { icon: <RiVipCrownLine />,             ok: true, txt: "Onboarding personalizado" },
             { icon: <RiCustomerService2Line />,     ok: true, txt: "Soporte dedicado 24/7" },
             { icon: <RiShieldCheckLine />,          ok: true, txt: "SLA garantizado 99.9%" },
             { icon: <RiTimeLine />,                 ok: true, txt: "Respuesta en < 2 horas" },
+            { icon: <RiStore2Line />,               ok: true, txt: "+$100.000/mes por almacén adicional" },
         ],
     },
 ];
@@ -136,6 +138,104 @@ const STATS = [
 
 const formatCOP = (n) =>
     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n);
+
+/* ─────────────────────────────────────────
+   CURSOR SPOTLIGHT
+───────────────────────────────────────── */
+function CursorSpotlight() {
+    const [pos, setPos] = useState({ x: -999, y: -999 });
+    useEffect(() => {
+        const h = (e) => setPos({ x: e.clientX, y: e.clientY });
+        window.addEventListener("mousemove", h);
+        return () => window.removeEventListener("mousemove", h);
+    }, []);
+    return (
+        <div style={{
+            position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0,
+            background: `radial-gradient(700px at ${pos.x}px ${pos.y}px, rgba(248,133,51,0.055) 0%, transparent 75%)`,
+        }} />
+    );
+}
+
+/* ─────────────────────────────────────────
+   CANVAS DE PARTÍCULAS
+───────────────────────────────────────── */
+function ParticleCanvas() {
+    const canvasRef = useRef(null);
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d");
+        let W = canvas.width  = canvas.offsetWidth;
+        let H = canvas.height = canvas.offsetHeight;
+        const particles = Array.from({ length: 90 }, () => ({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            r: Math.random() * 1.4 + 0.2,
+            dx: (Math.random() - 0.5) * 0.18,
+            dy: (Math.random() - 0.5) * 0.12,
+            o: Math.random() * 0.45 + 0.08,
+        }));
+        let raf;
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+            for (const p of particles) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255,255,255,${p.o})`;
+                ctx.fill();
+                p.x += p.dx; p.y += p.dy;
+                if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+                if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+            }
+            raf = requestAnimationFrame(draw);
+        }
+        draw();
+        const onResize = () => { W = canvas.width = canvas.offsetWidth; H = canvas.height = canvas.offsetHeight; };
+        window.addEventListener("resize", onResize);
+        return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); };
+    }, []);
+    return (
+        <canvas ref={canvasRef} style={{ position: "fixed", inset: 0, width: "100%", height: "100%", pointerEvents: "none", zIndex: 0, opacity: 0.3 }} />
+    );
+}
+
+/* ─────────────────────────────────────────
+   COUNTER STAT ANIMADO
+───────────────────────────────────────── */
+function CounterStat({ val, label, borderRight }) {
+    const [display, setDisplay] = useState("0");
+    const ref   = useRef(null);
+    const ran   = useRef(false);
+    useEffect(() => {
+        const num = parseFloat(val.replace(/[^0-9.]/g, ""));
+        if (isNaN(num)) { setDisplay(val); return; }
+        const suffix = val.replace(/[\d.]/g, "").trim();
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting && !ran.current) {
+                ran.current = true;
+                const dur = 1100;
+                const start = performance.now();
+                const tick = (t) => {
+                    const p = Math.min((t - start) / dur, 1);
+                    const ease = 1 - Math.pow(1 - p, 3);
+                    const cur = ease * num;
+                    setDisplay(Number.isInteger(num) ? `${Math.round(cur)}${suffix}` : `${cur.toFixed(1)}${suffix}`);
+                    if (p < 1) requestAnimationFrame(tick); else setDisplay(val);
+                };
+                requestAnimationFrame(tick);
+            }
+        }, { threshold: 0.5 });
+        if (ref.current) observer.observe(ref.current);
+        return () => observer.disconnect();
+    }, [val]);
+    return (
+        <div ref={ref} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "16px 20px", borderRight: borderRight ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+            <StatVal>{display}</StatVal>
+            <StatLabel>{label}</StatLabel>
+        </div>
+    );
+}
 
 /* ─────────────────────────────────────────
    TILT CARD — 3D hover + flip entrance
@@ -230,7 +330,17 @@ export function PlanesTemplate() {
 
     const [anual, setAnual] = useState(false);
     const [visible, setVisible] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
+    const [faqOpen, setFaqOpen] = useState(null);
     const heroRef = useRef(null);
+    const { scrollYProgress } = useScroll();
+    const heroParallaxY = useTransform(scrollYProgress, [0, 0.18], [0, -45]);
+
+    useEffect(() => {
+        const h = () => setScrolled(window.scrollY > 40);
+        window.addEventListener("scroll", h, { passive: true });
+        return () => window.removeEventListener("scroll", h);
+    }, []);
 
     /* ── Estado del modal de registro ── */
     const [registroOpen, setRegistroOpen] = useState(false);
@@ -248,6 +358,33 @@ export function PlanesTemplate() {
     const [pagoError, setPagoError]     = useState("");
     const [dropActPago, setDropActPago] = useState(false);
     const dropActPagoRef                = useRef(null);
+
+    /* ── Verificador de descuento web ── */
+    const [webDescOpen,    setWebDescOpen]    = useState(false);
+    const [webUsuario,     setWebUsuario]     = useState("");
+    const [webVerificando, setWebVerificando] = useState(false);
+    const [webResult,      setWebResult]      = useState(null); // null | { encontrado, tiene_descuento, plan, porcentaje }
+    const [webDescError,   setWebDescError]   = useState("");
+
+    const handleVerificarDescuento = async (e) => {
+        e.preventDefault();
+        if (!webUsuario.trim()) return;
+        setWebVerificando(true);
+        setWebResult(null);
+        setWebDescError("");
+        try {
+            const r = await VerificarDescuentoWeb(webUsuario);
+            setWebResult(r);
+        } catch {
+            setWebDescError("No pudimos verificar. Intenta de nuevo.");
+        } finally {
+            setWebVerificando(false);
+        }
+    };
+
+    const webPrecios = webResult?.tiene_descuento
+        ? calcularPreciosConDescuento(webResult.porcentaje)
+        : calcularPreciosConDescuento(0);
 
     useEffect(() => {
         const handler = (e) => {
@@ -382,16 +519,32 @@ export function PlanesTemplate() {
 
     return (
         <>
+        {/* ── Barra de progreso de scroll ── */}
+        <motion.div
+            style={{
+                position: "fixed", top: 0, left: 0, right: 0,
+                height: 2,
+                background: "linear-gradient(90deg, #f88533, #fbbf24, #f56a00)",
+                zIndex: 998, scaleX: scrollYProgress, transformOrigin: "0%",
+                pointerEvents: "none",
+            }}
+        />
+
         <Pagina>
-            {/* ── Decoración de fondo ── */}
-            <BgOrb $x="-10%" $y="-8%"  $size="600px" $color="rgba(248,133,51,0.12)"  $dur="7s" />
-            <BgOrb $x="70%"  $y="10%"  $size="400px" $color="rgba(99,102,241,0.10)"  $dur="9s" $delay="1s" />
-            <BgOrb $x="20%"  $y="55%"  $size="350px" $color="rgba(52,211,153,0.08)"  $dur="11s" $delay="2s" />
-            <BgOrb $x="80%"  $y="75%"  $size="500px" $color="rgba(248,133,51,0.08)"  $dur="8s" $delay="0.5s" />
+            {/* ── Efectos de fondo ── */}
+            <CursorSpotlight />
+            <ParticleCanvas />
+            <BgOrb $x="-10%" $y="-8%"  $size="700px" $color="rgba(248,133,51,0.14)"  $dur="7s" />
+            <BgOrb $x="70%"  $y="10%"  $size="500px" $color="rgba(99,102,241,0.11)"  $dur="9s" $delay="1s" />
+            <BgOrb $x="20%"  $y="55%"  $size="420px" $color="rgba(52,211,153,0.09)"  $dur="11s" $delay="2s" />
+            <BgOrb $x="80%"  $y="75%"  $size="600px" $color="rgba(248,133,51,0.09)"  $dur="8s" $delay="0.5s" />
             <BgLines />
+            <AuroraBeam $color="#f88533" $top="18%"  $delay="0s"  $dur="13s" />
+            <AuroraBeam $color="#818cf8" $top="52%"  $delay="5s"  $dur="17s" />
+            <AuroraBeam $color="#34d399" $top="82%"  $delay="9s"  $dur="15s" />
 
             {/* ── Navbar ── */}
-            <Navbar $visible={visible}>
+            <Navbar $visible={visible} $scrolled={scrolled}>
                 <NavLogo onClick={() => navigate("/")}>
                     <img src={v.logo} alt="logo" />
                     <span>POS<b>.DTO2</b></span>
@@ -413,14 +566,32 @@ export function PlanesTemplate() {
 
             {/* ── Hero ── */}
             <Hero ref={heroRef} $visible={visible}>
+                <motion.div style={{ y: heroParallaxY }}>
                 <HeroBadge>
                     <HeroBadgeDot />
                     Sistema de punto de venta SaaS para Colombia
                 </HeroBadge>
 
                 <HeroTitle>
-                    Un plan para<br />
-                    <TitleGrad>cada historia</TitleGrad>
+                    {["Un", "plan", "para"].map((word, i) => (
+                        <motion.span key={i}
+                            initial={{ opacity: 0, y: 22, filter: "blur(8px)" }}
+                            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                            transition={{ duration: 0.55, delay: 0.25 + i * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                            style={{ display: "inline-block", marginRight: "0.26em" }}
+                        >{word}</motion.span>
+                    ))}
+                    <br />
+                    <TitleGrad>
+                        {["cada", "historia"].map((word, i) => (
+                            <motion.span key={i}
+                                initial={{ opacity: 0, y: 22, filter: "blur(8px)" }}
+                                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                                transition={{ duration: 0.55, delay: 0.6 + i * 0.13, ease: [0.22, 1, 0.36, 1] }}
+                                style={{ display: "inline-block", marginRight: i === 0 ? "0.26em" : 0 }}
+                            >{word}</motion.span>
+                        ))}
+                    </TitleGrad>
                 </HeroTitle>
 
                 <HeroSub>
@@ -428,18 +599,15 @@ export function PlanesTemplate() {
                     Actívate hoy y empieza a vender en minutos.
                 </HeroSub>
 
-                {/* Stats */}
+                {/* Stats con contador animado */}
                 <StatsBar>
                     {STATS.map((s, i) => (
-                        <motion.div
-                            key={i}
-                            style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "16px 20px", borderRight: i < STATS.length - 1 ? "1px solid rgba(255,255,255,0.06)" : "none" }}
+                        <motion.div key={i} style={{ flex: 1 }}
                             initial={{ opacity: 0, y: 14 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.45, delay: 0.2 + i * 0.08, ease: [0.22, 1, 0.36, 1] }}
                         >
-                            <StatVal>{s.val}</StatVal>
-                            <StatLabel>{s.label}</StatLabel>
+                            <CounterStat val={s.val} label={s.label} borderRight={i < STATS.length - 1} />
                         </motion.div>
                     ))}
                 </StatsBar>
@@ -454,6 +622,16 @@ export function PlanesTemplate() {
                         Anual <AhorroBadge>−15%</AhorroBadge>
                     </ToggleOpt>
                 </ToggleWrap>
+                </motion.div>
+
+                {/* Scroll hint */}
+                <motion.div
+                    animate={{ y: [0, 9, 0] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+                    style={{ position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)", color: "rgba(255,255,255,0.18)", fontSize: 30, pointerEvents: "none" }}
+                >
+                    <RiArrowDownSLine />
+                </motion.div>
             </Hero>
 
             {/* ── Cards ── */}
@@ -517,7 +695,7 @@ export function PlanesTemplate() {
 
                             {/* Features — editables desde /configuracion/planes */}
                             <FeatureList>
-                                {(planFeatures[plan.id] ?? plan.features).map((f, i) => (
+                                {(planFeatures[plan.id] ?? plan.features).filter(f => f.ok).map((f, i) => (
                                     <motion.li
                                         key={i}
                                         style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, fontWeight: 500, color: f.ok ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.2)", textDecoration: f.ok ? "none" : "line-through", listStyle: "none" }}
@@ -553,13 +731,20 @@ export function PlanesTemplate() {
                         <motion.div
                             key={i}
                             style={{ padding: "24px 20px", borderRadius: 20, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(12px)", display: "flex", flexDirection: "column", gap: 10, textAlign: "left" }}
-                            initial={{ opacity: 0, y: 28 }}
-                            whileInView={{ opacity: 1, y: 0 }}
+                            initial={{ opacity: 0, y: 36, scale: 0.93 }}
+                            whileInView={{ opacity: 1, y: 0, scale: 1 }}
                             viewport={{ once: true, margin: "-40px" }}
-                            transition={{ duration: 0.45, delay: i * 0.1, ease: [0.22, 1, 0.36, 1] }}
-                            whileHover={{ borderColor: "rgba(248,133,51,0.3)", background: "rgba(248,133,51,0.04)", y: -3, transition: { type: "spring", stiffness: 300, damping: 22 } }}
+                            transition={{ duration: 0.52, delay: i * 0.09, ease: [0.22, 1, 0.36, 1] }}
+                            whileHover={{ borderColor: "rgba(248,133,51,0.32)", background: "rgba(248,133,51,0.05)", y: -6, scale: 1.025, transition: { type: "spring", stiffness: 280, damping: 20 } }}
                         >
-                            <CompareIcon>{item.icon}</CompareIcon>
+                            <motion.div
+                                initial={{ scale: 0.4, opacity: 0 }}
+                                whileInView={{ scale: 1, opacity: 1 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.45, delay: 0.18 + i * 0.09, type: "spring", stiffness: 220, damping: 16 }}
+                            >
+                                <CompareIcon>{item.icon}</CompareIcon>
+                            </motion.div>
                             <CompareItemTitle>{item.title}</CompareItemTitle>
                             <CompareItemDesc>{item.desc}</CompareItemDesc>
                         </motion.div>
@@ -567,7 +752,7 @@ export function PlanesTemplate() {
                 </CompareGrid>
             </CompareSection>
 
-            {/* ── Pregunta frecuente ── */}
+            {/* ── Preguntas frecuentes — accordion interactivo ── */}
             <FaqSection $visible={visible}>
                 <CompareTitulo>Preguntas frecuentes</CompareTitulo>
                 {[
@@ -578,18 +763,256 @@ export function PlanesTemplate() {
                 ].map((faq, i) => (
                     <motion.div
                         key={i}
-                        style={{ textAlign: "left", padding: "20px 24px", borderRadius: 16, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", marginBottom: 12, cursor: "default" }}
+                        style={{ textAlign: "left", borderRadius: 16, overflow: "hidden", marginBottom: 12, cursor: "pointer" }}
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true, margin: "-30px" }}
                         transition={{ duration: 0.4, delay: i * 0.08, ease: "easeOut" }}
-                        whileHover={{ borderColor: "rgba(248,133,51,0.25)", transition: { duration: 0.2 } }}
+                        animate={{
+                            background: faqOpen === i ? "rgba(248,133,51,0.05)" : "rgba(255,255,255,0.03)",
+                            borderColor: faqOpen === i ? "rgba(248,133,51,0.35)" : "rgba(255,255,255,0.06)",
+                            outline: faqOpen === i ? "1px solid rgba(248,133,51,0.35)" : "1px solid rgba(255,255,255,0.06)",
+                        }}
+                        onClick={() => setFaqOpen(faqOpen === i ? null : i)}
+                        whileHover={{ outline: "1px solid rgba(248,133,51,0.28)" }}
                     >
-                        <FaqQ>{faq.q}</FaqQ>
-                        <FaqA>{faq.a}</FaqA>
+                        <FaqHeader>
+                            <FaqQ style={{ margin: 0 }}>{faq.q}</FaqQ>
+                            <motion.div
+                                animate={{ rotate: faqOpen === i ? 180 : 0 }}
+                                transition={{ duration: 0.25, ease: "easeInOut" }}
+                                style={{ display: "flex", alignItems: "center", color: faqOpen === i ? "#f88533" : "rgba(255,255,255,0.3)", fontSize: 22, flexShrink: 0 }}
+                            >
+                                <RiArrowDownSLine />
+                            </motion.div>
+                        </FaqHeader>
+                        <AnimatePresence initial={false}>
+                        {faqOpen === i && (
+                            <motion.div
+                                key="answer"
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+                                style={{ overflow: "hidden" }}
+                            >
+                                <FaqAWrap>
+                                    <FaqA>{faq.a}</FaqA>
+                                </FaqAWrap>
+                            </motion.div>
+                        )}
+                        </AnimatePresence>
                     </motion.div>
                 ))}
             </FaqSection>
+
+            {/* ── Servicio Web ── */}
+            <WebServiceSection>
+                <motion.div
+                    initial={{ opacity: 0, y: 40 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-60px" }}
+                    transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                    style={{ width: "100%" }}
+                >
+                <WebServiceCard>
+                    {/* Glow de fondo */}
+                    <WebCardGlow />
+
+                    {/* Decoración — browser mockup */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.88, rotateY: -8 }}
+                        whileInView={{ opacity: 1, scale: 1, rotateY: 0 }}
+                        viewport={{ once: true, margin: "-60px" }}
+                        transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+                        style={{ perspective: 800 }}
+                    >
+                    <WebBrowserMock>
+                        <WebBrowserBar>
+                            <WebBrowserDot $c="#f87171" /><WebBrowserDot $c="#fbbf24" /><WebBrowserDot $c="#34d399" />
+                            <WebBrowserUrl>tu-negocio.com</WebBrowserUrl>
+                        </WebBrowserBar>
+                        <WebBrowserBody>
+                            <WebBrowserHero />
+                            <WebBrowserLines>
+                                <WebBrowserLine $w="70%" /><WebBrowserLine $w="45%" /><WebBrowserLine $w="55%" />
+                            </WebBrowserLines>
+                            <WebBrowserGrid>
+                                {[0,1,2].map(i => <WebBrowserBlock key={i} />)}
+                            </WebBrowserGrid>
+                        </WebBrowserBody>
+                    </WebBrowserMock>
+                    </motion.div>
+
+                    {/* Contenido */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true, margin: "-60px" }}
+                        transition={{ duration: 0.65, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                    >
+                    <WebCardContent>
+                        <WebCardEyebrow>
+                            <WebCardDot />
+                            Nuevo servicio · Presencia digital
+                        </WebCardEyebrow>
+
+                        <WebCardTitle>
+                            Tu negocio merece<br />
+                            <WebCardTitleGrad>una página web</WebCardTitleGrad>
+                        </WebCardTitle>
+
+                        <WebCardDesc>
+                            Diseño profesional, único y con animaciones. Sin plantillas genéricas.
+                            Entregado en días, no en meses.
+                        </WebCardDesc>
+
+                        <WebCardFeatures>
+                            {[
+                                "Diseño 100% personalizado",
+                                "Responsive — móvil y desktop",
+                                "Animaciones y efectos modernos",
+                                "SEO básico incluido",
+                                "Formulario de contacto integrado",
+                                "1 mes de soporte post-entrega",
+                            ].map((f, i) => (
+                                <motion.div key={i}
+                                    initial={{ opacity: 0, x: -12 }}
+                                    whileInView={{ opacity: 1, x: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.32, delay: 0.1 + i * 0.06, ease: "easeOut" }}
+                                    style={{ display: "flex", alignItems: "center", gap: 9, fontSize: 13, color: "rgba(255,255,255,0.75)", fontWeight: 500 }}
+                                >
+                                    <WebFeatCheck><RiCheckLine /></WebFeatCheck>
+                                    {f}
+                                </motion.div>
+                            ))}
+                        </WebCardFeatures>
+
+                        <WebPriceRow>
+                            <WebPriceFrom>desde</WebPriceFrom>
+                            <WebPrice>$1.200.000</WebPrice>
+                            <WebPriceCop>COP</WebPriceCop>
+                        </WebPriceRow>
+
+                        {/* Verificador de descuento POS */}
+                        <WebDescWrap>
+                            <WebDescToggle onClick={() => { setWebDescOpen(v => !v); setWebResult(null); setWebUsuario(""); setWebDescError(""); }}>
+                                {webDescOpen ? "▲" : "▼"} ¿Ya eres cliente POS? Ver mi descuento
+                            </WebDescToggle>
+
+                            <AnimatePresence>
+                            {webDescOpen && (
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.28, ease: [0.4,0,0.2,1] }}
+                                    style={{ overflow: "hidden" }}
+                                >
+                                    <WebDescForm onSubmit={handleVerificarDescuento}>
+                                        <WebDescInput
+                                            type="text"
+                                            placeholder="Tu usuario POS"
+                                            value={webUsuario}
+                                            onChange={e => { setWebUsuario(e.target.value); setWebResult(null); }}
+                                            autoComplete="off"
+                                        />
+                                        <WebDescBtn type="submit" disabled={webVerificando || !webUsuario.trim()}>
+                                            {webVerificando ? "..." : "Verificar"}
+                                        </WebDescBtn>
+                                    </WebDescForm>
+
+                                    {webDescError && <WebDescMsg $type="error">{webDescError}</WebDescMsg>}
+
+                                    {webResult && !webResult.encontrado && (
+                                        <WebDescMsg $type="warn">Usuario no encontrado. Verifica que esté bien escrito.</WebDescMsg>
+                                    )}
+
+                                    {webResult?.encontrado && !webResult.tiene_descuento && (
+                                        <WebDescMsg $type="warn">Tu plan Chispa no incluye descuento en diseño web aún. ¡Considera subir a Fuego o Cosmos!</WebDescMsg>
+                                    )}
+
+                                    {webResult?.tiene_descuento && (
+                                        <WebDescMsg $type="ok">
+                                            {webResult.plan === "cosmos" ? "🌌" : "🔥"} ¡Tienes <strong>{webResult.porcentaje}% de descuento</strong> por tu plan {webResult.plan === "cosmos" ? "Cosmos" : "Fuego"}
+                                        </WebDescMsg>
+                                    )}
+                                </motion.div>
+                            )}
+                            </AnimatePresence>
+                        </WebDescWrap>
+
+                        {/* Tipos de página con precios dinámicos */}
+                        <WebCardTypes>
+                            {[
+                                { emoji: "🚀", label: "Landing page",  precio: webPrecios.landing    },
+                                { emoji: "🖼️", label: "Portafolio",    precio: webPrecios.portafolio },
+                                { emoji: "🛒", label: "Tienda virtual", precio: webPrecios.tienda     },
+                            ].map((t, i) => (
+                                <WebTypeChip key={i} $descuento={webResult?.tiene_descuento}>
+                                    <span>{t.emoji}</span>
+                                    <div>
+                                        <WebTypeLabel>{t.label}</WebTypeLabel>
+                                        <WebTypePrice $descuento={webResult?.tiene_descuento}>
+                                            {webResult?.tiene_descuento ? "✓ " : "desde "}{t.precio}
+                                        </WebTypePrice>
+                                    </div>
+                                </WebTypeChip>
+                            ))}
+                        </WebCardTypes>
+
+                        {webResult?.tiene_descuento && (
+                            <WebDescBanner $plan={webResult.plan}>
+                                {webResult.plan === "cosmos" ? "🌌" : "🔥"} Precio con {webResult.porcentaje}% de descuento aplicado · Plan {webResult.plan === "cosmos" ? "Cosmos" : "Fuego"}
+                            </WebDescBanner>
+                        )}
+
+                        <WebContactTitle>¿Cómo prefieres que te contactemos?</WebContactTitle>
+                        <WebContactBtns>
+                            <motion.a
+                                href="https://wa.me/573118303017?text=Hola%2C%20quiero%20información%20sobre%20páginas%20web"
+                                target="_blank" rel="noopener noreferrer"
+                                whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 18 }}
+                            >
+                                <WebBtnWA>
+                                    <RiWhatsappLine size={18} />
+                                    WhatsApp
+                                    <WebBtnBadge>Recomendado</WebBtnBadge>
+                                </WebBtnWA>
+                            </motion.a>
+                            <motion.a
+                                href="mailto:gerencia.adma.sas@gmail.com?subject=Quiero%20una%20página%20web"
+                                whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 18 }}
+                            >
+                                <WebBtnEmail>
+                                    <RiMailLine size={18} />
+                                    Correo
+                                </WebBtnEmail>
+                            </motion.a>
+                            <motion.div
+                                whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
+                                transition={{ type: "spring", stiffness: 300, damping: 18 }}
+                                onClick={() => setRegistroOpen(true)}
+                                style={{ cursor: "pointer" }}
+                            >
+                                <WebBtnForm>
+                                    <RiFileListLine size={18} />
+                                    Formulario
+                                </WebBtnForm>
+                            </motion.div>
+                        </WebContactBtns>
+
+                        <WebMantNote>
+                            + Mantenimiento mensual disponible desde <strong>$180.000/mes</strong>
+                        </WebMantNote>
+                    </WebCardContent>
+                    </motion.div>
+                </WebServiceCard>
+                </motion.div>
+            </WebServiceSection>
 
             {/* ── CTA Final ── */}
             <CtaFinal
@@ -973,6 +1396,13 @@ const blink = keyframes`
     50%       { opacity: 0.3; }
 `;
 
+const auroraMove = keyframes`
+    0%   { transform: translateX(-120%) skewX(-15deg); opacity: 0; }
+    8%   { opacity: 1; }
+    92%  { opacity: 0.7; }
+    100% { transform: translateX(220vw) skewX(-15deg); opacity: 0; }
+`;
+
 /* ═══════════════════════════════════════
    LAYOUT
 ═══════════════════════════════════════ */
@@ -986,6 +1416,23 @@ const Pagina = styled.div`
     position: relative;
     overflow-x: hidden;
     font-family: "Poppins", sans-serif;
+`;
+
+/* ── Rayos de aurora ── */
+const AuroraBeam = styled.div`
+    position: fixed;
+    top: ${({ $top }) => $top};
+    left: -30%;
+    width: 40%;
+    height: 1.5px;
+    background: linear-gradient(90deg, transparent 0%, ${({ $color }) => $color} 40%, ${({ $color }) => $color} 60%, transparent 100%);
+    filter: blur(2px);
+    box-shadow: 0 0 18px ${({ $color }) => $color}99, 0 0 50px ${({ $color }) => $color}44;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    animation: ${auroraMove} ${({ $dur }) => $dur} ease-in-out infinite;
+    animation-delay: ${({ $delay }) => $delay};
 `;
 
 /* ── Orbs de fondo ── */
@@ -1018,19 +1465,23 @@ const BgLines = styled.div`
 
 /* ── Navbar ── */
 const Navbar = styled.nav`
-    position: relative;
+    position: sticky;
+    top: 0;
     z-index: 20;
     width: 100%;
-    max-width: 1140px;
+    max-width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 22px 32px;
+    padding: ${({ $scrolled }) => $scrolled ? "14px 32px" : "22px 32px"};
     opacity: ${({ $visible }) => $visible ? 1 : 0};
     transform: ${({ $visible }) => $visible ? "none" : "translateY(-16px)"};
-    transition: opacity 0.5s ease, transform 0.5s ease;
+    transition: opacity 0.5s ease, transform 0.5s ease, padding 0.3s ease, background 0.3s ease, backdrop-filter 0.3s ease, border-color 0.3s ease;
+    background: ${({ $scrolled }) => $scrolled ? "rgba(7,9,15,0.82)" : "transparent"};
+    backdrop-filter: ${({ $scrolled }) => $scrolled ? "blur(22px) saturate(1.4)" : "none"};
+    border-bottom: 1px solid ${({ $scrolled }) => $scrolled ? "rgba(255,255,255,0.07)" : "transparent"};
 
-    @media (max-width: 767px) { padding: 18px 18px; }
+    @media (max-width: 767px) { padding: ${({ $scrolled }) => $scrolled ? "12px 18px" : "18px 18px"}; }
 `;
 
 const NavLogo = styled.button`
@@ -1663,6 +2114,18 @@ const FaqItem = styled.div`
     &:hover { border-color: rgba(248,133,51,0.25); }
 `;
 
+const FaqHeader = styled.div`
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 20px 24px;
+`;
+
+const FaqAWrap = styled.div`
+    padding: 0 24px 20px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    padding-top: 14px;
+    margin-top: 0;
+`;
+
 const FaqQ = styled.p`
     font-size: 14px; font-weight: 800; color: #fff; margin: 0 0 6px;
 `;
@@ -1750,6 +2213,325 @@ const FooterLogo = styled.button`
 
 const FooterTexto = styled.span`
     font-size: 12px; color: rgba(255,255,255,0.2);
+`;
+
+/* ══════════════════════════════════════
+   SERVICIO WEB
+══════════════════════════════════════ */
+const webGlow = keyframes`
+    0%, 100% { opacity: 0.5; transform: scale(1); }
+    50%       { opacity: 0.9; transform: scale(1.06); }
+`;
+
+const WebServiceSection = styled.section`
+    position: relative; z-index: 1;
+    width: 100%; max-width: 1100px;
+    padding: 80px 24px 0;
+    @media (max-width: 767px) { padding: 60px 16px 0; }
+`;
+
+const WebServiceCard = styled.div`
+    position: relative;
+    border-radius: 32px;
+    padding: 0;
+    background: linear-gradient(135deg, #0a0f1e 0%, #0d1520 50%, #0a1218 100%);
+    border: 1px solid rgba(99,202,255,0.18);
+    box-shadow: 0 0 80px rgba(56,182,255,0.07), 0 32px 80px rgba(0,0,0,0.55);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 0;
+    @media (max-width: 820px) { grid-template-columns: 1fr; }
+`;
+
+const WebCardGlow = styled.div`
+    position: absolute; top: -60px; left: 20%; width: 60%; height: 200px;
+    background: radial-gradient(ellipse, rgba(56,182,255,0.12) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+    animation: ${webGlow} 5s ease-in-out infinite;
+`;
+
+/* ── Browser mockup ── */
+const WebBrowserMock = styled.div`
+    position: relative; z-index: 1;
+    margin: 32px 0 32px 32px;
+    border-radius: 16px;
+    background: #0b1120;
+    border: 1px solid rgba(255,255,255,0.1);
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(56,182,255,0.08);
+    align-self: center;
+    @media (max-width: 820px) { margin: 28px 24px 0; }
+`;
+
+const WebBrowserBar = styled.div`
+    background: #111827;
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+`;
+
+const WebBrowserDot = styled.div`
+    width: 10px; height: 10px; border-radius: 50%;
+    background: ${({ $c }) => $c}; opacity: 0.8; flex-shrink: 0;
+`;
+
+const WebBrowserUrl = styled.div`
+    flex: 1; margin: 0 8px;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px; padding: 4px 10px;
+    font-size: 11px; color: rgba(255,255,255,0.3);
+    font-family: 'SF Mono','Fira Code',monospace;
+`;
+
+const WebBrowserBody = styled.div`
+    padding: 16px;
+    display: flex; flex-direction: column; gap: 12px;
+`;
+
+const WebBrowserHero = styled.div`
+    height: 72px; border-radius: 10px;
+    background: linear-gradient(135deg, rgba(56,182,255,0.18) 0%, rgba(99,102,241,0.15) 50%, rgba(52,211,153,0.12) 100%);
+    border: 1px solid rgba(56,182,255,0.15);
+    position: relative;
+    &::after {
+        content: '';
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+        width: 40%; height: 8px; border-radius: 4px;
+        background: rgba(255,255,255,0.12);
+    }
+`;
+
+const WebBrowserLines = styled.div`
+    display: flex; flex-direction: column; gap: 7px;
+    padding: 0 4px;
+`;
+
+const WebBrowserLine = styled.div`
+    height: 7px; border-radius: 4px;
+    width: ${({ $w }) => $w};
+    background: rgba(255,255,255,0.07);
+`;
+
+const WebBrowserGrid = styled.div`
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+`;
+
+const WebBrowserBlock = styled.div`
+    height: 44px; border-radius: 8px;
+    background: rgba(255,255,255,0.045);
+    border: 1px solid rgba(255,255,255,0.07);
+`;
+
+/* ── Contenido ── */
+const WebCardContent = styled.div`
+    position: relative; z-index: 1;
+    padding: 36px 36px 36px 32px;
+    display: flex; flex-direction: column; gap: 18px;
+    @media (max-width: 820px) { padding: 24px 24px 32px; }
+`;
+
+const WebCardEyebrow = styled.div`
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+    color: #38b6ff; padding: 5px 14px;
+    border: 1px solid rgba(56,182,255,0.28);
+    background: rgba(56,182,255,0.08);
+    border-radius: 999px; width: fit-content;
+`;
+
+const WebCardDot = styled.div`
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #38b6ff;
+    animation: ${blink} 1.8s ease-in-out infinite;
+`;
+
+const WebCardTitle = styled.h2`
+    font-size: clamp(22px, 3vw, 32px); font-weight: 900;
+    line-height: 1.15; margin: 0; letter-spacing: -0.5px;
+`;
+
+const WebCardTitleGrad = styled.span`
+    background: linear-gradient(90deg, #38b6ff 0%, #818cf8 50%, #34d399 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    animation: ${gradAnim} 4s ease infinite;
+`;
+
+const WebCardDesc = styled.p`
+    font-size: 13.5px; color: rgba(255,255,255,0.45); margin: 0; line-height: 1.65;
+`;
+
+const WebCardFeatures = styled.div`
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px;
+    @media (max-width: 500px) { grid-template-columns: 1fr; }
+`;
+
+const WebFeatCheck = styled.span`
+    display: flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
+    background: rgba(56,182,255,0.15); color: #38b6ff; font-size: 12px;
+`;
+
+const WebPriceRow = styled.div`
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 14px 18px;
+    background: rgba(56,182,255,0.07);
+    border: 1px solid rgba(56,182,255,0.18);
+    border-radius: 14px; width: fit-content;
+`;
+
+const WebPriceFrom = styled.span`
+    font-size: 12px; color: rgba(255,255,255,0.35); font-weight: 600;
+`;
+
+const WebPrice = styled.span`
+    font-size: 26px; font-weight: 900; color: #38b6ff; letter-spacing: -0.5px;
+    font-variant-numeric: tabular-nums;
+`;
+
+const WebPriceCop = styled.span`
+    font-size: 13px; color: rgba(255,255,255,0.3); font-weight: 700;
+`;
+
+const WebCardTypes = styled.div`
+    display: flex; gap: 8px; flex-wrap: wrap;
+`;
+
+const WebTypeChip = styled.div`
+    display: flex; align-items: center; gap: 9px;
+    padding: 9px 14px; border-radius: 12px;
+    background: ${({ $descuento }) => $descuento ? "rgba(52,211,153,0.06)" : "rgba(255,255,255,0.04)"};
+    border: 1px solid ${({ $descuento }) => $descuento ? "rgba(52,211,153,0.22)" : "rgba(255,255,255,0.08)"};
+    font-size: 13px;
+    flex: 1; min-width: 140px;
+    transition: border-color 0.3s, background 0.3s;
+    &:hover { border-color: rgba(56,182,255,0.3); background: rgba(56,182,255,0.06); }
+`;
+
+const WebTypeLabel = styled.div`
+    font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.8);
+`;
+
+const WebTypePrice = styled.div`
+    font-size: 11px; margin-top: 1px;
+    color: ${({ $descuento }) => $descuento ? "#34d399" : "rgba(255,255,255,0.35)"};
+    font-weight: ${({ $descuento }) => $descuento ? "700" : "400"};
+    transition: color 0.3s;
+`;
+
+const WebContactTitle = styled.p`
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; color: rgba(255,255,255,0.3); margin: 0;
+`;
+
+const WebContactBtns = styled.div`
+    display: flex; gap: 10px; flex-wrap: wrap;
+    a { text-decoration: none; }
+`;
+
+const WebBtnWA = styled.button`
+    display: flex; align-items: center; gap: 8px; position: relative;
+    padding: 12px 20px; border-radius: 12px; cursor: pointer;
+    border: 2px solid #16a34a88;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff; font-size: 14px; font-weight: 800;
+    font-family: "Poppins", sans-serif;
+    box-shadow: 0 4px 20px rgba(22,163,74,0.35), 3px 3px 0 #14532d;
+    transition: filter 0.15s;
+    &:hover { filter: brightness(1.1); }
+`;
+
+const WebBtnBadge = styled.span`
+    position: absolute; top: -10px; right: -10px;
+    background: linear-gradient(90deg,#f88533,#f56a00);
+    color: #fff; font-size: 9px; font-weight: 800;
+    padding: 2px 7px; border-radius: 999px; letter-spacing: .03em;
+    white-space: nowrap;
+`;
+
+const WebBtnEmail = styled.button`
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 20px; border-radius: 12px; cursor: pointer;
+    border: 1px solid rgba(56,182,255,0.3);
+    background: rgba(56,182,255,0.08);
+    color: #38b6ff; font-size: 14px; font-weight: 700;
+    font-family: "Poppins", sans-serif;
+    transition: background 0.15s, border-color 0.15s;
+    &:hover { background: rgba(56,182,255,0.14); border-color: rgba(56,182,255,0.5); }
+`;
+
+const WebBtnForm = styled.button`
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 20px; border-radius: 12px; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.6); font-size: 14px; font-weight: 700;
+    font-family: "Poppins", sans-serif;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    &:hover { background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.22); }
+`;
+
+const WebMantNote = styled.p`
+    font-size: 12px; color: rgba(255,255,255,0.28); margin: 0; line-height: 1.5;
+    strong { color: rgba(255,255,255,0.5); }
+`;
+
+/* ── Verificador de descuento ── */
+const WebDescWrap = styled.div`
+    display: flex; flex-direction: column; gap: 10px;
+`;
+
+const WebDescToggle = styled.button`
+    background: none; border: none; cursor: pointer; padding: 0;
+    font-size: 12px; font-weight: 700; font-family: "Poppins", sans-serif;
+    color: rgba(56,182,255,0.7); text-align: left; letter-spacing: .02em;
+    transition: color 0.15s;
+    &:hover { color: #38b6ff; }
+`;
+
+const WebDescForm = styled.form`
+    display: flex; gap: 8px; margin-top: 8px;
+`;
+
+const WebDescInput = styled.input`
+    flex: 1; padding: 10px 14px; border-radius: 10px;
+    border: 1.5px solid rgba(56,182,255,0.25);
+    background: rgba(56,182,255,0.06);
+    color: #fff; font-size: 14px; font-family: "Poppins", sans-serif;
+    outline: none;
+    &::placeholder { color: rgba(255,255,255,0.25); }
+    &:focus { border-color: #38b6ff; }
+`;
+
+const WebDescBtn = styled.button`
+    padding: 10px 18px; border-radius: 10px;
+    border: 1.5px solid rgba(56,182,255,0.4);
+    background: rgba(56,182,255,0.12);
+    color: #38b6ff; font-size: 13px; font-weight: 700;
+    font-family: "Poppins", sans-serif; cursor: pointer;
+    transition: background 0.15s;
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+    &:not(:disabled):hover { background: rgba(56,182,255,0.22); }
+`;
+
+const WebDescMsg = styled.div`
+    margin-top: 8px; padding: 10px 14px; border-radius: 10px;
+    font-size: 13px; font-weight: 600; line-height: 1.5;
+    strong { font-weight: 900; }
+    ${({ $type }) => $type === "ok"   && `background: rgba(52,211,153,0.1); color: #34d399; border: 1px solid rgba(52,211,153,0.25);`}
+    ${({ $type }) => $type === "warn" && `background: rgba(251,191,36,0.08); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2);`}
+    ${({ $type }) => $type === "error"&& `background: rgba(248,113,113,0.1); color: #f87171; border: 1px solid rgba(248,113,113,0.2);`}
+`;
+
+const WebDescBanner = styled.div`
+    padding: 10px 16px; border-radius: 12px; font-size: 12px; font-weight: 700;
+    background: ${({ $plan }) => $plan === "cosmos"
+        ? "linear-gradient(90deg, rgba(52,211,153,0.12), rgba(99,102,241,0.12))"
+        : "linear-gradient(90deg, rgba(248,133,51,0.12), rgba(248,133,51,0.06))"};
+    border: 1px solid ${({ $plan }) => $plan === "cosmos" ? "rgba(52,211,153,0.25)" : "rgba(248,133,51,0.25)"};
+    color: ${({ $plan }) => $plan === "cosmos" ? "#34d399" : "#f88533"};
+    text-align: center;
 `;
 
 /* ══════════════════════════════════════

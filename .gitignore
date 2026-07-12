@@ -27,3 +27,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+.env*
+
+# Claude Code — configuración local (rutas de máquina, no compartir)
+.claude/settings.local.json
