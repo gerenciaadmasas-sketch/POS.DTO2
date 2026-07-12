@@ -108,9 +108,10 @@ export function Sidebar({ state, setState, onNavClick }) {
         return () => { if (channel) supabase.removeChannel(channel); };
     }, [id_empresa, yo_id, necesitaBadgeInternos]);
 
-    const esInmobiliaria = dataempresa?.actividad_economica === "construccion";
+    const esSuscripcionesTV = dataempresa?.actividad_economica === "suscripciones_tv";
+    const esInmobiliaria    = dataempresa?.actividad_economica === "construccion";
 
-    const linksBase = esInmobiliaria
+    const linksBase = (esSuscripcionesTV || esInmobiliaria)
         ? LinksArray.filter(l => LINKS_SUSCRIPCIONES.includes(l.to))
         : esCajero
         ? LinksArray.filter(l => LINKS_CAJERO.includes(l.to))
