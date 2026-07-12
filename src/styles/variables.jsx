@@ -12,7 +12,7 @@ import { TbBrandSupabase } from "react-icons/tb";
 import { FaReact } from "react-icons/fa";
 import { BsArrowDown, BsArrowUpShort } from "react-icons/bs";
 import { FaBalanceScale } from "react-icons/fa";
-import logo from "../assets/punto-de-venta.png";
+import logo from "../assets/icono_marca.png";
 
 import { RiCloseLine } from "react-icons/ri";
 import { BiSave } from "react-icons/bi";
