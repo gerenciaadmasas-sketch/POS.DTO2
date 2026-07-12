@@ -637,7 +637,7 @@ export function PlanesTemplate() {
             {/* ── Cards ── */}
             <CardsSection>
                 {PLANES.map((plan, idx) => (
-                    <TiltCard key={plan.id} color={plan.color} idx={idx} popular={plan.popular}>
+                    <TiltCard key={`${plan.id}-${anual}`} color={plan.color} idx={idx} popular={plan.popular}>
                     <PlanCard
                         id={plan.id}
                         $color={plan.color}
