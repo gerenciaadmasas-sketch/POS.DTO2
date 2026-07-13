@@ -903,10 +903,14 @@ export function PlanesTemplate() {
                             ))}
                         </WebCardFeatures>
 
-                        <WebPriceRow>
-                            <WebPriceFrom>desde</WebPriceFrom>
-                            <WebPrice>$1.200.000</WebPrice>
-                            <WebPriceCop>COP</WebPriceCop>
+                        <WebPriceRow style={{ flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+                            <WebPriceFrom>Inversión según tu proyecto</WebPriceFrom>
+                            <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+                                <WebPrice>$600.000</WebPrice>
+                                <span style={{ color: "rgba(56,182,255,0.5)", fontSize: 20, fontWeight: 700 }}>→</span>
+                                <WebPrice>$3.800.000</WebPrice>
+                            </div>
+                            <WebPriceCop>COP · sin costos ocultos</WebPriceCop>
                         </WebPriceRow>
 
                         {/* Verificador de descuento POS */}
@@ -957,19 +961,19 @@ export function PlanesTemplate() {
                             </AnimatePresence>
                         </WebDescWrap>
 
-                        {/* Tipos de página con precios dinámicos */}
+                        {/* Tipos de página */}
                         <WebCardTypes>
                             {[
-                                { emoji: "🚀", label: "Landing page",  precio: webPrecios.landing    },
-                                { emoji: "🖼️", label: "Portafolio",    precio: webPrecios.portafolio },
-                                { emoji: "🛒", label: "Tienda virtual", precio: webPrecios.tienda     },
+                                { emoji: "🚀", label: "Landing page",  desde: "desde $600.000"   },
+                                { emoji: "🖼️", label: "Portafolio",    desde: "desde $1.200.000" },
+                                { emoji: "🛒", label: "Tienda virtual", desde: "desde $2.500.000" },
                             ].map((t, i) => (
                                 <WebTypeChip key={i} $descuento={webResult?.tiene_descuento}>
                                     <span>{t.emoji}</span>
                                     <div>
                                         <WebTypeLabel>{t.label}</WebTypeLabel>
                                         <WebTypePrice $descuento={webResult?.tiene_descuento}>
-                                            {webResult?.tiene_descuento ? "✓ " : "desde "}{t.precio}
+                                            {webResult?.tiene_descuento ? "✓ Con tu descuento" : t.desde}
                                         </WebTypePrice>
                                     </div>
                                 </WebTypeChip>
@@ -983,7 +987,7 @@ export function PlanesTemplate() {
                         )}
 
                         <WebMantNote>
-                            + Mantenimiento mensual disponible desde <strong>$180.000/mes</strong>
+                            + Mantenimiento mensual disponible · cotización según alcance
                         </WebMantNote>
                     </WebCardContent>
                     </motion.div>
