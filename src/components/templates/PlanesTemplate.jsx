@@ -47,8 +47,6 @@ const PLANES = [
         badge: "Ideal para comenzar",
         precio_mes: 49000,
         precio_ano: 42000,
-        precio_desde: 504000,
-        precio_hasta: 588000,
         color: "#818cf8",
         colorAlt: "#6366f1",
         colorDark: "#4338ca",
@@ -75,8 +73,6 @@ const PLANES = [
         badge: "⭐ El más elegido",
         precio_mes: 129000,
         precio_ano: 110000,
-        precio_desde: 1320000,
-        precio_hasta: 1548000,
         color: "#f88533",
         colorAlt: "#f56a00",
         colorDark: "#b45309",
@@ -104,8 +100,6 @@ const PLANES = [
         badge: "Potencia tu marca",
         precio_mes: 249000,
         precio_ano: 212000,
-        precio_desde: 2544000,
-        precio_hasta: 2988000,
         color: "#34d399",
         colorAlt: "#10b981",
         colorDark: "#065f46",
@@ -140,14 +134,6 @@ const STATS = [
 
 const formatCOP = (n) =>
     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n);
-
-const formatRango = (n) => {
-    if (n >= 1000000) {
-        const m = n / 1000000;
-        return `$${Number.isInteger(m) ? m : m.toFixed(1)}M`;
-    }
-    return `$${(n / 1000).toFixed(0)}K`;
-};
 
 /* ─────────────────────────────────────────
    CURSOR SPOTLIGHT
@@ -676,20 +662,18 @@ export function PlanesTemplate() {
                             <PlanDesc>{plan.sub}</PlanDesc>
 
                             {/* Precio */}
-                            <PrecioBloque $color={plan.color}>
-                                <PrecioEtiqueta>Inversión anual estimada</PrecioEtiqueta>
-                                <PrecioRangoWrap>
-                                    <PrecioRangoItem>
-                                        <PrecioRangoTag>desde</PrecioRangoTag>
-                                        <PrecioRangoNum $color={plan.color}>{formatRango(plan.precio_desde)}</PrecioRangoNum>
-                                    </PrecioRangoItem>
-                                    <PrecioRangoSep $color={plan.color}>→</PrecioRangoSep>
-                                    <PrecioRangoItem>
-                                        <PrecioRangoTag>hasta</PrecioRangoTag>
-                                        <PrecioRangoNum $color={plan.color}>{formatRango(plan.precio_hasta)}</PrecioRangoNum>
-                                    </PrecioRangoItem>
-                                </PrecioRangoWrap>
-                                <PrecioNota>Mensual o anual · Sin permanencia · Cancela cuando quieras</PrecioNota>
+                            <PrecioBloque>
+                                <PrecioRow>
+                                    <PrecioNum $color={plan.color}>
+                                        {formatCOP(anual ? plan.precio_ano : plan.precio_mes)}
+                                    </PrecioNum>
+                                    <PrecioSufijo>/mes</PrecioSufijo>
+                                </PrecioRow>
+                                <PrecioNota>
+                                    {anual
+                                        ? `Facturado anualmente · ${formatCOP(plan.precio_ano * 12)}/año`
+                                        : "Facturado mensualmente · Cancela cuando quieras"}
+                                </PrecioNota>
                             </PrecioBloque>
 
                             {/* CTA */}
@@ -1996,45 +1980,25 @@ const PlanDesc = styled.p`
 `;
 
 const PrecioBloque = styled.div`
-    display: flex; flex-direction: column; gap: 10px;
-    background: ${({ $color }) => `${$color}0d`};
-    border: 1px solid ${({ $color }) => `${$color}28`};
-    border-radius: 14px;
-    padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 4px;
 `;
 
-const PrecioEtiqueta = styled.span`
-    font-size: 10px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 1.2px; color: rgba(255,255,255,0.3);
+const PrecioRow = styled.div`
+    display: flex; align-items: baseline; gap: 6px;
 `;
 
-const PrecioRangoWrap = styled.div`
-    display: flex; align-items: center; gap: 10px;
-`;
-
-const PrecioRangoItem = styled.div`
-    display: flex; flex-direction: column; gap: 1px; flex: 1;
-`;
-
-const PrecioRangoTag = styled.span`
-    font-size: 9px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.8px; color: rgba(255,255,255,0.25);
-`;
-
-const PrecioRangoNum = styled.span`
-    font-size: 22px; font-weight: 900;
+const PrecioNum = styled.span`
+    font-size: 28px; font-weight: 900;
     color: ${({ $color }) => $color};
-    letter-spacing: -0.5px; line-height: 1;
+    letter-spacing: -0.5px;
 `;
 
-const PrecioRangoSep = styled.span`
-    font-size: 18px; font-weight: 900;
-    color: ${({ $color }) => `${$color}60`};
-    flex-shrink: 0;
+const PrecioSufijo = styled.span`
+    font-size: 14px; color: rgba(255,255,255,0.3); font-weight: 600;
 `;
 
 const PrecioNota = styled.p`
-    font-size: 10px; color: rgba(255,255,255,0.2); margin: 0; line-height: 1.4;
+    font-size: 11px; color: rgba(255,255,255,0.25); margin: 0;
 `;
 
 const BtnPlan = styled.button`
