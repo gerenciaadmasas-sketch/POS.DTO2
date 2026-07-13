@@ -2221,6 +2221,7 @@ const BtnWA = styled.button`
     background: linear-gradient(135deg, #16a34a, #15803d);
     color: #fff; font-size: 15px; font-weight: 800;
     font-family: "Poppins", sans-serif; cursor: pointer; text-decoration: none;
+    position: relative;
     box-shadow: 0 6px 24px rgba(22,163,74,0.4), 4px 4px 0 #14532d;
     transition: transform 0.15s, filter 0.15s;
     &:hover  { filter: brightness(1.12); transform: translateY(-2px); }
