@@ -343,10 +343,11 @@ export function MesasTemplate() {
                 {modalMesa && (
                     <>
                         <Overlay onClick={() => setModalMesa(null)} />
+                        <ModalCenter>
                         <Modal
-                            initial={{ opacity: 0, scale: 0.92 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.92 }}
+                            initial={{ opacity: 0, scale: 0.92, y: 16 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.92, y: 16 }}
                             transition={{ duration: 0.2 }}
                         >
                             <ModalHeader>
@@ -386,6 +387,7 @@ export function MesasTemplate() {
                                 </BtnPrimary>
                             </ModalFooter>
                         </Modal>
+                        </ModalCenter>
                     </>
                 )}
             </AnimatePresence>
@@ -717,9 +719,15 @@ const BtnCobrar = styled.button`
 `;
 
 /* ── Modal mesa ── */
+const ModalCenter = styled.div`
+    position: fixed; inset: 0; z-index: 300;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+`;
+
 const Modal = styled(motion.div)`
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    z-index: 300; width: 360px; border-radius: 20px;
+    pointer-events: all;
+    width: 360px; border-radius: 20px;
     background: ${({ theme }) => theme.bgcards};
     border: 1px solid ${({ theme }) => theme.color2};
     padding: 24px; display: flex; flex-direction: column; gap: 16px;

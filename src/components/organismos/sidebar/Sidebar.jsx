@@ -21,7 +21,6 @@ const LINKS_ADMIN         = ["/home", "/mensajes", "/soporte"];
 const LINKS_SUPERADMIN    = ["/home", "/mensajes", "/chat"];
 const LINKS_COMERCIAL     = ["/home", "/mensajes"];
 const LINKS_SUSCRIPCIONES = ["/home", "/mensajes", "/soporte"];
-const LINKS_RESTAURANTE   = ["/home", "/mesas", "/menu-editor", "/mensajes", "/soporte"];
 
 export function Sidebar({ state, setState, onNavClick }) {
     const { cerrarSesion } = useAuthStore();
@@ -113,9 +112,7 @@ export function Sidebar({ state, setState, onNavClick }) {
     const esInmobiliaria    = dataempresa?.actividad_economica === "construccion";
     const esRestaurante     = dataempresa?.actividad_economica === "restaurante";
 
-    const linksBase = esRestaurante
-        ? LinksArray.filter(l => LINKS_RESTAURANTE.includes(l.to))
-        : (esSuscripcionesTV || esInmobiliaria)
+    const linksBase = (esSuscripcionesTV || esInmobiliaria || esRestaurante)
         ? LinksArray.filter(l => LINKS_SUSCRIPCIONES.includes(l.to))
         : esCajero
         ? LinksArray.filter(l => LINKS_CAJERO.includes(l.to))

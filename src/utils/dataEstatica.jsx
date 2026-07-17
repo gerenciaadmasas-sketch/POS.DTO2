@@ -74,18 +74,6 @@ export const LinksArray = [
     to: "/arqueo",
   },
   {
-    label: "Mesas",
-    icon: "solar:plate-bold-duotone",
-    to: "/mesas",
-    color: "#f97316",
-  },
-  {
-    label: "Menú",
-    icon: "solar:menu-dots-bold-duotone",
-    to: "/menu-editor",
-    color: "#f59e0b",
-  },
-  {
     label: "Mensajes Equipo",
     icon: "solar:chat-round-bold-duotone",
     to: "/mensajes",
