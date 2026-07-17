@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../supabase/supabase.config";
 import { MostrarComandasActivas, CambiarEstadoItem, CambiarEstadoComanda, CambiarEstadoMesa } from "../../supabase/crudRestaurante";
-import { RiRestaurantLine, RiCheckLine, RiTimeLine, RiFireLine } from "react-icons/ri";
+import { RiRestaurantLine, RiCheckLine, RiTimeLine, RiFireLine, RiLoader4Line } from "react-icons/ri";
 
 const ESTADO_ITEM = {
     pendiente:      { label: "Pendiente",       color: "#f59e0b", next: "en_preparacion", nextLabel: "Preparando" },
@@ -39,8 +39,10 @@ export function CocinaTemplate({ id_empresa: propIdEmpresa }) {
         return () => supabase.removeChannel(ch);
     }, [id_empresa, refetch]);
 
-    const activas = comandas.filter(c => ["abierta", "en_cocina"].includes(c.estado));
-    const listas  = comandas.filter(c => c.estado === "lista");
+    const activas    = comandas.filter(c => ["abierta", "en_cocina"].includes(c.estado));
+    const enCocina   = activas.filter(c => !(c.comanda_items ?? []).some(i => i.estado === "en_preparacion"));
+    const preparando = activas.filter(c =>  (c.comanda_items ?? []).some(i => i.estado === "en_preparacion"));
+    const listas     = comandas.filter(c => c.estado === "lista");
 
     const avanzarItem = async (item) => {
         const cfg = ESTADO_ITEM[item.estado];
@@ -62,7 +64,8 @@ export function CocinaTemplate({ id_empresa: propIdEmpresa }) {
                     <span>Cocina · POS.DTO2</span>
                 </LogoArea>
                 <Stats>
-                    <Chip $c="#f59e0b">{activas.length} en curso</Chip>
+                    <Chip $c="#f59e0b">{enCocina.length} en espera</Chip>
+                    <Chip $c="#6366f1">{preparando.length} preparando</Chip>
                     <Chip $c="#22c55e">{listas.length} listas</Chip>
                 </Stats>
                 <Clock />
@@ -75,13 +78,13 @@ export function CocinaTemplate({ id_empresa: propIdEmpresa }) {
                 </EmptyWrap>
             ) : (
                 <BoardGrid>
-                    {/* ── Comandas activas ── */}
+                    {/* ── Columna 1: En espera ── */}
                     <Column>
                         <ColHeader $c="#f59e0b">
-                            <RiTimeLine /> En cocina ({activas.length})
+                            <RiTimeLine /> En cocina ({enCocina.length})
                         </ColHeader>
                         <AnimatePresence>
-                            {activas.map(cmd => (
+                            {enCocina.map(cmd => (
                                 <ComandaCard key={cmd.id}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
@@ -99,14 +102,16 @@ export function CocinaTemplate({ id_empresa: propIdEmpresa }) {
                                                 <ItemRow key={item.id} $color={cfg.color}>
                                                     <ItemQty>{item.cantidad}×</ItemQty>
                                                     <ItemName>{item.nombre}</ItemName>
-                                                    <AvanzarBtn $color={cfg.color} onClick={() => avanzarItem(item)}>
-                                                        {cfg.nextLabel}
-                                                    </AvanzarBtn>
+                                                    {cfg.next && (
+                                                        <AvanzarBtn $color={cfg.color} onClick={() => avanzarItem(item)}>
+                                                            {cfg.nextLabel}
+                                                        </AvanzarBtn>
+                                                    )}
                                                 </ItemRow>
                                             );
                                         })}
                                         {(cmd.comanda_items ?? []).filter(i => i.estado === "listo").map(item => (
-                                            <ItemRow key={item.id} $color="#22c55e" style={{ opacity: 0.45 }}>
+                                            <ItemRow key={item.id} $color="#22c55e" style={{ opacity: 0.4 }}>
                                                 <RiCheckLine style={{ color: "#22c55e", flexShrink: 0 }} />
                                                 <ItemQty>{item.cantidad}×</ItemQty>
                                                 <ItemName style={{ textDecoration: "line-through" }}>{item.nombre}</ItemName>
@@ -124,7 +129,58 @@ export function CocinaTemplate({ id_empresa: propIdEmpresa }) {
                         </AnimatePresence>
                     </Column>
 
-                    {/* ── Listas para entrega ── */}
+                    {/* ── Columna 2: Preparando ── */}
+                    <Column>
+                        <ColHeader $c="#6366f1">
+                            <RiLoader4Line /> Preparando ({preparando.length})
+                        </ColHeader>
+                        <AnimatePresence>
+                            {preparando.map(cmd => (
+                                <ComandaCard key={cmd.id} $preparando
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.9 }}
+                                    layout
+                                >
+                                    <CardHeader>
+                                        <MesaLabel $preparando>{cmd.mesas?.nombre ?? `Mesa ${cmd.mesas?.numero ?? "?"}`}</MesaLabel>
+                                        <TimeLabel>{new Date(cmd.created_at).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })}</TimeLabel>
+                                    </CardHeader>
+                                    <ItemsList>
+                                        {(cmd.comanda_items ?? []).filter(i => i.estado !== "listo").map(item => {
+                                            const cfg = ESTADO_ITEM[item.estado] ?? ESTADO_ITEM.pendiente;
+                                            return (
+                                                <ItemRow key={item.id} $color={cfg.color}>
+                                                    <ItemQty>{item.cantidad}×</ItemQty>
+                                                    <ItemName>{item.nombre}</ItemName>
+                                                    {cfg.next && (
+                                                        <AvanzarBtn $color={cfg.color} onClick={() => avanzarItem(item)}>
+                                                            {cfg.nextLabel}
+                                                        </AvanzarBtn>
+                                                    )}
+                                                </ItemRow>
+                                            );
+                                        })}
+                                        {(cmd.comanda_items ?? []).filter(i => i.estado === "listo").map(item => (
+                                            <ItemRow key={item.id} $color="#22c55e" style={{ opacity: 0.4 }}>
+                                                <RiCheckLine style={{ color: "#22c55e", flexShrink: 0 }} />
+                                                <ItemQty>{item.cantidad}×</ItemQty>
+                                                <ItemName style={{ textDecoration: "line-through" }}>{item.nombre}</ItemName>
+                                                <span style={{ fontSize: 11, color: "#22c55e" }}>Listo</span>
+                                            </ItemRow>
+                                        ))}
+                                    </ItemsList>
+                                    {(cmd.comanda_items ?? []).every(i => i.estado === "listo") && (
+                                        <BtnListaComanda onClick={() => marcarListaComanda(cmd)}>
+                                            <RiCheckLine /> Marcar lista para entrega
+                                        </BtnListaComanda>
+                                    )}
+                                </ComandaCard>
+                            ))}
+                        </AnimatePresence>
+                    </Column>
+
+                    {/* ── Columna 3: Lista para entrega ── */}
                     <Column>
                         <ColHeader $c="#22c55e">
                             <RiCheckLine /> Lista para entrega ({listas.length})
@@ -144,6 +200,7 @@ export function CocinaTemplate({ id_empresa: propIdEmpresa }) {
                                     <ItemsList>
                                         {(cmd.comanda_items ?? []).map(item => (
                                             <ItemRow key={item.id} $color="#22c55e">
+                                                <RiCheckLine style={{ color: "#22c55e", flexShrink: 0 }} />
                                                 <ItemQty>{item.cantidad}×</ItemQty>
                                                 <ItemName>{item.nombre}</ItemName>
                                             </ItemRow>
@@ -218,9 +275,13 @@ const EmptyWrap = styled.div`
 
 const BoardGrid = styled.div`
     flex: 1; display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 0; overflow: hidden;
-    @media (max-width: 768px) {
+    @media (max-width: 900px) {
+        grid-template-columns: 1fr 1fr;
+        overflow-y: auto;
+    }
+    @media (max-width: 560px) {
         grid-template-columns: 1fr;
         overflow-y: auto;
     }
@@ -229,7 +290,7 @@ const BoardGrid = styled.div`
 const Column = styled.div`
     display: flex; flex-direction: column; gap: 14px;
     padding: 20px; overflow-y: auto;
-    &:first-child { border-right: 1px solid rgba(255,255,255,0.07); }
+    &:not(:last-child) { border-right: 1px solid rgba(255,255,255,0.07); }
 `;
 
 const ColHeader = styled.div`
@@ -249,10 +310,17 @@ const blink = keyframes`
 
 const ComandaCard = styled(motion.div)`
     border-radius: 16px;
-    border: 1px solid ${({ $lista }) => $lista ? "rgba(34,197,94,0.2)" : "rgba(249,115,22,0.15)"};
-    background: ${({ $lista }) => $lista ? "rgba(34,197,94,0.04)" : "rgba(249,115,22,0.04)"};
+    border: 1px solid ${({ $lista, $preparando }) =>
+        $lista      ? "rgba(34,197,94,0.2)"  :
+        $preparando ? "rgba(99,102,241,0.25)" :
+                      "rgba(249,115,22,0.15)"};
+    background: ${({ $lista, $preparando }) =>
+        $lista      ? "rgba(34,197,94,0.04)"  :
+        $preparando ? "rgba(99,102,241,0.06)"  :
+                      "rgba(249,115,22,0.04)"};
     padding: 16px;
-    animation: ${({ $lista }) => $lista ? "none" : css`${blink} 2s ease-in-out infinite`};
+    animation: ${({ $lista, $preparando }) =>
+        $lista || $preparando ? "none" : css`${blink} 2s ease-in-out infinite`};
 `;
 
 const CardHeader = styled.div`
@@ -262,7 +330,10 @@ const CardHeader = styled.div`
 
 const MesaLabel = styled.div`
     font-size: 16px; font-weight: 900;
-    color: ${({ $lista }) => $lista ? "#22c55e" : "#f97316"};
+    color: ${({ $lista, $preparando }) =>
+        $lista      ? "#22c55e"  :
+        $preparando ? "#6366f1"  :
+                      "#f97316"};
     font-family: "Poppins", sans-serif;
 `;
 
