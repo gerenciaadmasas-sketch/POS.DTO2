@@ -20,6 +20,9 @@ import { ProyectoDetalle } from "../pages/ProyectoDetalle";
 import { Mensajes } from "../pages/Mensajes";
 import { Privacidad } from "../pages/Privacidad";
 import { Terminos } from "../pages/Terminos";
+import { Mesas } from "../pages/Mesas";
+import { Cocina } from "../pages/Cocina";
+import { MenuEditor } from "../pages/MenuEditor";
 import { useQuery } from "@tanstack/react-query";
 import { Spinner1 } from "../components/moleculas/Spinner1";
 import { MostrarEmpresaPorId } from "../supabase/crudEmpresa";
@@ -75,6 +78,7 @@ export function Myroutes() {
       <Route path="/pago-exitoso"  element={<PagoExitoso />} />
       <Route path="/privacidad"    element={<Privacidad />} />
       <Route path="/terminos"      element={<Terminos />} />
+      <Route path="/cocina"        element={<Cocina />} />
       <Route element={<ProtectedRoute user={user} redirectTo="/" />}>
         <Route path="/home" element={<Home />} />
         <Route path="/configuracion" element={<Configuraciones />} />
@@ -108,6 +112,8 @@ export function Myroutes() {
         <Route path="/proyectos/:id"  element={<ProyectoDetalle />} />
         <Route path="/arrendamientos" element={<Arrendamientos />} />
         <Route path="/administracion" element={<Administracion />} />
+        <Route path="/mesas"         element={<Mesas />} />
+        <Route path="/menu-editor"   element={<MenuEditor />} />
 
         <Route path="/configurar" element={<Navigate to="/configuracion" replace />} />
         <Route path="/configurar/categorias" element={<Navigate to="/configuracion/categorias" replace />} />

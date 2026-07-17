@@ -110,8 +110,9 @@ export function Sidebar({ state, setState, onNavClick }) {
 
     const esSuscripcionesTV = dataempresa?.actividad_economica === "suscripciones_tv";
     const esInmobiliaria    = dataempresa?.actividad_economica === "construccion";
+    const esRestaurante     = dataempresa?.actividad_economica === "restaurante";
 
-    const linksBase = (esSuscripcionesTV || esInmobiliaria)
+    const linksBase = (esSuscripcionesTV || esInmobiliaria || esRestaurante)
         ? LinksArray.filter(l => LINKS_SUSCRIPCIONES.includes(l.to))
         : esCajero
         ? LinksArray.filter(l => LINKS_CAJERO.includes(l.to))

@@ -84,6 +84,13 @@ const ACCESOS_COMERCIAL = [
     { key: "prospectos", icon: "solar:user-speak-bold-duotone",          label: "Leads",       sub: "Seguimiento clientes",to: "/prospectos", accent: "#818cf8", glow: "rgba(129,140,248,0.35)",  big: true  },
 ];
 
+const ACCESOS_RESTAURANTE = [
+    { key: "mesas",      icon: "solar:plate-bold-duotone",              label: "Mesas",       sub: "Gestionar mesas y comandas",  to: "/mesas",       accent: "#f97316", glow: "rgba(249,115,22,0.35)",  big: true  },
+    { key: "menu",       icon: "solar:menu-dots-bold-duotone",          label: "Menú",        sub: "Editar carta y precios",      to: "/menu-editor", accent: "#f59e0b", glow: "rgba(245,158,11,0.35)",  big: false },
+    { key: "reportes",   icon: "solar:chart-square-bold-duotone",       label: "Reportes",    sub: "Ventas del día",              to: "/reportes",    accent: "#60a5fa", glow: "rgba(96,165,250,0.35)",   big: false },
+    { key: "soporte",    icon: "solar:chat-round-dots-bold-duotone",    label: "Soporte",     sub: "Canal de ayuda",              to: "/soporte",     accent: "#34d399", glow: "rgba(52,211,153,0.35)",   big: false },
+];
+
 const ACCESOS_INMOBILIARIA = [
     { key: "propiedades",    icon: "solar:home-smile-bold-duotone",        label: "Gestión Inmobiliaria", sub: "Inmuebles · Proyectos · Gestión Adm.", to: "/propiedades", accent: "#f59e0b", glow: "rgba(245,158,11,0.35)", big: true },
     { key: "proyectos",      icon: "mdi:hard-hat",                         label: "Proyectos",      sub: "Obras · Remodelación · Reparación",  to: "/proyectos",      accent: "#60a5fa", glow: "rgba(96,165,250,0.35)",  big: false },
@@ -135,6 +142,7 @@ export function HomeTemplates() {
 
     const esSuscripcionesTV  = dataempresa?.actividad_economica === "suscripciones_tv";
     const esInmobiliaria     = dataempresa?.actividad_economica === "construccion";
+    const esRestaurante      = dataempresa?.actividad_economica === "restaurante";
 
     /* versión para superadmin */
     const { data: versiones = [] } = useQuery({
@@ -215,7 +223,8 @@ export function HomeTemplates() {
         ? sucursal?.razon_social ?? "Sin sucursal"
         : dataempresa?.razon_social ?? "Empresa";
 
-    const accesos = esInmobiliaria        ? ACCESOS_INMOBILIARIA
+    const accesos = esRestaurante          ? ACCESOS_RESTAURANTE
+                  : esInmobiliaria        ? ACCESOS_INMOBILIARIA
                   : esSuscripcionesTV     ? ACCESOS_SUSCRIPCIONES
                   : tipo === "cajero"     ? ACCESOS_CAJERO
                   : tipo === "supervisor" ? ACCESOS_SUPERVISOR

@@ -18,11 +18,11 @@ const SECCIONES = [
     },
     {
         titulo: "4. Período de gracia y suspensión",
-        texto: `Si el pago no se realiza en la fecha de vencimiento:\n\n• Días 1-3 de mora: la cuenta permanece activa con alerta de vencimiento.\n• A partir del día 3: la cuenta puede ser suspendida temporalmente.\n• Suspensión: el acceso queda restringido hasta regularizar el pago.\n\nPara casos excepcionales (dificultades económicas, errores de pago), el equipo de ADMA BI puede otorgar un período de gracia adicional a su discreción.`,
+        texto: `Si el pago no se realiza en la fecha de vencimiento:\n\n• Días 1-3 de mora: la cuenta permanece activa con alerta de vencimiento.\n• A partir del día 3: la cuenta puede ser suspendida temporalmente.\n• Suspensión: el acceso queda restringido hasta regularizar el pago.\n\nPara casos excepcionales (Problemas al realizar el pago), se puede contactar directamente al correo gerencia.adma.sas@gmail.com con ADMA BI, con el fin de resolver el inconveniente.`,
     },
     {
         titulo: "5. Cancelación del servicio",
-        texto: `El usuario puede cancelar su suscripción en cualquier momento contactando al equipo de soporte. No se realizan reembolsos proporcionales por períodos no utilizados en el mes en curso. Para suscripciones anuales, se evaluará cada caso de cancelación anticipada de forma individual.\n\nAl cancelar, los datos del negocio permanecerán disponibles por 30 días adicionales para descarga, tras lo cual serán eliminados de forma definitiva.`,
+        texto: `El usuario puede cancelar su suscripción en cualquier momento contactando al equipo de soporte. No se realizan reembolsos proporcionales por períodos no utilizados en el mes en curso.\n\nAl cancelar, los datos del negocio permanecerán disponibles por 5 días adicionales para descarga, tras lo cual serán eliminados de forma definitiva.`,
     },
     {
         titulo: "6. Responsabilidades del usuario",
