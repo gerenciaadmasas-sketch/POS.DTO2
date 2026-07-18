@@ -1,6 +1,27 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Genera contraseña aleatoria segura (sin caracteres ambiguos)
+function generatePassword(length = 12): string {
+  const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(length));
+  return Array.from(bytes).map((b) => chars[b % chars.length]).join("");
+}
+
+// PBKDF2 con sal aleatoria — formato: "pbkdf2:<sal_hex>:<hash_hex>"
+async function hashPassword(plain: string): Promise<string> {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(plain), "PBKDF2", false, ["deriveBits"],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", hash: "SHA-256", salt, iterations: 100_000 },
+    key, 256,
+  );
+  const toHex = (b: ArrayBuffer) => Array.from(new Uint8Array(b)).map((n) => n.toString(16).padStart(2, "0")).join("");
+  return `pbkdf2:${toHex(salt)}:${toHex(bits)}`;
+}
+
 const VALORES_PLAN: Record<string, number> = {
   chispa: 49000,
   fuego:  129000,
@@ -94,9 +115,7 @@ serve(async (req) => {
       usuario = `${usuarioBase}${intento}`;
     }
 
-    const password = pending.cedula
-      ? pending.cedula.replace(/\D/g, "") || "123456"
-      : "123456";
+    const password = generatePassword();
     const nombreEmpresa = pending.empresa || `${pending.nombre} ${pending.apellido}`.trim();
 
     // 1. Crear empresa
@@ -170,10 +189,7 @@ serve(async (req) => {
     const hoy     = new Date();
     const proximoPago = new Date(hoy.getFullYear(), hoy.getMonth() + meses, hoy.getDate());
 
-    // Hash SHA-256 de la contraseña antes de guardar en suscripciones
-    const pwRaw  = new TextEncoder().encode(password);
-    const pwBuf  = await crypto.subtle.digest("SHA-256", pwRaw);
-    const pwHash = Array.from(new Uint8Array(pwBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+    const pwHash = await hashPassword(password);
 
     await supabase.from("suscripciones").insert({
       nombre_cliente:       pending.nombre,

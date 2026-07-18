@@ -1,6 +1,6 @@
 import { supabase } from "./supabase.config";
 import { toastError } from "../utils/toast";
-import { hashPassword } from "../utils/hash";
+import { hashPassword, generatePassword } from "../utils/hash";
 
 const tabla = "suscripciones";
 
@@ -28,7 +28,7 @@ export async function InsertarSuscripcion(p) {
         usuario = `${usuarioBase}${intento}`;
     }
 
-    const password = p.cedula_cliente || "123456";
+    const password = generatePassword();
     const nombreEmpresa = `${nombre} ${apellido}`.trim();
 
     // 1. Crear empresa aislada (tenant)

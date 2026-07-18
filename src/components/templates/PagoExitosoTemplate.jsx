@@ -34,13 +34,9 @@ export function PagoExitosoTemplate() {
 
         const interval = setInterval(async () => {
             intentos++;
-            const { data } = await supabase
-                .from("wompi_transacciones_pendientes")
-                .select("estado, usuario_admin, password_admin")
-                .eq("reference", reference)
-                .maybeSingle();
+            const { data } = await supabase.rpc("get_onboarding_credentials", { p_reference: reference });
 
-            if (data?.estado === "procesado" && data.usuario_admin) {
+            if (data?.estado === "procesado" && data?.usuario_admin) {
                 clearInterval(interval);
                 setCredenciales({ usuario: data.usuario_admin, password: data.password_admin });
                 setFase("listo");
