@@ -611,7 +611,7 @@ export function SaasTemplate() {
                             {!editando && (
                                 <FilaDos>
                                     <Campo>
-                                        <label>Cédula (será la contraseña)</label>
+                                        <label>Cédula</label>
                                         <Input value={form.cedula_cliente} onChange={e => setForm({ ...form, cedula_cliente: e.target.value })} placeholder="Número de cédula" required />
                                     </Campo>
                                     <Campo>
