@@ -1179,6 +1179,13 @@ const TipoPlanPill = styled.span`
 `;
 
 /* ── Modal credenciales nuevas ────────────────────────────── */
+const BtnClose = styled.button`
+    background: none; border: none; cursor: pointer;
+    color: ${({ theme }) => theme.colorsubtitlecard}; font-size: 20px;
+    display: flex; align-items: center; padding: 2px;
+    &:hover { color: ${({ theme }) => theme.text}; }
+`;
+
 const CredOverlay = styled.div`
     position: fixed; inset: 0; background: rgba(0,0,0,0.65);
     display: flex; align-items: center; justify-content: center;
