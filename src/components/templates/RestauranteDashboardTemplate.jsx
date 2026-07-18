@@ -65,7 +65,10 @@ export function RestauranteDashboardTemplate() {
         staleTime: 60_000,
     });
 
-    const maxTop = stats?.topItems?.[0]?.cantidad ?? 1;
+    const maxTop      = stats?.topItems?.[0]?.cantidad ?? 1;
+    const totalItems  = (stats?.topItems ?? []).reduce((s, i) => s + i.cantidad, 0) || 1;
+
+    const MEDAL = ["🥇", "🥈", "🥉"];
 
     return (
         <Page>
@@ -127,27 +130,40 @@ export function RestauranteDashboardTemplate() {
                         <Section>
                             <SectionTitle>
                                 <RiRestaurantLine size={16} />
-                                Top 5 platos más pedidos
+                                Platos más vendidos
+                                <PlatosCount>{(stats?.topItems ?? []).length} platos</PlatosCount>
                             </SectionTitle>
                             {(stats?.topItems ?? []).length === 0 ? (
                                 <EmptyTip>Sin datos para el período seleccionado</EmptyTip>
                             ) : (
                                 <PlatosList>
-                                    {(stats?.topItems ?? []).map((item, i) => (
-                                        <PlatoRow key={item.nombre}>
-                                            <PlatoRank>#{i + 1}</PlatoRank>
-                                            <PlatoInfo>
-                                                <PlatoNombre>{item.nombre}</PlatoNombre>
-                                                <PlatoBar>
-                                                    <PlatoBarFill style={{ width: `${(item.cantidad / maxTop) * 100}%` }} />
-                                                </PlatoBar>
-                                            </PlatoInfo>
-                                            <PlatoStats>
-                                                <PlatoCantidad>{item.cantidad} uds</PlatoCantidad>
-                                                <PlatoTotal>{cop(item.total)}</PlatoTotal>
-                                            </PlatoStats>
-                                        </PlatoRow>
-                                    ))}
+                                    {(stats?.topItems ?? []).map((item, i) => {
+                                        const pct = Math.round((item.cantidad / totalItems) * 100);
+                                        const isMedal = i < 3;
+                                        return (
+                                            <PlatoRow key={item.nombre} $top={isMedal}>
+                                                <PlatoRank $medal={isMedal}>
+                                                    {isMedal ? MEDAL[i] : `#${i + 1}`}
+                                                </PlatoRank>
+                                                <PlatoInfo>
+                                                    <PlatoNombreRow>
+                                                        <PlatoNombre>{item.nombre}</PlatoNombre>
+                                                        <PlatoPct>{pct}%</PlatoPct>
+                                                    </PlatoNombreRow>
+                                                    <PlatoBar>
+                                                        <PlatoBarFill
+                                                            $rank={i}
+                                                            style={{ width: `${(item.cantidad / maxTop) * 100}%` }}
+                                                        />
+                                                    </PlatoBar>
+                                                </PlatoInfo>
+                                                <PlatoStats>
+                                                    <PlatoCantidad>{item.cantidad} uds</PlatoCantidad>
+                                                    <PlatoTotal>{cop(item.total)}</PlatoTotal>
+                                                </PlatoStats>
+                                            </PlatoRow>
+                                        );
+                                    })}
                                 </PlatosList>
                             )}
                         </Section>
@@ -301,35 +317,62 @@ const EmptyTip = styled.p`
     text-align: center; padding: 20px 0; margin: 0;
 `;
 
-const PlatosList = styled.div`display: flex; flex-direction: column; gap: 14px;`;
+const PlatosCount = styled.span`
+    margin-left: auto; font-size: 11px; font-weight: 600;
+    color: ${({ theme }) => theme.colorsubtitlecard};
+    text-transform: none; letter-spacing: 0;
+`;
+
+const PlatosList = styled.div`display: flex; flex-direction: column; gap: 12px;`;
 
 const PlatoRow = styled.div`
     display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border-radius: 12px;
+    background: ${({ $top, theme }) => $top ? "rgba(249,115,22,0.05)" : theme.bgtotal};
+    border: 1px solid ${({ $top, theme }) => $top ? "rgba(249,115,22,0.15)" : theme.color2};
+    transition: background 0.15s;
 `;
 
 const PlatoRank = styled.span`
-    font-size: 13px; font-weight: 900; color: #f97316;
-    min-width: 28px; font-family: "Poppins", sans-serif;
+    font-size: ${({ $medal }) => $medal ? "20px" : "13px"};
+    font-weight: 900; color: #f97316;
+    min-width: 30px; text-align: center;
+    font-family: "Poppins", sans-serif;
+    line-height: 1;
 `;
 
 const PlatoInfo = styled.div`flex: 1; min-width: 0;`;
 
-const PlatoNombre = styled.div`
-    font-size: 14px; font-weight: 700;
-    color: ${({ theme }) => theme.text};
-    font-family: "Poppins", sans-serif;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+const PlatoNombreRow = styled.div`
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
     margin-bottom: 6px;
 `;
 
+const PlatoNombre = styled.div`
+    font-size: 13px; font-weight: 700;
+    color: ${({ theme }) => theme.text};
+    font-family: "Poppins", sans-serif;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    flex: 1; min-width: 0;
+`;
+
+const PlatoPct = styled.span`
+    font-size: 11px; font-weight: 700; color: #f97316;
+    white-space: nowrap;
+`;
+
 const PlatoBar = styled.div`
-    height: 6px; border-radius: 3px;
-    background: rgba(249,115,22,0.12);
+    height: 5px; border-radius: 3px;
+    background: rgba(249,115,22,0.10);
 `;
 
 const PlatoBarFill = styled.div`
     height: 100%; border-radius: 3px;
-    background: linear-gradient(90deg, #f97316, #fb923c);
+    background: ${({ $rank }) =>
+        $rank === 0 ? "linear-gradient(90deg,#f59e0b,#fbbf24)" :
+        $rank === 1 ? "linear-gradient(90deg,#94a3b8,#cbd5e1)" :
+        $rank === 2 ? "linear-gradient(90deg,#b45309,#d97706)" :
+        "linear-gradient(90deg,#f97316,#fb923c)"};
     transition: width 0.6s ease;
 `;
 
@@ -338,7 +381,7 @@ const PlatoStats = styled.div`
 `;
 
 const PlatoCantidad = styled.span`
-    font-size: 13px; font-weight: 800; color: #f97316;
+    font-size: 13px; font-weight: 800; color: ${({ theme }) => theme.text};
     font-family: "Poppins", sans-serif;
 `;
 

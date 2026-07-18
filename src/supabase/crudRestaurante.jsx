@@ -200,7 +200,7 @@ export async function ObtenerStatsRestaurante({ id_empresa, desde, hasta }) {
             agrupado[i.nombre].cantidad += Number(i.cantidad);
             agrupado[i.nombre].total += Number(i.cantidad) * Number(i.precio_unitario);
         });
-        topItems = Object.values(agrupado).sort((a, b) => b.cantidad - a.cantidad).slice(0, 5);
+        topItems = Object.values(agrupado).sort((a, b) => b.cantidad - a.cantidad).slice(0, 8);
     }
 
     const totalIngresos  = (comandas ?? []).reduce((s, c) => s + Number(c.total ?? 0), 0);
