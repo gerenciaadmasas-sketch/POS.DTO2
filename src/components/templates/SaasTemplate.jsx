@@ -48,6 +48,7 @@ export function SaasTemplate() {
     const [historialId, setHistorialId] = useState(null);
     const [confeti, setConfeti] = useState(false);
     const [dropActividad, setDropActividad] = useState(false);
+    const [credNuevas, setCredNuevas] = useState(null); // { usuario, password, nombre, telefono }
     const dropActividadRef = useRef(null);
 
     useEffect(() => {
@@ -154,9 +155,14 @@ export function SaasTemplate() {
             });
         },
         onSuccess: (result) => {
-            toastExito(`Cliente creado — Usuario: ${result.usuario} / Contraseña: ${result.password}`);
             invalidar();
             cerrar();
+            setCredNuevas({
+                usuario:  result.usuario,
+                password: result.password,
+                nombre:   form.nombre_cliente,
+                telefono: form.telefono ?? "",
+            });
         },
     });
 
@@ -254,6 +260,46 @@ export function SaasTemplate() {
     return (
         <Page>
             {confeti && <ConfettiExplosion force={0.6} duration={3000} particleCount={100} />}
+
+            {/* ── Modal credenciales nuevas ── */}
+            {credNuevas && (
+                <CredOverlay>
+                    <CredModal>
+                        <CredHeader>
+                            <span>🎉 Cliente creado</span>
+                            <BtnClose onClick={() => setCredNuevas(null)}><RiCloseLine /></BtnClose>
+                        </CredHeader>
+                        <CredWarning>
+                            ⚠️ Guarda esta contraseña ahora — no podrá recuperarse después.
+                        </CredWarning>
+                        <CredRow>
+                            <CredLabel>Usuario</CredLabel>
+                            <CredVal>{credNuevas.usuario}</CredVal>
+                            <BtnCopy onClick={() => { navigator.clipboard.writeText(credNuevas.usuario); toastExito("Usuario copiado"); }}>Copiar</BtnCopy>
+                        </CredRow>
+                        <CredRow>
+                            <CredLabel>Contraseña</CredLabel>
+                            <CredVal>{credNuevas.password}</CredVal>
+                            <BtnCopy onClick={() => { navigator.clipboard.writeText(credNuevas.password); toastExito("Contraseña copiada"); }}>Copiar</BtnCopy>
+                        </CredRow>
+                        <CredActions>
+                            {credNuevas.telefono && (
+                                <CredBtnWA
+                                    as="a"
+                                    href={`https://wa.me/57${credNuevas.telefono.replace(/\D/g, "")}?text=${encodeURIComponent(`Hola ${credNuevas.nombre}, tu cuenta en SaaS.DTO2 está lista 🎉\n\n👤 Usuario: ${credNuevas.usuario}\n🔑 Contraseña: ${credNuevas.password}\n\n🌐 Ingresa en: https://saasdto2.vercel.app/login\n\n¡Bienvenido!`)}`}
+                                    target="_blank" rel="noopener noreferrer"
+                                >
+                                    <RiWhatsappLine size={17} /> Enviar por WhatsApp
+                                </CredBtnWA>
+                            )}
+                            <BtnCopy onClick={() => { navigator.clipboard.writeText(`Usuario: ${credNuevas.usuario}\nContraseña: ${credNuevas.password}`); toastExito("Credenciales copiadas"); }}>
+                                Copiar todo
+                            </BtnCopy>
+                        </CredActions>
+                    </CredModal>
+                </CredOverlay>
+            )}
+
             <TopBar>
                 <div>
                     <h1>Panel SaaS</h1>
@@ -410,7 +456,7 @@ export function SaasTemplate() {
                                             <InfoLabel>Contraseña</InfoLabel>
                                             <InfoVal>
                                                 {s.password_admin
-                                                    ? <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#4ade80", fontSize: 12, fontWeight: 700 }}>🔒 Protegida (SHA-256)</span>
+                                                    ? <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#4ade80", fontSize: 12, fontWeight: 700 }}>🔒 Protegida (PBKDF2)</span>
                                                     : <span style={{ color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>No registrada</span>
                                                 }
                                             </InfoVal>
@@ -1130,5 +1176,73 @@ const TipoPlanPill = styled.span`
     background:   ${({ $tipo }) => TIPO_COLORS[$tipo]?.bg     ?? "transparent"};
     border: 1px solid ${({ $tipo }) => TIPO_COLORS[$tipo]?.border ?? "transparent"};
     font-family: "Poppins", sans-serif;
+`;
+
+/* ── Modal credenciales nuevas ────────────────────────────── */
+const CredOverlay = styled.div`
+    position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 600; padding: 16px;
+`;
+
+const CredModal = styled.div`
+    background: ${({ theme }) => theme.bgcards};
+    border: 1.5px solid rgba(74,222,128,0.35);
+    border-radius: 20px; padding: 28px 28px 24px;
+    width: 100%; max-width: 440px;
+    display: flex; flex-direction: column; gap: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+`;
+
+const CredHeader = styled.div`
+    display: flex; align-items: center; justify-content: space-between;
+    span { font-size: 17px; font-weight: 900; color: ${({ theme }) => theme.text}; }
+`;
+
+const CredWarning = styled.div`
+    background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 10px; padding: 10px 14px;
+    font-size: 12px; font-weight: 600; color: #f59e0b;
+    font-family: "Poppins", sans-serif;
+`;
+
+const CredRow = styled.div`
+    display: flex; align-items: center; gap: 10px;
+    background: rgba(255,255,255,0.04); border-radius: 10px; padding: 10px 14px;
+    border: 1px solid rgba(255,255,255,0.09);
+`;
+
+const CredLabel = styled.span`
+    font-size: 11px; font-weight: 700; text-transform: uppercase;
+    color: ${({ theme }) => theme.colorsubtitlecard}; min-width: 76px;
+    letter-spacing: 0.4px;
+`;
+
+const CredVal = styled.span`
+    flex: 1; font-family: monospace; font-size: 15px; font-weight: 800;
+    color: #4ade80; letter-spacing: 1px;
+    word-break: break-all;
+`;
+
+const BtnCopy = styled.button`
+    padding: 5px 11px; border-radius: 7px; border: none; cursor: pointer;
+    background: rgba(255,255,255,0.08); color: ${({ theme }) => theme.text};
+    font-size: 11px; font-weight: 700; font-family: "Poppins", sans-serif;
+    white-space: nowrap;
+    &:hover { background: rgba(255,255,255,0.14); }
+`;
+
+const CredActions = styled.div`
+    display: flex; gap: 10px; flex-wrap: wrap;
+`;
+
+const CredBtnWA = styled.button`
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px 16px; border-radius: 12px;
+    border: 1.5px solid #16a34a88;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff; font-size: 13px; font-weight: 800;
+    font-family: "Poppins", sans-serif; cursor: pointer; text-decoration: none;
+    &:hover { filter: brightness(1.1); }
 `;
 
