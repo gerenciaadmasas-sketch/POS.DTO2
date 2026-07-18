@@ -58,7 +58,7 @@ export function CocinaTemplate({ id_empresa: propIdEmpresa }) {
             <TopBar>
                 <LogoArea>
                     <RiRestaurantLine size={22} />
-                    <span>Cocina · POS.DTO2</span>
+                    <span>Cocina · SaaS.DTO2</span>
                 </LogoArea>
                 <Stats>
                     <Chip $c="#f59e0b">{activas.length} en curso</Chip>

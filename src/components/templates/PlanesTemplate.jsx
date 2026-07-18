@@ -717,7 +717,7 @@ export function PlanesTemplate() {
 
             {/* ── Comparación visual ── */}
             <CompareSection $visible={visible}>
-                <CompareTitulo>¿Por qué POS.DTO2?</CompareTitulo>
+                <CompareTitulo>¿Por qué SaaS.DTO2?</CompareTitulo>
                 <CompareSub>Diseñado para negocios colombianos que quieren crecer sin complicaciones.</CompareSub>
                 <CompareGrid>
                     {[
@@ -756,7 +756,7 @@ export function PlanesTemplate() {
                 {[
                     { q: "¿Puedo cambiar de plan después?", a: "Sí, en cualquier momento. Sube o baja de plan sin perder ningún dato y el cambio se aplica de inmediato." },
                     { q: "¿Qué pasa si cancelo?", a: "Puedes cancelar en cualquier momento desde tu perfil. Seguirás usando el sistema hasta el final del período pagado, luego se desactiva." },
-                    { q: "¿Necesito instalar algo?", a: "No. POS.DTO2 funciona completamente desde el navegador — en computador, tablet o celular. Sin instalaciones, sin actualizaciones manuales." },
+                    { q: "¿Necesito instalar algo?", a: "No. SaaS.DTO2 funciona completamente desde el navegador — en computador, tablet o celular. Sin instalaciones, sin actualizaciones manuales." },
                     { q: "¿Mis datos están seguros en la nube?", a: "Sí. Toda la información está cifrada y almacenada en servidores seguros con backups automáticos cada 24 horas." },
                 ].map((faq, i) => (
                     <motion.div
@@ -1008,7 +1008,7 @@ export function PlanesTemplate() {
                         </BtnWA>
                     </motion.a>
                     <motion.a
-                        href="mailto:gerencia.adma.sas@gmail.com?subject=Quiero%20información%20sobre%20POS.DTO2"
+                        href="mailto:gerencia.adma.sas@gmail.com?subject=Quiero%20información%20sobre%20SaaS.DTO2"
                         whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
                         transition={{ type: "spring", stiffness: 300, damping: 18 }}
                         style={{ textDecoration: "none" }}

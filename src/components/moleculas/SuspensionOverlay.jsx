@@ -53,7 +53,7 @@ export function SuspensionOverlay() {
                 <Btns>
                     <BtnWA
                         as="a"
-                        href={`https://wa.me/573118303017?text=Hola!%20Soy%20${encodeURIComponent(nombre)}%20y%20quiero%20regularizar%20mi%20pago%20de%20POS.DTO2`}
+                        href={`https://wa.me/573118303017?text=Hola!%20Soy%20${encodeURIComponent(nombre)}%20y%20quiero%20regularizar%20mi%20pago%20de%20SaaS.DTO2`}
                         target="_blank"
                         rel="noopener noreferrer"
                     >
@@ -61,7 +61,7 @@ export function SuspensionOverlay() {
                     </BtnWA>
                     <BtnPagar
                         as="a"
-                        href={`https://wa.me/573118303017?text=Quiero%20pagar%20mi%20suscripci%C3%B3n%20de%20POS.DTO2`}
+                        href={`https://wa.me/573118303017?text=Quiero%20pagar%20mi%20suscripci%C3%B3n%20de%20SaaS.DTO2`}
                         target="_blank"
                         rel="noopener noreferrer"
                     >

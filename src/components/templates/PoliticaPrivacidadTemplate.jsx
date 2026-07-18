@@ -6,7 +6,7 @@ import { v } from "../../styles/variables";
 const SECCIONES = [
     {
         titulo: "1. Responsable del tratamiento",
-        texto: `ADMA BI, con correo de contacto gerencia.adma.sas@gmail.com, con domicilio en Bogotá, Colombia, es el responsable del tratamiento de los datos personales recolectados a través de la plataforma POS.DTO2.`,
+        texto: `ADMA BI, con correo de contacto gerencia.adma.sas@gmail.com, con domicilio en Bogotá, Colombia, es el responsable del tratamiento de los datos personales recolectados a través de la plataforma SaaS.DTO2.`,
     },
     {
         titulo: "2. Datos que recolectamos",
@@ -18,7 +18,7 @@ const SECCIONES = [
     },
     {
         titulo: "4. Aislamiento de datos (Multi-tenant)",
-        texto: `La plataforma POS.DTO2 opera bajo arquitectura multi-tenant con aislamiento total por empresa. Esto significa que los datos de ventas, clientes, inventario, proveedores y cualquier otra información de su negocio son completamente privados y no pueden ser accedidos por otros usuarios de la plataforma. Cada empresa cuenta con su propio espacio aislado y protegido.`,
+        texto: `La plataforma SaaS.DTO2 opera bajo arquitectura multi-tenant con aislamiento total por empresa. Esto significa que los datos de ventas, clientes, inventario, proveedores y cualquier otra información de su negocio son completamente privados y no pueden ser accedidos por otros usuarios de la plataforma. Cada empresa cuenta con su propio espacio aislado y protegido.`,
     },
     {
         titulo: "5. Derechos del titular",
@@ -51,12 +51,12 @@ export function PoliticaPrivacidadTemplate() {
                 <Header>
                     <IconoEscudo><RiShieldCheckLine /></IconoEscudo>
                     <Titulo>Política de Privacidad y Tratamiento de Datos Personales</Titulo>
-                    <Meta>ADMA BI · POS.DTO2 · Última actualización: enero 2025</Meta>
+                    <Meta>ADMA BI · SaaS.DTO2 · Última actualización: enero 2025</Meta>
                     <Meta>Ley 1581 de 2012 — República de Colombia 🇨🇴</Meta>
                 </Header>
 
                 <Intro>
-                    En ADMA BI nos comprometemos con la protección de sus datos personales. Esta política describe cómo recolectamos, usamos y protegemos la información que nos comparte al utilizar nuestra plataforma POS.DTO2.
+                    En ADMA BI nos comprometemos con la protección de sus datos personales. Esta política describe cómo recolectamos, usamos y protegemos la información que nos comparte al utilizar nuestra plataforma SaaS.DTO2.
                 </Intro>
 
                 <Divider />

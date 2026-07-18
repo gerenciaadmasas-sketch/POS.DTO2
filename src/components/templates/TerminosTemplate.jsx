@@ -6,7 +6,7 @@ import { v } from "../../styles/variables";
 const SECCIONES = [
     {
         titulo: "1. Descripción del servicio",
-        texto: `POS.DTO2 es una plataforma de software como servicio (SaaS) desarrollada por ADMA BI, orientada a micro y pequeñas empresas colombianas. El servicio incluye punto de venta (POS), gestión de inventario, reportes, y módulos adicionales según el plan contratado.\n\nEl acceso al servicio se otorga mediante suscripción mensual o anual, y queda habilitado tras la confirmación del pago.`,
+        texto: `SaaS.DTO2 es una plataforma de software como servicio (SaaS) desarrollada por ADMA BI, orientada a micro y pequeñas empresas colombianas. El servicio incluye punto de venta (POS), gestión de inventario, reportes, y módulos adicionales según el plan contratado.\n\nEl acceso al servicio se otorga mediante suscripción mensual o anual, y queda habilitado tras la confirmación del pago.`,
     },
     {
         titulo: "2. Planes y precios",
@@ -34,7 +34,7 @@ const SECCIONES = [
     },
     {
         titulo: "8. Propiedad intelectual",
-        texto: `Todo el software, diseño, código fuente y documentación de POS.DTO2 es propiedad exclusiva de ADMA BI. Queda prohibida su reproducción, distribución, ingeniería inversa o uso fuera de los términos aquí establecidos.\n\nLos datos ingresados por el usuario (productos, clientes, ventas, etc.) son de propiedad exclusiva del usuario.`,
+        texto: `Todo el software, diseño, código fuente y documentación de SaaS.DTO2 es propiedad exclusiva de ADMA BI. Queda prohibida su reproducción, distribución, ingeniería inversa o uso fuera de los términos aquí establecidos.\n\nLos datos ingresados por el usuario (productos, clientes, ventas, etc.) son de propiedad exclusiva del usuario.`,
     },
     {
         titulo: "9. Modificaciones a los términos",
@@ -59,12 +59,12 @@ export function TerminosTemplate() {
                 <Header>
                     <IconoDoc><RiFileTextLine /></IconoDoc>
                     <Titulo>Términos y Condiciones de Uso</Titulo>
-                    <Meta>ADMA BI · POS.DTO2 · Última actualización: enero 2025</Meta>
+                    <Meta>ADMA BI · SaaS.DTO2 · Última actualización: enero 2025</Meta>
                     <Meta>República de Colombia 🇨🇴</Meta>
                 </Header>
 
                 <Intro>
-                    Al registrarse y utilizar la plataforma POS.DTO2, usted acepta estos Términos y Condiciones en su totalidad. Si no está de acuerdo con alguno de ellos, le recomendamos no utilizar el servicio.
+                    Al registrarse y utilizar la plataforma SaaS.DTO2, usted acepta estos Términos y Condiciones en su totalidad. Si no está de acuerdo con alguno de ellos, le recomendamos no utilizar el servicio.
                 </Intro>
 
                 <Divider />

@@ -80,7 +80,7 @@ export function VersionTemplate() {
                         <ModalForm onSubmit={handleGuardar}>
                             <Campo>
                                 <label>Versión</label>
-                                <Input value={form.version} onChange={e => setForm({ ...form, version: e.target.value })} placeholder="Ej: POS.DTO2.v3" required />
+                                <Input value={form.version} onChange={e => setForm({ ...form, version: e.target.value })} placeholder="Ej: SaaS.DTO2.v3" required />
                             </Campo>
                             <Campo>
                                 <label>Notas de actualización</label>

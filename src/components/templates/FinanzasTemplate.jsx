@@ -34,7 +34,7 @@ const MIX = [0.30, 0.60, 0.10]; // 30% Chispa, 60% Fuego, 10% Cosmos
 const COMPETENCIA = [
     { nombre: "Siigo POS",   basico: 79000,  medio: 159000, color: "#60a5fa" },
     { nombre: "Alegra",      basico: 45000,  medio: 99000,  color: "#a78bfa" },
-    { nombre: "POS.DTO2",    basico: 49000,  medio: 129000, color: "#f88533", propio: true },
+    { nombre: "SaaS.DTO2",    basico: 49000,  medio: 129000, color: "#f88533", propio: true },
 ];
 
 const fmtCOP = (n) =>
@@ -314,7 +314,7 @@ export function FinanzasTemplate() {
                             { label: "En COP",     valor: `~${fmtCOP(4200)}/mes`, ok: null },
                         ],
                         clientesOk:  "No aplica — es un costo fijo pequeño",
-                        riesgo:      "Sin dominio propio tu URL es posdto2.vercel.app — no es profesional para clientes de pago. Proveedor recomendado: Namecheap o Porkbun (~$9-11 USD/año).",
+                        riesgo:      "Sin dominio propio tu URL es saasdto2.vercel.app — no es profesional para clientes de pago. Proveedor recomendado: Namecheap o Porkbun (~$9-11 USD/año).",
                         accion:      "Comprarlo YA — es el menor costo del negocio y da imagen profesional.",
                     },
                 ].map((s) => (
@@ -476,7 +476,7 @@ export function FinanzasTemplate() {
                     </tbody>
                 </CompTable>
                 <CompNota>
-                    POS.DTO2 entra al mercado con precios similares a Alegra pero con kardex, multi-almacén
+                    SaaS.DTO2 entra al mercado con precios similares a Alegra pero con kardex, multi-almacén
                     y roles incluidos desde el plan Fuego — lo que Siigo cobra $159.000.
                 </CompNota>
             </CompCard>

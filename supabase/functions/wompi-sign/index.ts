@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const allowedOrigin = Deno.env.get("FRONTEND_URL") ?? "https://posdto2.vercel.app";
+const allowedOrigin = Deno.env.get("FRONTEND_URL") ?? "https://saasdto2.vercel.app";
 const CORS = {
   "Access-Control-Allow-Origin": allowedOrigin,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -83,7 +83,7 @@ serve(async (req) => {
 
     // URL de checkout Wompi
     const publicKey  = Deno.env.get("WOMPI_PUBLIC_KEY")!;
-    const frontendUrl = Deno.env.get("FRONTEND_URL") ?? "https://posdto2.vercel.app";
+    const frontendUrl = Deno.env.get("FRONTEND_URL") ?? "https://saasdto2.vercel.app";
     const redirectUrl = `${frontendUrl}/pago-exitoso`;
 
     // Determinar tipo de documento
