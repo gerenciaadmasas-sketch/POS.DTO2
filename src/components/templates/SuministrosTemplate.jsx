@@ -21,6 +21,7 @@ import {
     RiCloseLine,
     RiLoader4Line,
     RiStore2Line,
+    RiPriceTag3Line,
 } from "react-icons/ri";
 
 const UNIDADES = ["kg", "g", "litros", "ml", "unidades", "porciones", "cajas", "bolsas", "docenas"];
@@ -28,7 +29,7 @@ const UNIDADES = ["kg", "g", "litros", "ml", "unidades", "porciones", "cajas", "
 const cop = (v) =>
     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(v);
 
-const EMPTY_FORM = { nombre: "", unidad: "unidades", stock_minimo: 0 };
+const EMPTY_FORM = { nombre: "", unidad: "unidades", stock_minimo: 0, precio_promedio: "" };
 const EMPTY_COMPRA = { cantidad: "", precio_total: "", proveedor: "" };
 
 export function SuministrosTemplate() {
@@ -66,7 +67,7 @@ export function SuministrosTemplate() {
 
     const abrirEditar = useCallback((s) => {
         setEditando(s);
-        setForm({ nombre: s.nombre, unidad: s.unidad, stock_minimo: s.stock_minimo });
+        setForm({ nombre: s.nombre, unidad: s.unidad, stock_minimo: s.stock_minimo, precio_promedio: s.precio_promedio || "" });
         setModalSuministro(true);
     }, []);
 
@@ -74,10 +75,15 @@ export function SuministrosTemplate() {
         if (!form.nombre.trim()) return;
         setGuardando(true);
         try {
+            const payload = {
+                ...form,
+                stock_minimo:    Number(form.stock_minimo) || 0,
+                precio_promedio: Number(form.precio_promedio) || 0,
+            };
             if (editando) {
-                await EditarSuministro({ id: editando.id, ...form, stock_minimo: Number(form.stock_minimo) });
+                await EditarSuministro({ id: editando.id, ...payload });
             } else {
-                await CrearSuministro({ id_empresa, ...form, stock_minimo: Number(form.stock_minimo) });
+                await CrearSuministro({ id_empresa, ...payload });
             }
             ref(); setModalSuministro(false);
         } finally { setGuardando(false); }
@@ -159,9 +165,13 @@ export function SuministrosTemplate() {
                                         <StockMin>mín. {s.stock_minimo}</StockMin>
                                     )}
                                 </StockRow>
-                                {s.precio_promedio > 0 && (
-                                    <PrecioPromedio>Costo unitario: {cop(s.precio_promedio)}</PrecioPromedio>
-                                )}
+                                <PrecioRow>
+                                    <RiPriceTag3Line size={13} />
+                                    <PrecioLabel>Costo / {s.unidad}</PrecioLabel>
+                                    <PrecioValor $vacio={!s.precio_promedio}>
+                                        {s.precio_promedio > 0 ? cop(s.precio_promedio) : "Sin precio"}
+                                    </PrecioValor>
+                                </PrecioRow>
                                 <CardActions>
                                     <ActionBtn title="Registrar compra" $color="#22c55e" onClick={() => { setModalCompra(s); setCompra(EMPTY_COMPRA); }}>
                                         <RiShoppingCart2Line size={15} />
@@ -219,6 +229,13 @@ export function SuministrosTemplate() {
                                         />
                                     </div>
                                 </FormRow>
+                                <FormLabel>Precio / costo unitario ($)</FormLabel>
+                                <FormInput
+                                    type="number" min={0}
+                                    placeholder="Ej: 5000"
+                                    value={form.precio_promedio}
+                                    onChange={e => setForm(f => ({ ...f, precio_promedio: e.target.value }))}
+                                />
                             </ModalBody>
                             <ModalFooter>
                                 <BtnCancel onClick={() => setModalSuministro(false)}>Cancelar</BtnCancel>
@@ -422,8 +439,23 @@ const StockMin = styled.span`
     margin-left: auto;
 `;
 
-const PrecioPromedio = styled.div`
-    font-size: 11px; color: ${({ theme }) => theme.colorsubtitlecard};
+const PrecioRow = styled.div`
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 10px; border-radius: 8px;
+    background: rgba(20,184,166,0.07);
+    border: 1px solid rgba(20,184,166,0.18);
+    color: #14b8a6;
+`;
+
+const PrecioLabel = styled.span`
+    flex: 1; font-size: 11px; font-weight: 600;
+    color: ${({ theme }) => theme.colorsubtitlecard};
+`;
+
+const PrecioValor = styled.span`
+    font-size: 13px; font-weight: 800;
+    color: ${({ $vacio }) => $vacio ? "rgba(255,255,255,0.2)" : "#14b8a6"};
+    font-family: "Poppins", sans-serif;
 `;
 
 const CardActions = styled.div`
