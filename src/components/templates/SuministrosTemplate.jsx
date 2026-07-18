@@ -55,9 +55,12 @@ export function SuministrosTemplate() {
         queryKey: ["compras-sum", modalHistorial?.id],
         queryFn: () => MostrarComprasSuministro({ id_suministro: modalHistorial?.id }),
         enabled: !!modalHistorial?.id,
+        staleTime: 0,
+        refetchOnMount: "always",
     });
 
-    const ref = () => qc.invalidateQueries({ queryKey: ["suministros", id_empresa] });
+    const ref        = () => qc.invalidateQueries({ queryKey: ["suministros", id_empresa] });
+    const refHistorial = (id) => qc.invalidateQueries({ queryKey: ["compras-sum", id] });
 
     const abrirNuevo = useCallback(() => {
         setEditando(null);
@@ -99,14 +102,15 @@ export function SuministrosTemplate() {
         if (!compra.cantidad || !compra.precio_total || !modalCompra) return;
         setGuardando(true);
         try {
+            const idSum = modalCompra.id;
             await RegistrarCompra({
                 id_empresa,
-                id_suministro: modalCompra.id,
+                id_suministro: idSum,
                 cantidad:    Number(compra.cantidad),
                 precio_total: Number(compra.precio_total),
                 proveedor:   compra.proveedor || null,
             });
-            ref(); setModalCompra(null); setCompra(EMPTY_COMPRA);
+            ref(); refHistorial(idSum); setModalCompra(null); setCompra(EMPTY_COMPRA);
         } finally { setGuardando(false); }
     }, [compra, modalCompra, id_empresa]);
 
