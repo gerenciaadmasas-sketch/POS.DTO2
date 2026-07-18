@@ -1,5 +1,6 @@
 import { supabase } from "./supabase.config";
 import { toastError } from "../utils/toast";
+import { hashPassword } from "../utils/hash";
 
 const tabla = "suscripciones";
 
@@ -115,7 +116,7 @@ export async function InsertarSuscripcion(p) {
         actividad_economica: p.actividad_economica,
         id_empresa: empresa.id,
         usuario_admin: usuario,
-        password_admin: password,
+        password_admin: await hashPassword(password),
         email_admin: email,
     });
     if (error) { toastError(error.message, "Suscripciones › Insertar"); throw error; }

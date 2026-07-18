@@ -170,6 +170,11 @@ serve(async (req) => {
     const hoy     = new Date();
     const proximoPago = new Date(hoy.getFullYear(), hoy.getMonth() + meses, hoy.getDate());
 
+    // Hash SHA-256 de la contraseña antes de guardar en suscripciones
+    const pwRaw  = new TextEncoder().encode(password);
+    const pwBuf  = await crypto.subtle.digest("SHA-256", pwRaw);
+    const pwHash = Array.from(new Uint8Array(pwBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+
     await supabase.from("suscripciones").insert({
       nombre_cliente:       pending.nombre,
       apellido_cliente:     pending.apellido,
@@ -185,7 +190,7 @@ serve(async (req) => {
       actividad_economica:  pending.actividad_economica,
       id_empresa:           empresa.id,
       usuario_admin:        usuario,
-      password_admin:       password,
+      password_admin:       pwHash,
       email_admin:          email,
     });
 

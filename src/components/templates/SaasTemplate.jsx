@@ -408,8 +408,11 @@ export function SaasTemplate() {
                                         </InfoFila>
                                         <InfoFila>
                                             <InfoLabel>Contraseña</InfoLabel>
-                                            <InfoVal style={{ fontFamily: "monospace" }}>
-                                                {s.password_admin || <span style={{ color: "rgba(255,255,255,0.3)", fontStyle: "italic", fontFamily: "inherit" }}>No registrada</span>}
+                                            <InfoVal>
+                                                {s.password_admin
+                                                    ? <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#4ade80", fontSize: 12, fontWeight: 700 }}>🔒 Protegida (SHA-256)</span>
+                                                    : <span style={{ color: "rgba(255,255,255,0.3)", fontStyle: "italic" }}>No registrada</span>
+                                                }
                                             </InfoVal>
                                         </InfoFila>
                                     </CredencialesBox>

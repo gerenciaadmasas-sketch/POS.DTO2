@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { SuspensionOverlay } from "../components/moleculas/SuspensionOverlay";
 import { Categorias, Clientes, Configuraciones, Empresa, Home, Inventario, Kardex, Login, POS, Productos, Proveedores, Reportes, ProtectedRoute, UserAuth, useEmpresaStore, useUsuariosStore, Serializacion, TicketConfig, SucursalesCajas, Saas, PlanesConfig, Version } from "../index"
+import { SuperadminRoute } from "../hooks/SuperadminRoute";
 import { UsuariosConfig } from "../pages/UsuariosConfig";
 import { MiPerfil } from "../pages/MiPerfil";
 import { Arqueo } from "../pages/Arqueo";
@@ -100,12 +101,15 @@ export function Myroutes() {
         <Route path="/arqueo" element={<Arqueo />} />
         <Route path="/configuracion/impresoras" element={<Impresoras />} />
         <Route path="/pos" element={<POS />} />
-        <Route path="/saas" element={<Saas />} />
-        <Route path="/configuracion/planes" element={<PlanesConfig />} />
-        <Route path="/configuracion/version" element={<Version />} />
-        <Route path="/finanzas" element={<Finanzas />} />
-        <Route path="/prospectos" element={<Prospectos />} />
-        <Route path="/mensajes"   element={<Mensajes />} />
+        {/* ── Rutas exclusivas de superadmin ── */}
+        <Route element={<SuperadminRoute usuario={datausuarios} />}>
+          <Route path="/saas"       element={<Saas />} />
+          <Route path="/finanzas"   element={<Finanzas />} />
+          <Route path="/prospectos" element={<Prospectos />} />
+          <Route path="/mensajes"   element={<Mensajes />} />
+          <Route path="/configuracion/planes" element={<PlanesConfig />} />
+          <Route path="/configuracion/version" element={<Version />} />
+        </Route>
         <Route path="/soporte"    element={<Soporte />} />
         <Route path="/chat"        element={<Chat />} />
         <Route path="/propiedades"    element={<Propiedades />} />
