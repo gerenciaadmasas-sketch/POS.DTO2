@@ -73,7 +73,6 @@ export function ConfiguracionesTemplate() {
         "/configuracion/productos",
         "/configuracion/serializacion",
         "/configuracion/sucursales",
-        "/configuracion/clientes",
     ];
 
     const VISIBLES_SUPERADMIN = ["/configuracion/planes", "/configuracion/version"];
