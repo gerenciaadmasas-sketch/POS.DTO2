@@ -14,6 +14,7 @@ import {
     RiRestaurantLine, RiAddLine, RiEditLine, RiDeleteBinLine,
     RiCloseLine, RiCheckLine, RiSendPlane2Line, RiMoneyDollarCircleLine,
     RiTableLine, RiArrowLeftLine, RiSubtractLine, RiRefreshLine,
+    RiBankCardLine, RiSmartphoneLine, RiExchangeDollarLine, RiBankLine,
 } from "react-icons/ri";
 import Swal from "sweetalert2";
 
@@ -37,6 +38,9 @@ export function MesasTemplate() {
     const [loading, setLoading]       = useState(false);
     const [modalMesa, setModalMesa]   = useState(null);   // null | "nueva" | mesa
     const [formMesa, setFormMesa]     = useState({ numero: "", nombre: "", capacidad: 4 });
+    const [modalCobro, setModalCobro] = useState(false);
+    const [metodoPago, setMetodoPago] = useState("efectivo");
+    const [pagadoCon, setPagadoCon]   = useState("");
 
     const refMesas = () => qc.invalidateQueries({ queryKey: ["mesas", id_empresa] });
 
@@ -113,22 +117,22 @@ export function MesasTemplate() {
     }, [comanda]);
 
     /* ── Cobrar ───────────────────────────────────────────── */
-    const cobrar = useCallback(async () => {
-        const r = await Swal.fire({
-            title: `Cobrar mesa ${panel?.nombre ?? panel?.numero}`,
-            text: `Total: ${COP(comanda?.total)} — ¿Confirmar cobro?`,
-            icon: "question",
-            showCancelButton: true,
-            confirmButtonText: "Cobrar",
-            cancelButtonText: "Cancelar",
-            confirmButtonColor: "#22c55e",
-            customClass: { popup: "swal-pos" },
-        });
-        if (!r.isConfirmed) return;
-        await CerrarComanda({ id: comanda.id, id_mesa: panel.id });
+    const abrirCobro = useCallback(() => {
+        if (!comanda?.total) return;
+        setMetodoPago("efectivo");
+        setPagadoCon("");
+        setModalCobro(true);
+    }, [comanda]);
+
+    const confirmarCobro = useCallback(async () => {
+        const total   = comanda?.total ?? 0;
+        const pagado  = metodoPago === "efectivo" ? (parseFloat(pagadoCon) || total) : total;
+        const cambio  = metodoPago === "efectivo" ? Math.max(0, pagado - total) : 0;
+        await CerrarComanda({ id: comanda.id, id_mesa: panel.id, metodo_pago: metodoPago, pagado_con: pagado, cambio });
+        setModalCobro(false);
         cerrarPanel();
         refMesas();
-    }, [comanda, panel]);
+    }, [comanda, panel, metodoPago, pagadoCon]);
 
     /* ── CRUD mesas ───────────────────────────────────────── */
     const abrirModalMesa = (mesa = null) => {
@@ -324,7 +328,7 @@ export function MesasTemplate() {
                                                 <RiSendPlane2Line /> Enviar a cocina
                                             </BtnCocina>
                                             <BtnCobrar
-                                                onClick={cobrar}
+                                                onClick={abrirCobro}
                                                 disabled={!comanda?.total}
                                             >
                                                 <RiMoneyDollarCircleLine /> Cobrar
@@ -336,6 +340,100 @@ export function MesasTemplate() {
                         </Drawer>
                     </>
                 )}
+            </AnimatePresence>
+
+            {/* ── Modal cobro ── */}
+            <AnimatePresence>
+                {modalCobro && (() => {
+                    const total     = comanda?.total ?? 0;
+                    const pagado    = parseFloat(pagadoCon) || 0;
+                    const cambio    = metodoPago === "efectivo" && pagado >= total ? pagado - total : 0;
+                    const falta     = metodoPago === "efectivo" && pagado > 0 && pagado < total ? total - pagado : 0;
+                    const puedeCobrar = metodoPago !== "efectivo" || pagado >= total || pagadoCon === "";
+                    const METODOS = [
+                        { key: "efectivo",      label: "Efectivo",     icon: <RiMoneyDollarCircleLine /> },
+                        { key: "tarjeta",       label: "Tarjeta",      icon: <RiBankCardLine />          },
+                        { key: "transferencia", label: "Transferencia", icon: <RiBankLine />              },
+                        { key: "nequi",         label: "Nequi / DaviPlata", icon: <RiSmartphoneLine />   },
+                    ];
+                    return (
+                        <>
+                            <Overlay onClick={() => setModalCobro(false)} />
+                            <ModalCenter>
+                                <Modal
+                                    initial={{ opacity: 0, scale: 0.93, y: 20 }}
+                                    animate={{ opacity: 1, scale: 1,    y: 0  }}
+                                    exit={{   opacity: 0, scale: 0.9,   y: 10 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    <CobroHeader>
+                                        <CobroTitulo>
+                                            <RiMoneyDollarCircleLine />
+                                            Cobro · {panel?.nombre ?? `Mesa ${panel?.numero}`}
+                                        </CobroTitulo>
+                                        <IconBtn onClick={() => setModalCobro(false)}><RiCloseLine /></IconBtn>
+                                    </CobroHeader>
+
+                                    <CobroBody>
+                                        {/* Total */}
+                                        <TotalBox>
+                                            <TotalLabel>Total a cobrar</TotalLabel>
+                                            <TotalAmount>{COP(total)}</TotalAmount>
+                                        </TotalBox>
+
+                                        {/* Método de pago */}
+                                        <CobroSection>
+                                            <CobroSectionLabel>Método de pago</CobroSectionLabel>
+                                            <MetodosGrid>
+                                                {METODOS.map(m => (
+                                                    <MetodoBtn
+                                                        key={m.key}
+                                                        $active={metodoPago === m.key}
+                                                        onClick={() => { setMetodoPago(m.key); setPagadoCon(""); }}
+                                                    >
+                                                        {m.icon} {m.label}
+                                                    </MetodoBtn>
+                                                ))}
+                                            </MetodosGrid>
+                                        </CobroSection>
+
+                                        {/* Campo efectivo */}
+                                        {metodoPago === "efectivo" && (
+                                            <CobroSection>
+                                                <CobroSectionLabel>¿Con cuánto paga el cliente?</CobroSectionLabel>
+                                                <EfectivoInput
+                                                    type="number" min="0" step="1000"
+                                                    placeholder={`Mínimo ${COP(total)}`}
+                                                    value={pagadoCon}
+                                                    onChange={e => setPagadoCon(e.target.value)}
+                                                    autoFocus
+                                                />
+                                                {cambio > 0 && (
+                                                    <CambioBox $tipo="cambio">
+                                                        <RiExchangeDollarLine />
+                                                        <span>Cambio a devolver: <strong>{COP(cambio)}</strong></span>
+                                                    </CambioBox>
+                                                )}
+                                                {falta > 0 && (
+                                                    <CambioBox $tipo="falta">
+                                                        <span>Faltan: <strong>{COP(falta)}</strong></span>
+                                                    </CambioBox>
+                                                )}
+                                            </CobroSection>
+                                        )}
+                                    </CobroBody>
+
+                                    <CobroFooter>
+                                        <BtnSecondary onClick={() => setModalCobro(false)}>Cancelar</BtnSecondary>
+                                        <BtnCobrarModal onClick={confirmarCobro} disabled={!puedeCobrar}>
+                                            <RiCheckLine /> Confirmar cobro
+                                        </BtnCobrarModal>
+                                    </CobroFooter>
+                                </Modal>
+                            </ModalCenter>
+                        </>
+                    );
+                })()}
             </AnimatePresence>
 
             {/* ── Modal nueva/editar mesa ── */}
@@ -757,4 +855,103 @@ const FormInput = styled.input`
 
 const ModalFooter = styled.div`
     display: flex; gap: 8px; justify-content: flex-end;
+`;
+
+/* ── Modal cobro ── */
+const CobroHeader = styled.div`
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 22px 16px;
+    border-bottom: 1px solid ${({ theme }) => theme.color2};
+`;
+
+const CobroTitulo = styled.div`
+    display: flex; align-items: center; gap: 10px;
+    font-size: 16px; font-weight: 800; color: ${({ theme }) => theme.text};
+    svg { color: #22c55e; font-size: 20px; }
+`;
+
+const CobroBody = styled.div`
+    padding: 20px 22px; display: flex; flex-direction: column; gap: 20px;
+`;
+
+const TotalBox = styled.div`
+    background: rgba(34,197,94,0.07);
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 14px; padding: 16px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+`;
+
+const TotalLabel = styled.span`
+    font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.4);
+`;
+
+const TotalAmount = styled.span`
+    font-size: 26px; font-weight: 900; color: #22c55e;
+    font-family: "Poppins", sans-serif;
+`;
+
+const CobroSection = styled.div`
+    display: flex; flex-direction: column; gap: 10px;
+`;
+
+const CobroSectionLabel = styled.div`
+    font-size: 11px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.5px; color: rgba(255,255,255,0.3);
+`;
+
+const MetodosGrid = styled.div`
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+`;
+
+const MetodoBtn = styled.button`
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px 14px; border-radius: 12px; cursor: pointer;
+    font-size: 13px; font-weight: 700; font-family: "Poppins", sans-serif;
+    transition: all 0.15s;
+    border: 2px solid ${({ $active }) => $active ? "#f97316" : "rgba(255,255,255,0.1)"};
+    background: ${({ $active }) => $active ? "rgba(249,115,22,0.12)" : "rgba(255,255,255,0.03)"};
+    color: ${({ $active }) => $active ? "#f97316" : "rgba(255,255,255,0.5)"};
+    svg { font-size: 17px; }
+    &:hover {
+        border-color: #f97316;
+        color: #f97316;
+        background: rgba(249,115,22,0.08);
+    }
+`;
+
+const EfectivoInput = styled.input`
+    padding: 12px 16px; border-radius: 12px; font-size: 20px; font-weight: 800;
+    border: 2px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    color: ${({ theme }) => theme.text};
+    font-family: "Poppins", sans-serif; outline: none; width: 100%;
+    &:focus { border-color: #f97316; }
+`;
+
+const CambioBox = styled.div`
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; border-radius: 10px;
+    font-size: 14px; font-weight: 700;
+    background: ${({ $tipo }) => $tipo === "cambio" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)"};
+    border: 1px solid ${({ $tipo }) => $tipo === "cambio" ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.25)"};
+    color: ${({ $tipo }) => $tipo === "cambio" ? "#22c55e" : "#ef4444"};
+    svg { font-size: 18px; flex-shrink: 0; }
+    strong { font-size: 16px; }
+`;
+
+const CobroFooter = styled.div`
+    display: flex; gap: 8px; justify-content: flex-end;
+    padding: 14px 22px 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+`;
+
+const BtnCobrarModal = styled.button`
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 22px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: #fff; font-size: 13px; font-weight: 800;
+    font-family: "Poppins", sans-serif; cursor: pointer;
+    transition: filter 0.15s, opacity 0.15s;
+    &:hover:not(:disabled) { filter: brightness(1.1); }
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
 `;
