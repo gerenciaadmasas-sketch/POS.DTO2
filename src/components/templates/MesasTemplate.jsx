@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import styled, { keyframes, css } from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,8 +15,10 @@ import {
     RiCloseLine, RiCheckLine, RiSendPlane2Line, RiMoneyDollarCircleLine,
     RiTableLine, RiArrowLeftLine, RiSubtractLine, RiRefreshLine,
     RiBankCardLine, RiSmartphoneLine, RiExchangeDollarLine, RiBankLine,
+    RiUserLine, RiSearchLine, RiUserFollowLine,
 } from "react-icons/ri";
 import Swal from "sweetalert2";
+import { BuscarClientes } from "../../supabase/crudClientes";
 
 const COP = (n) =>
     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n ?? 0);
@@ -38,9 +40,14 @@ export function MesasTemplate() {
     const [loading, setLoading]       = useState(false);
     const [modalMesa, setModalMesa]   = useState(null);   // null | "nueva" | mesa
     const [formMesa, setFormMesa]     = useState({ numero: "", nombre: "", capacidad: 4 });
-    const [modalCobro, setModalCobro] = useState(false);
-    const [metodoPago, setMetodoPago] = useState("efectivo");
-    const [pagadoCon, setPagadoCon]   = useState("");
+    const [modalCobro, setModalCobro]       = useState(false);
+    const [metodoPago, setMetodoPago]       = useState("efectivo");
+    const [pagadoCon, setPagadoCon]         = useState("");
+    const [clienteBusq, setClienteBusq]     = useState("");
+    const [clienteSel, setClienteSel]       = useState(null);
+    const [clienteOpts, setClienteOpts]     = useState([]);
+    const [clienteLoading, setClienteLoading] = useState(false);
+    const busqTimer = useRef(null);
 
     const refMesas = () => qc.invalidateQueries({ queryKey: ["mesas", id_empresa] });
 
@@ -116,11 +123,27 @@ export function MesasTemplate() {
         refMesas();
     }, [comanda]);
 
+    /* ── Búsqueda de cliente (debounced) ─────────────────── */
+    useEffect(() => {
+        if (!clienteBusq.trim() || clienteSel) { setClienteOpts([]); return; }
+        clearTimeout(busqTimer.current);
+        busqTimer.current = setTimeout(async () => {
+            setClienteLoading(true);
+            const res = await BuscarClientes({ id_empresa, busqueda: clienteBusq });
+            setClienteOpts(res ?? []);
+            setClienteLoading(false);
+        }, 350);
+        return () => clearTimeout(busqTimer.current);
+    }, [clienteBusq, id_empresa, clienteSel]);
+
     /* ── Cobrar ───────────────────────────────────────────── */
     const abrirCobro = useCallback(() => {
         if (!comanda?.total) return;
         setMetodoPago("efectivo");
         setPagadoCon("");
+        setClienteBusq("");
+        setClienteSel(null);
+        setClienteOpts([]);
         setModalCobro(true);
     }, [comanda]);
 
@@ -128,7 +151,12 @@ export function MesasTemplate() {
         const total   = comanda?.total ?? 0;
         const pagado  = metodoPago === "efectivo" ? (parseFloat(pagadoCon) || total) : total;
         const cambio  = metodoPago === "efectivo" ? Math.max(0, pagado - total) : 0;
-        await CerrarComanda({ id: comanda.id, id_mesa: panel.id, metodo_pago: metodoPago, pagado_con: pagado, cambio });
+        await CerrarComanda({
+            id: comanda.id, id_mesa: panel.id,
+            metodo_pago: metodoPago, pagado_con: pagado, cambio,
+            id_cliente: clienteSel?.id ?? null,
+            nombre_cliente: clienteSel ? `${clienteSel.nombre} ${clienteSel.apellido ?? ""}`.trim() : null,
+        });
         setModalCobro(false);
         cerrarPanel();
         refMesas();
@@ -421,6 +449,46 @@ export function MesasTemplate() {
                                                 )}
                                             </CobroSection>
                                         )}
+
+                                        {/* Cliente opcional */}
+                                        <CobroSection>
+                                            <CobroSectionLabel>
+                                                <RiUserLine size={12} /> Cliente (opcional)
+                                            </CobroSectionLabel>
+                                            {clienteSel ? (
+                                                <ClienteSelBox>
+                                                    <RiUserFollowLine size={16} />
+                                                    <ClienteSelNombre>
+                                                        {clienteSel.nombre} {clienteSel.apellido ?? ""}
+                                                        {clienteSel.telefono && <span>{clienteSel.telefono}</span>}
+                                                    </ClienteSelNombre>
+                                                    <ClienteDeselBtn onClick={() => { setClienteSel(null); setClienteBusq(""); }}>
+                                                        <RiCloseLine size={14} />
+                                                    </ClienteDeselBtn>
+                                                </ClienteSelBox>
+                                            ) : (
+                                                <ClienteBusqWrap>
+                                                    <ClienteBusqIcon><RiSearchLine size={14} /></ClienteBusqIcon>
+                                                    <ClienteBusqInput
+                                                        placeholder="Buscar por nombre o teléfono..."
+                                                        value={clienteBusq}
+                                                        onChange={e => setClienteBusq(e.target.value)}
+                                                    />
+                                                    {clienteLoading && <ClienteBusqSpinner />}
+                                                    {clienteOpts.length > 0 && (
+                                                        <ClienteDropdown>
+                                                            {clienteOpts.map(c => (
+                                                                <ClienteOpcion key={c.id} onClick={() => { setClienteSel(c); setClienteOpts([]); setClienteBusq(""); }}>
+                                                                    <RiUserLine size={13} />
+                                                                    <span>{c.nombre} {c.apellido ?? ""}</span>
+                                                                    {c.telefono && <ClienteTel>{c.telefono}</ClienteTel>}
+                                                                </ClienteOpcion>
+                                                            ))}
+                                                        </ClienteDropdown>
+                                                    )}
+                                                </ClienteBusqWrap>
+                                            )}
+                                        </CobroSection>
                                     </CobroBody>
 
                                     <CobroFooter>
@@ -954,4 +1022,78 @@ const BtnCobrarModal = styled.button`
     transition: filter 0.15s, opacity 0.15s;
     &:hover:not(:disabled) { filter: brightness(1.1); }
     &:disabled { opacity: 0.4; cursor: not-allowed; }
+`;
+
+/* ── Cliente en cobro ── */
+const ClienteBusqWrap = styled.div`
+    position: relative;
+`;
+
+const ClienteBusqIcon = styled.div`
+    position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+    color: rgba(255,255,255,0.3); pointer-events: none; display: flex;
+`;
+
+const ClienteBusqInput = styled.input`
+    width: 100%; padding: 9px 12px 9px 32px;
+    border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04); color: ${({ theme }) => theme.text};
+    font-size: 13px; font-family: "Poppins", sans-serif; outline: none;
+    box-sizing: border-box;
+    &:focus { border-color: #f97316; }
+    &::placeholder { color: rgba(255,255,255,0.25); }
+`;
+
+const ClienteBusqSpinner = styled.div`
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.1);
+    border-top-color: #f97316;
+    animation: spin 0.7s linear infinite;
+`;
+
+const ClienteDropdown = styled.div`
+    position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+    background: ${({ theme }) => theme.bgcards};
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px; overflow: hidden;
+    z-index: 20; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+`;
+
+const ClienteOpcion = styled.div`
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; cursor: pointer; font-size: 13px;
+    color: ${({ theme }) => theme.text};
+    transition: background 0.12s;
+    &:hover { background: rgba(249,115,22,0.1); }
+    svg { color: rgba(255,255,255,0.35); flex-shrink: 0; }
+    span { flex: 1; font-weight: 600; }
+`;
+
+const ClienteTel = styled.span`
+    font-size: 11px; color: rgba(255,255,255,0.3);
+    flex: 0 !important; font-weight: 400 !important;
+`;
+
+const ClienteSelBox = styled.div`
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 10px;
+    background: rgba(34,197,94,0.08);
+    border: 1px solid rgba(34,197,94,0.25);
+    color: #22c55e;
+    svg { flex-shrink: 0; }
+`;
+
+const ClienteSelNombre = styled.div`
+    flex: 1; font-size: 13px; font-weight: 700;
+    color: ${({ theme }) => theme.text};
+    font-family: "Poppins", sans-serif;
+    span { display: block; font-size: 11px; font-weight: 400; color: rgba(255,255,255,0.4); margin-top: 1px; }
+`;
+
+const ClienteDeselBtn = styled.button`
+    background: rgba(239,68,68,0.1); border: none; cursor: pointer;
+    color: #ef4444; border-radius: 6px; padding: 3px;
+    display: flex; align-items: center;
+    &:hover { background: rgba(239,68,68,0.2); }
 `;

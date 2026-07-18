@@ -68,6 +68,14 @@ export function ConfiguracionesTemplate() {
         "/configuracion/productos",
     ];
 
+    const OCULTOS_RESTAURANTE = [
+        "/configuracion/categorias",
+        "/configuracion/productos",
+        "/configuracion/serializacion",
+        "/configuracion/sucursales",
+        "/configuracion/clientes",
+    ];
+
     const VISIBLES_SUPERADMIN = ["/configuracion/planes", "/configuracion/version"];
 
     const modulosFiltrados = useMemo(() => {
@@ -76,7 +84,8 @@ export function ConfiguracionesTemplate() {
         if (esSupervisor) return dataModulos.filter((m) => !OCULTOS_SUPERVISOR.includes(m.link));
         if (esAdmin) {
             let modulos = dataModulos.filter((m) => !OCULTOS_ADMIN.includes(m.link));
-            if (esInmobiliaria || esRestaurante) modulos = modulos.filter((m) => !OCULTOS_INMOBILIARIA.includes(m.link));
+            if (esRestaurante) return modulos.filter((m) => !OCULTOS_RESTAURANTE.includes(m.link));
+            if (esInmobiliaria) return modulos.filter((m) => !OCULTOS_INMOBILIARIA.includes(m.link));
             return modulos;
         }
         return dataModulos;

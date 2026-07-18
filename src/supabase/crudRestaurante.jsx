@@ -161,9 +161,9 @@ export async function CambiarEstadoItem({ id, estado }) {
     if (error) { toastError(error.message, "Comanda › Estado ítem"); throw error; }
 }
 
-export async function CerrarComanda({ id, id_mesa, metodo_pago = "efectivo", pagado_con = 0, cambio = 0 }) {
+export async function CerrarComanda({ id, id_mesa, metodo_pago = "efectivo", pagado_con = 0, cambio = 0, id_cliente = null, nombre_cliente = null }) {
     const [r1, r2] = await Promise.all([
-        supabase.from("comandas").update({ estado: "cobrada", metodo_pago, pagado_con, cambio }).eq("id", id),
+        supabase.from("comandas").update({ estado: "cobrada", metodo_pago, pagado_con, cambio, id_cliente, nombre_cliente }).eq("id", id),
         supabase.from("mesas").update({ estado: "libre" }).eq("id", id_mesa),
     ]);
     if (r1.error) toastError(r1.error.message, "Comanda › Cerrar");
