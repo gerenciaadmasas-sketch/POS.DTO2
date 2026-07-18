@@ -22,7 +22,7 @@ export function SuspensionOverlay() {
             <Caja>
                 <Logo>
                     <img src={v.logo} alt="logo" width={36} />
-                    <span>POS<b>.DTO2</b></span>
+                    <span>SaaS<b>.DTO2</b></span>
                 </Logo>
 
                 <IconoLock>

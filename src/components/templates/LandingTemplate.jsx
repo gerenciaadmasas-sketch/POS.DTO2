@@ -87,7 +87,7 @@ export function LandingTemplate() {
                 <MktInner>
                     <MktLogo>
                         <img src={v.logo} alt="logo" />
-                        <MktNombre>POS<span>.DTO2</span></MktNombre>
+                        <MktNombre>SaaS<span>.DTO2</span></MktNombre>
                     </MktLogo>
                     <MktTagline>El sistema de punto de venta que impulsa tu negocio</MktTagline>
                     <MktSub>Gestiona ventas, inventario y reportes desde cualquier dispositivo, en tiempo real.</MktSub>
@@ -109,7 +109,7 @@ export function LandingTemplate() {
                 <MktMobile>
                     <MktMobileLogo>
                         <img src={v.logo} alt="logo" />
-                        <span>POS<b>.DTO2</b></span>
+                        <span>SaaS<b>.DTO2</b></span>
                     </MktMobileLogo>
                     <MktMobileTagline>El punto de venta que impulsa tu negocio</MktMobileTagline>
                     <MktMobileGrid>
@@ -126,7 +126,7 @@ export function LandingTemplate() {
                 <Card>
                     <CtaLogo>
                         <img src={v.logo} alt="logo" />
-                        <span>POS<b>.DTO2</b></span>
+                        <span>SaaS<b>.DTO2</b></span>
                     </CtaLogo>
                     <CtaTexto>Bienvenido al sistema de gestión</CtaTexto>
 
@@ -167,7 +167,7 @@ export function LandingTemplate() {
 
             <DrawerLogo>
                 <img src={v.logo} alt="logo" />
-                <span>POS<b>.DTO2</b></span>
+                <span>SaaS<b>.DTO2</b></span>
             </DrawerLogo>
 
             <DrawerTitle>Bienvenido de vuelta</DrawerTitle>

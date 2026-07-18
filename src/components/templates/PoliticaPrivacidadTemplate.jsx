@@ -84,7 +84,7 @@ export function PoliticaPrivacidadTemplate() {
                 <FooterLegal>
                     <LogoBtn onClick={() => navigate("/")}>
                         <img src={v.logo} alt="logo" />
-                        <span>POS<b>.DTO2</b></span>
+                        <span>SaaS<b>.DTO2</b></span>
                     </LogoBtn>
                     <FooterTexto>© {new Date().getFullYear()} ADMA BI · Bogotá, Colombia</FooterTexto>
                 </FooterLegal>

@@ -545,7 +545,7 @@ export function PlanesTemplate() {
             <Navbar $visible={visible} $scrolled={scrolled}>
                 <NavLogo onClick={() => navigate("/")}>
                     <img src={v.logo} alt="logo" />
-                    <span>POS<b>.DTO2</b></span>
+                    <span>SaaS<b>.DTO2</b></span>
                 </NavLogo>
 
                 <NavCenter>
@@ -1034,7 +1034,7 @@ export function PlanesTemplate() {
             <PlanFooter>
                 <FooterLogo onClick={() => navigate("/")}>
                     <img src={v.logo} alt="logo" />
-                    <span>POS<b>.DTO2</b></span>
+                    <span>SaaS<b>.DTO2</b></span>
                 </FooterLogo>
                 <FooterLinks>
                     <FooterLink onClick={() => navigate("/privacidad")}>Política de Privacidad</FooterLink>
@@ -1054,7 +1054,7 @@ export function PlanesTemplate() {
 
             <DrawerLogo>
                 <img src={v.logo} alt="logo" />
-                <span>POS<b>.DTO2</b></span>
+                <span>SaaS<b>.DTO2</b></span>
             </DrawerLogo>
 
             {regOk ? (
@@ -1312,7 +1312,7 @@ export function PlanesTemplate() {
 
             <DrawerLogo>
                 <img src={v.logo} alt="logo" />
-                <span>POS<b>.DTO2</b></span>
+                <span>SaaS<b>.DTO2</b></span>
             </DrawerLogo>
 
             <DrawerTitle>Bienvenido de vuelta</DrawerTitle>

@@ -72,7 +72,7 @@ export function PagoExitosoTemplate() {
                 {/* Logo */}
                 <Logo onClick={() => navigate("/")}>
                     <img src={v.logo} alt="logo" />
-                    <span>POS<b>.DTO2</b></span>
+                    <span>SaaS<b>.DTO2</b></span>
                 </Logo>
 
                 {/* ── APROBADO: creando cuenta ── */}
