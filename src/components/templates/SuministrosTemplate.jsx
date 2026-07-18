@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -22,7 +22,10 @@ import {
     RiLoader4Line,
     RiStore2Line,
     RiPriceTag3Line,
+    RiSearchLine,
+    RiTruckLine,
 } from "react-icons/ri";
+import { BuscarProveedores } from "../../supabase/crudProveedores";
 
 const UNIDADES = ["kg", "g", "litros", "ml", "unidades", "porciones", "cajas", "bolsas", "docenas"];
 
@@ -44,6 +47,11 @@ export function SuministrosTemplate() {
     const [form, setForm]   = useState(EMPTY_FORM);
     const [compra, setCompra] = useState(EMPTY_COMPRA);
     const [guardando, setGuardando] = useState(false);
+    const [provBusq, setProvBusq]       = useState("");
+    const [provSel, setProvSel]         = useState(null);
+    const [provOpts, setProvOpts]       = useState([]);
+    const [provLoading, setProvLoading] = useState(false);
+    const provTimer = useRef(null);
 
     const { data: suministros = [], isLoading } = useQuery({
         queryKey: ["suministros", id_empresa],
@@ -59,8 +67,20 @@ export function SuministrosTemplate() {
         refetchOnMount: "always",
     });
 
-    const ref        = () => qc.invalidateQueries({ queryKey: ["suministros", id_empresa] });
+    const ref          = () => qc.invalidateQueries({ queryKey: ["suministros", id_empresa] });
     const refHistorial = (id) => qc.invalidateQueries({ queryKey: ["compras-sum", id] });
+
+    useEffect(() => {
+        if (!provBusq.trim() || provSel) { setProvOpts([]); return; }
+        clearTimeout(provTimer.current);
+        provTimer.current = setTimeout(async () => {
+            setProvLoading(true);
+            const res = await BuscarProveedores({ id_empresa, busqueda: provBusq });
+            setProvOpts(res ?? []);
+            setProvLoading(false);
+        }, 350);
+        return () => clearTimeout(provTimer.current);
+    }, [provBusq, id_empresa, provSel]);
 
     const abrirNuevo = useCallback(() => {
         setEditando(null);
@@ -106,11 +126,14 @@ export function SuministrosTemplate() {
             await RegistrarCompra({
                 id_empresa,
                 id_suministro: idSum,
-                cantidad:    Number(compra.cantidad),
+                cantidad:     Number(compra.cantidad),
                 precio_total: Number(compra.precio_total),
-                proveedor:   compra.proveedor || null,
+                proveedor:    provSel ? provSel.nombre : (provBusq.trim() || null),
+                id_proveedor: provSel?.id ?? null,
             });
-            ref(); refHistorial(idSum); setModalCompra(null); setCompra(EMPTY_COMPRA);
+            ref(); refHistorial(idSum);
+            setModalCompra(null); setCompra(EMPTY_COMPRA);
+            setProvSel(null); setProvBusq(""); setProvOpts([]);
         } finally { setGuardando(false); }
     }, [compra, modalCompra, id_empresa]);
 
@@ -177,7 +200,7 @@ export function SuministrosTemplate() {
                                     </PrecioValor>
                                 </PrecioRow>
                                 <CardActions>
-                                    <ActionBtn title="Registrar compra" $color="#22c55e" onClick={() => { setModalCompra(s); setCompra(EMPTY_COMPRA); }}>
+                                    <ActionBtn title="Registrar compra" $color="#22c55e" onClick={() => { setModalCompra(s); setCompra(EMPTY_COMPRA); setProvSel(null); setProvBusq(""); setProvOpts([]); }}>
                                         <RiShoppingCart2Line size={15} />
                                     </ActionBtn>
                                     <ActionBtn title="Historial" $color="#6366f1" onClick={() => setModalHistorial(s)}>
@@ -289,11 +312,40 @@ export function SuministrosTemplate() {
                                     </div>
                                 </FormRow>
                                 <FormLabel>Proveedor (opcional)</FormLabel>
-                                <FormInput
-                                    placeholder="Nombre del proveedor…"
-                                    value={compra.proveedor}
-                                    onChange={e => setCompra(c => ({ ...c, proveedor: e.target.value }))}
-                                />
+                                {provSel ? (
+                                    <ProvSelBox>
+                                        <RiTruckLine size={15} />
+                                        <ProvSelNombre>
+                                            {provSel.nombre}
+                                            {provSel.nit && <span>NIT: {provSel.nit}</span>}
+                                        </ProvSelNombre>
+                                        <ProvDeselBtn onClick={() => { setProvSel(null); setProvBusq(""); }}>
+                                            <RiCloseLine size={14} />
+                                        </ProvDeselBtn>
+                                    </ProvSelBox>
+                                ) : (
+                                    <ProvBusqWrap>
+                                        <ProvBusqIcon><RiSearchLine size={13} /></ProvBusqIcon>
+                                        <FormInput
+                                            style={{ paddingLeft: 32 }}
+                                            placeholder="Buscar proveedor o escribir nombre…"
+                                            value={provBusq}
+                                            onChange={e => setProvBusq(e.target.value)}
+                                        />
+                                        {provLoading && <ProvSpinner />}
+                                        {provOpts.length > 0 && (
+                                            <ProvDropdown>
+                                                {provOpts.map(p => (
+                                                    <ProvOpcion key={p.id} onClick={() => { setProvSel(p); setProvOpts([]); }}>
+                                                        <RiTruckLine size={13} />
+                                                        <span>{p.nombre}</span>
+                                                        {p.nit && <ProvNit>{p.nit}</ProvNit>}
+                                                    </ProvOpcion>
+                                                ))}
+                                            </ProvDropdown>
+                                        )}
+                                    </ProvBusqWrap>
+                                )}
                                 {compra.cantidad && compra.precio_total && (
                                     <CostoUnitario>
                                         Costo unitario: {cop(Number(compra.precio_total) / Number(compra.cantidad))} / {modalCompra.unidad}
@@ -636,4 +688,65 @@ const HistPrecio = styled.span`
 
 const HistProv = styled.span`
     font-size: 11px; color: ${({ theme }) => theme.colorsubtitlecard};
+`;
+
+/* ── Buscador proveedor ── */
+const ProvBusqWrap = styled.div`position: relative;`;
+
+const ProvBusqIcon = styled.div`
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    color: ${({ theme }) => theme.colorsubtitlecard}; pointer-events: none; display: flex;
+`;
+
+const ProvSpinner = styled.div`
+    position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+    width: 13px; height: 13px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.1); border-top-color: #f97316;
+    animation: spinProv 0.7s linear infinite;
+    @keyframes spinProv { to { transform: translateY(-50%) rotate(360deg); } }
+`;
+
+const ProvDropdown = styled.div`
+    position: absolute; top: calc(100% + 5px); left: 0; right: 0; z-index: 30;
+    background: ${({ theme }) => theme.bgcards};
+    border: 1px solid ${({ theme }) => theme.color2};
+    border-radius: 10px; overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+`;
+
+const ProvOpcion = styled.div`
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; cursor: pointer; font-size: 13px;
+    color: ${({ theme }) => theme.text};
+    transition: background 0.12s;
+    &:hover { background: rgba(249,115,22,0.08); }
+    svg { color: ${({ theme }) => theme.colorsubtitlecard}; flex-shrink: 0; }
+    span { flex: 1; font-weight: 600; }
+`;
+
+const ProvNit = styled.span`
+    font-size: 11px; color: ${({ theme }) => theme.colorsubtitlecard};
+    flex: 0 !important; font-weight: 400 !important;
+`;
+
+const ProvSelBox = styled.div`
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 10px;
+    background: rgba(249,115,22,0.07);
+    border: 1px solid rgba(249,115,22,0.25);
+    color: #f97316;
+    svg { flex-shrink: 0; }
+`;
+
+const ProvSelNombre = styled.div`
+    flex: 1; font-size: 13px; font-weight: 700;
+    color: ${({ theme }) => theme.text};
+    span { display: block; font-size: 11px; font-weight: 400; color: ${({ theme }) => theme.colorsubtitlecard}; margin-top: 1px; }
+`;
+
+const ProvDeselBtn = styled.button`
+    background: rgba(239,68,68,0.1); border: none; cursor: pointer;
+    color: #ef4444; border-radius: 6px; padding: 3px;
+    display: flex; align-items: center;
+    &:hover { background: rgba(239,68,68,0.2); }
 `;

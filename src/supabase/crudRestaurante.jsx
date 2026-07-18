@@ -272,10 +272,10 @@ export async function EliminarSuministro({ id }) {
     if (error) { toastError(error.message, "Suministros › Eliminar"); throw error; }
 }
 
-export async function RegistrarCompra({ id_empresa, id_suministro, cantidad, precio_total, proveedor }) {
+export async function RegistrarCompra({ id_empresa, id_suministro, cantidad, precio_total, proveedor, id_proveedor }) {
     const { data, error } = await supabase
         .from("compras_suministros")
-        .insert({ id_empresa, id_suministro, cantidad, precio_total, proveedor: proveedor || null })
+        .insert({ id_empresa, id_suministro, cantidad, precio_total, proveedor: proveedor || null, id_proveedor: id_proveedor || null })
         .select().single();
     if (error) { toastError(error.message, "Compra › Registrar"); throw error; }
     const { data: sum } = await supabase.from("suministros").select("stock_actual").eq("id", id_suministro).single();
