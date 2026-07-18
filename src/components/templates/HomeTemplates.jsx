@@ -88,8 +88,9 @@ const ACCESOS_RESTAURANTE = [
     { key: "mesas",      icon: "solar:plate-bold-duotone",              label: "Mesas",       sub: "Gestionar mesas y comandas",  to: "/mesas",       accent: "#f97316", glow: "rgba(249,115,22,0.35)",  big: true  },
     { key: "menu",       icon: "solar:menu-dots-bold-duotone",          label: "Menú",        sub: "Editar carta y precios",      to: "/menu-editor", accent: "#f59e0b", glow: "rgba(245,158,11,0.35)",  big: false },
     { key: "reportes",   icon: "solar:chart-square-bold-duotone",       label: "Reportes",    sub: "Ventas del día",              to: "/reportes",    accent: "#60a5fa", glow: "rgba(96,165,250,0.35)",  big: false },
-    { key: "arqueo",     icon: "solar:wallet-money-bold-duotone",       label: "Arqueo",      sub: "Cierre y resumen del día",    to: "/arqueo",      accent: "#ec4899", glow: "rgba(236,72,153,0.35)",  big: false },
-    { key: "soporte",    icon: "solar:chat-round-dots-bold-duotone",    label: "Soporte",     sub: "Canal de ayuda",              to: "/soporte",     accent: "#34d399", glow: "rgba(52,211,153,0.35)",  big: false },
+    { key: "arqueo",      icon: "solar:wallet-money-bold-duotone",       label: "Arqueo",      sub: "Cierre y resumen del día",    to: "/arqueo",      accent: "#ec4899", glow: "rgba(236,72,153,0.35)",  big: false },
+    { key: "suministros", icon: "solar:box-bold-duotone",                label: "Suministros", sub: "Stock e insumos de cocina",   to: "/suministros", accent: "#14b8a6", glow: "rgba(20,184,166,0.35)",  big: false },
+    { key: "soporte",     icon: "solar:chat-round-dots-bold-duotone",    label: "Soporte",     sub: "Canal de ayuda",              to: "/soporte",     accent: "#34d399", glow: "rgba(52,211,153,0.35)",  big: false },
 ];
 
 const ACCESOS_INMOBILIARIA = [
