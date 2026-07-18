@@ -170,6 +170,115 @@ export async function CerrarComanda({ id, id_mesa, metodo_pago = "efectivo", pag
     if (r2.error) toastError(r2.error.message, "Comanda › Liberar mesa");
 }
 
+// ── STATS / REPORTES ─────────────────────────────────────────
+export async function ObtenerStatsRestaurante({ id_empresa, desde, hasta }) {
+    const [{ data: comandas }, { data: mesasActivas }] = await Promise.all([
+        supabase
+            .from("comandas")
+            .select("id, total, metodo_pago, created_at")
+            .eq("id_empresa", id_empresa)
+            .eq("estado", "cobrada")
+            .gte("created_at", desde)
+            .lte("created_at", hasta),
+        supabase
+            .from("mesas")
+            .select("id")
+            .eq("id_empresa", id_empresa)
+            .neq("estado", "libre"),
+    ]);
+
+    const ids = (comandas ?? []).map(c => c.id);
+    let topItems = [];
+    if (ids.length > 0) {
+        const { data: items } = await supabase
+            .from("comanda_items")
+            .select("nombre, cantidad, precio_unitario")
+            .in("id_comanda", ids);
+        const agrupado = {};
+        (items ?? []).forEach(i => {
+            if (!agrupado[i.nombre]) agrupado[i.nombre] = { nombre: i.nombre, cantidad: 0, total: 0 };
+            agrupado[i.nombre].cantidad += Number(i.cantidad);
+            agrupado[i.nombre].total += Number(i.cantidad) * Number(i.precio_unitario);
+        });
+        topItems = Object.values(agrupado).sort((a, b) => b.cantidad - a.cantidad).slice(0, 5);
+    }
+
+    const totalIngresos  = (comandas ?? []).reduce((s, c) => s + Number(c.total ?? 0), 0);
+    const totalComandas  = (comandas ?? []).length;
+    const ticketPromedio = totalComandas > 0 ? totalIngresos / totalComandas : 0;
+
+    const porMetodo = {};
+    (comandas ?? []).forEach(c => {
+        const m = c.metodo_pago ?? "efectivo";
+        if (!porMetodo[m]) porMetodo[m] = { metodo: m, total: 0, count: 0 };
+        porMetodo[m].total += Number(c.total ?? 0);
+        porMetodo[m].count += 1;
+    });
+
+    const porHora = {};
+    (comandas ?? []).forEach(c => {
+        const h = new Date(c.created_at).getHours();
+        porHora[h] = (porHora[h] ?? 0) + 1;
+    });
+    const horaPicoEntry = Object.entries(porHora).sort((a, b) => b[1] - a[1])[0];
+
+    return {
+        totalIngresos,
+        totalComandas,
+        ticketPromedio,
+        mesasActivas: (mesasActivas ?? []).length,
+        topItems,
+        porMetodo: Object.values(porMetodo),
+        horaPico: horaPicoEntry ? `${horaPicoEntry[0]}:00` : null,
+    };
+}
+
+// ── SUMINISTROS ──────────────────────────────────────────────
+export async function MostrarSuministros({ id_empresa }) {
+    const { data, error } = await supabase
+        .from("suministros").select("*").eq("id_empresa", id_empresa).order("nombre");
+    if (error) { toastError(error.message, "Suministros › Mostrar"); return []; }
+    return data ?? [];
+}
+
+export async function CrearSuministro(p) {
+    const { data, error } = await supabase.from("suministros").insert(p).select().single();
+    if (error) { toastError(error.message, "Suministros › Crear"); throw error; }
+    return data;
+}
+
+export async function EditarSuministro({ id, ...campos }) {
+    const { error } = await supabase.from("suministros").update(campos).eq("id", id);
+    if (error) { toastError(error.message, "Suministros › Editar"); throw error; }
+}
+
+export async function EliminarSuministro({ id }) {
+    const { error } = await supabase.from("suministros").delete().eq("id", id);
+    if (error) { toastError(error.message, "Suministros › Eliminar"); throw error; }
+}
+
+export async function RegistrarCompra({ id_empresa, id_suministro, cantidad, precio_total, proveedor }) {
+    const { data, error } = await supabase
+        .from("compras_suministros")
+        .insert({ id_empresa, id_suministro, cantidad, precio_total, proveedor: proveedor || null })
+        .select().single();
+    if (error) { toastError(error.message, "Compra › Registrar"); throw error; }
+    const { data: sum } = await supabase.from("suministros").select("stock_actual").eq("id", id_suministro).single();
+    await supabase.from("suministros").update({
+        stock_actual:   Number(sum?.stock_actual ?? 0) + Number(cantidad),
+        precio_promedio: Number(precio_total) / Number(cantidad),
+    }).eq("id", id_suministro);
+    return data;
+}
+
+export async function MostrarComprasSuministro({ id_suministro }) {
+    const { data, error } = await supabase
+        .from("compras_suministros").select("*").eq("id_suministro", id_suministro)
+        .order("fecha", { ascending: false }).limit(20);
+    if (error) { toastError(error.message, "Compras › Mostrar"); return []; }
+    return data ?? [];
+}
+
 async function _recalcTotal(id_comanda) {
     const { data: items } = await supabase
         .from("comanda_items").select("precio_unitario, cantidad").eq("id_comanda", id_comanda);

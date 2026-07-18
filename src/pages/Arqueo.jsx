@@ -1,2 +1,11 @@
 import { ArqueoTemplate } from "../components/templates/ArqueoTemplate";
-export function Arqueo() { return <ArqueoTemplate />; }
+import { ArqueoRestauranteTemplate } from "../components/templates/ArqueoRestauranteTemplate";
+import { useEmpresaStore } from "../store/EmpresaStore";
+
+export function Arqueo() {
+    const { dataempresa } = useEmpresaStore();
+    if (dataempresa?.actividad_economica === "restaurante") {
+        return <ArqueoRestauranteTemplate />;
+    }
+    return <ArqueoTemplate />;
+}
