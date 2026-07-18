@@ -10,7 +10,7 @@ import {
 import {
     RiMenuLine, RiAddLine, RiEditLine, RiDeleteBinLine,
     RiCloseLine, RiCheckLine, RiToggleLine, RiToggleFill,
-    RiPriceTag3Line,
+    RiPriceTag3Line, RiMoneyDollarCircleLine,
 } from "react-icons/ri";
 import Swal from "sweetalert2";
 
@@ -18,7 +18,21 @@ const COP = (n) =>
     new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n ?? 0);
 
 const FORM_CAT_INIT  = { nombre: "" };
-const FORM_ITEM_INIT = { nombre: "", descripcion: "", precio: "", id_categoria: "" };
+const FORM_ITEM_INIT = { nombre: "", descripcion: "", precio: "", costo: "", id_categoria: "" };
+
+function getMargen(precio, costo) {
+    const p = parseFloat(precio);
+    const c = parseFloat(costo);
+    if (!p || !c || c <= 0) return null;
+    return Math.round(((p - c) / p) * 100);
+}
+
+function MargenBadge({ precio, costo }) {
+    const m = getMargen(precio, costo);
+    if (m === null) return null;
+    const color = m >= 60 ? "#22c55e" : m >= 35 ? "#f59e0b" : "#ef4444";
+    return <MargenChip $color={color}>{m}% margen</MargenChip>;
+}
 
 export function MenuEditorTemplate() {
     const { dataempresa } = useEmpresaStore();
@@ -93,7 +107,7 @@ export function MenuEditorTemplate() {
     const abrirModalItem = (item = null) => {
         setModalItem(item ?? "nuevo");
         setFormItem(item
-            ? { nombre: item.nombre, descripcion: item.descripcion ?? "", precio: String(item.precio), id_categoria: item.id_categoria }
+            ? { nombre: item.nombre, descripcion: item.descripcion ?? "", precio: String(item.precio), costo: item.costo > 0 ? String(item.costo) : "", id_categoria: item.id_categoria }
             : { ...FORM_ITEM_INIT, id_categoria: catActivaId ?? "" }
         );
     };
@@ -106,6 +120,7 @@ export function MenuEditorTemplate() {
             nombre:       formItem.nombre.trim(),
             descripcion:  formItem.descripcion.trim() || null,
             precio:       parseFloat(formItem.precio),
+            costo:        formItem.costo ? parseFloat(formItem.costo) : 0,
         };
         if (modalItem === "nuevo") {
             await CrearMenuItem(payload);
@@ -240,6 +255,16 @@ export function MenuEditorTemplate() {
                                             </ItemPrecio>
                                             {!item.disponible && <AgotadoBadge>No disponible</AgotadoBadge>}
                                         </ItemFooter>
+                                        <CostoRow>
+                                            <CostoLabel>
+                                                <RiMoneyDollarCircleLine size={12} />
+                                                Costo
+                                            </CostoLabel>
+                                            <CostoValor $vacio={!item.costo}>
+                                                {item.costo > 0 ? COP(item.costo) : "—"}
+                                            </CostoValor>
+                                            <MargenBadge precio={item.precio} costo={item.costo} />
+                                        </CostoRow>
                                         <ItemCardActions>
                                             <ActionBtn onClick={() => abrirModalItem(item)}>
                                                 <RiEditLine /> Editar
@@ -337,13 +362,37 @@ export function MenuEditorTemplate() {
                                             </FormSelect>
                                         </FormGroup>
                                         <FormGroup>
-                                            <FormLabel>Precio (COP) *</FormLabel>
+                                            <FormLabel>Precio de venta (COP) *</FormLabel>
                                             <FormInput
                                                 type="number" min="0" step="100"
                                                 value={formItem.precio}
                                                 onChange={e => setFormItem(f => ({ ...f, precio: e.target.value }))}
                                                 placeholder="15000"
                                             />
+                                        </FormGroup>
+                                    </FormRow>
+                                    <FormRow>
+                                        <FormGroup>
+                                            <FormLabel>Costo aprox. (COP)</FormLabel>
+                                            <FormInput
+                                                type="number" min="0" step="100"
+                                                value={formItem.costo}
+                                                onChange={e => setFormItem(f => ({ ...f, costo: e.target.value }))}
+                                                placeholder="Ej: 8000"
+                                            />
+                                        </FormGroup>
+                                        <FormGroup style={{ justifyContent: "flex-end" }}>
+                                            <FormLabel>Margen estimado</FormLabel>
+                                            <MargenPreview>
+                                                {getMargen(formItem.precio, formItem.costo) !== null
+                                                    ? (() => {
+                                                        const m = getMargen(formItem.precio, formItem.costo);
+                                                        const color = m >= 60 ? "#22c55e" : m >= 35 ? "#f59e0b" : "#ef4444";
+                                                        return <span style={{ color, fontWeight: 900, fontSize: 22 }}>{m}%</span>;
+                                                    })()
+                                                    : <span style={{ opacity: 0.3 }}>—</span>
+                                                }
+                                            </MargenPreview>
                                         </FormGroup>
                                     </FormRow>
                                     <FormGroup>
@@ -653,4 +702,40 @@ const BtnSecondary = styled.button`
     font-size: 12px; font-weight: 600; font-family: "Poppins", sans-serif;
     cursor: pointer; transition: background 0.15s;
     &:hover { background: rgba(255,255,255,0.08); }
+`;
+
+const CostoRow = styled.div`
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 9px; border-radius: 8px; margin-bottom: 8px;
+    background: rgba(20,184,166,0.07);
+    border: 1px solid rgba(20,184,166,0.15);
+`;
+
+const CostoLabel = styled.span`
+    display: flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.4px; color: rgba(255,255,255,0.3);
+`;
+
+const CostoValor = styled.span`
+    font-size: 12px; font-weight: 800;
+    color: ${({ $vacio }) => $vacio ? "rgba(255,255,255,0.18)" : "#14b8a6"};
+    flex: 1;
+`;
+
+const MargenChip = styled.span`
+    font-size: 10px; font-weight: 800;
+    padding: 2px 7px; border-radius: 20px;
+    background: ${({ $color }) => $color}18;
+    color: ${({ $color }) => $color};
+    border: 1px solid ${({ $color }) => $color}30;
+    white-space: nowrap;
+`;
+
+const MargenPreview = styled.div`
+    display: flex; align-items: center; justify-content: center;
+    flex: 1; padding: 8px;
+    background: rgba(255,255,255,0.03); border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.08);
+    font-family: "Poppins", sans-serif;
 `;
