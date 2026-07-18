@@ -1,379 +1,270 @@
-import { useState, useMemo } from "react";
-import styled from "styled-components";
+import { useState } from "react";
+import styled, { keyframes } from "styled-components";
 import { useQuery } from "@tanstack/react-query";
 import { useEmpresaStore } from "../../store/EmpresaStore";
-import { ObtenerStatsRestaurante } from "../../supabase/crudRestaurante";
+import { ListarComandasCobradas } from "../../supabase/crudRestaurante";
 import {
     RiRestaurantLine,
+    RiFilterOffLine,
+    RiCalendarLine,
     RiMoneyDollarCircleLine,
-    RiFileListLine,
-    RiBarChartBoxLine,
-    RiTableLine,
     RiBankCardLine,
     RiSmartphoneLine,
     RiBankLine,
-    RiExchangeDollarLine,
-    RiLoader4Line,
-    RiCheckboxCircleLine,
-    RiTrophyLine,
 } from "react-icons/ri";
 
-const cop = (v) =>
-    new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(v);
-
-function getRangoHoy() {
-    const ahora  = new Date();
-    const inicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate());
-    const fin    = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 23, 59, 59, 999);
-    return { desde: inicio.toISOString(), hasta: fin.toISOString() };
-}
+const fmt      = (n) => new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 }).format(n ?? 0);
+const fmtFecha = (s) => s ? new Date(s).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+const fmtHora  = (s) => s ? new Date(s).toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" }) : "—";
 
 const METODO_META = {
     efectivo:      { label: "Efectivo",      icon: RiMoneyDollarCircleLine, color: "#22c55e" },
     tarjeta:       { label: "Tarjeta",        icon: RiBankCardLine,          color: "#6366f1" },
     transferencia: { label: "Transferencia",  icon: RiBankLine,              color: "#3b82f6" },
-    nequi:         { label: "Nequi / Daviplata", icon: RiSmartphoneLine,     color: "#a855f7" },
+    nequi:         { label: "Nequi",          icon: RiSmartphoneLine,        color: "#a855f7" },
 };
+
+function MetodoBadge({ metodo }) {
+    const meta = METODO_META[metodo] ?? { label: metodo ?? "—", color: "#94a3b8" };
+    return <MetodoChip $color={meta.color}>{meta.label}</MetodoChip>;
+}
 
 export function ArqueoRestauranteTemplate() {
     const { dataempresa } = useEmpresaStore();
     const id_empresa = dataempresa?.id;
-    const rango = useMemo(() => getRangoHoy(), []);
 
-    const { data: stats, isLoading } = useQuery({
-        queryKey: ["arqueo-restaurante", id_empresa, rango.desde],
-        queryFn: () => ObtenerStatsRestaurante({ id_empresa, ...rango }),
-        enabled: !!id_empresa,
-        staleTime: 30_000,
+    const [page,  setPage]  = useState(1);
+    const [desde, setDesde] = useState("");
+    const [hasta, setHasta] = useState("");
+    const pageSize = 25;
+
+    const { data: res = { data: [], count: 0 }, isFetching } = useQuery({
+        queryKey: ["arqueo-restaurante-tabla", id_empresa, desde, hasta, page],
+        queryFn:  () => ListarComandasCobradas({ id_empresa, desde: desde || undefined, hasta: hasta || undefined, page, pageSize }),
+        enabled:  !!id_empresa,
+        refetchOnWindowFocus: false,
     });
 
-    const efectivoTotal = (stats?.porMetodo ?? []).find(m => m.metodo === "efectivo")?.total ?? 0;
+    const comandas   = res.data ?? [];
+    const totalPags  = Math.ceil((res.count ?? 0) / pageSize);
+    const hayFiltros = desde || hasta;
+
+    function limpiarFiltros() { setDesde(""); setHasta(""); setPage(1); }
 
     return (
         <Page>
-            <Header>
-                <TitleRow>
-                    <RiRestaurantLine size={22} />
-                    <div>
-                        <h1>Arqueo del día</h1>
-                        <Fecha>{new Date().toLocaleDateString("es-CO", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</Fecha>
-                    </div>
-                </TitleRow>
-            </Header>
+            <TopBar>
+                <TopLeft>
+                    <h1>Arqueo de Caja</h1>
+                    <p>Historial de comandas cobradas</p>
+                </TopLeft>
+                <RestTag>
+                    <RiRestaurantLine />
+                    Restaurante
+                </RestTag>
+            </TopBar>
 
-            {isLoading ? (
-                <LoadingWrap>
-                    <RiLoader4Line size={32} className="spin" />
-                    <span>Cargando cierre del día…</span>
-                </LoadingWrap>
-            ) : (
-                <>
-                    {/* Resumen general */}
-                    <KpiGrid>
-                        <KpiCard $accent="#f97316">
-                            <KpiIcon $accent="#f97316"><RiMoneyDollarCircleLine size={26} /></KpiIcon>
-                            <KpiBody>
-                                <KpiValue>{cop(stats?.totalIngresos ?? 0)}</KpiValue>
-                                <KpiLabel>Total recaudado hoy</KpiLabel>
-                            </KpiBody>
-                        </KpiCard>
-                        <KpiCard $accent="#22c55e">
-                            <KpiIcon $accent="#22c55e"><RiMoneyDollarCircleLine size={26} /></KpiIcon>
-                            <KpiBody>
-                                <KpiValue>{cop(efectivoTotal)}</KpiValue>
-                                <KpiLabel>Efectivo en caja</KpiLabel>
-                            </KpiBody>
-                        </KpiCard>
-                        <KpiCard $accent="#6366f1">
-                            <KpiIcon $accent="#6366f1"><RiFileListLine size={26} /></KpiIcon>
-                            <KpiBody>
-                                <KpiValue>{stats?.totalComandas ?? 0}</KpiValue>
-                                <KpiLabel>Comandas cobradas</KpiLabel>
-                            </KpiBody>
-                        </KpiCard>
-                        <KpiCard $accent="#f59e0b">
-                            <KpiIcon $accent="#f59e0b"><RiBarChartBoxLine size={26} /></KpiIcon>
-                            <KpiBody>
-                                <KpiValue>{cop(stats?.ticketPromedio ?? 0)}</KpiValue>
-                                <KpiLabel>Ticket promedio</KpiLabel>
-                            </KpiBody>
-                        </KpiCard>
-                    </KpiGrid>
+            <FiltrosRow>
+                <FiltroItem>
+                    <RiCalendarLine />
+                    <DateInput
+                        type="date"
+                        value={desde}
+                        onChange={e => { setDesde(e.target.value); setPage(1); }}
+                        title="Desde"
+                    />
+                </FiltroItem>
+                <FiltroItem>
+                    <RiCalendarLine />
+                    <DateInput
+                        type="date"
+                        value={hasta}
+                        onChange={e => { setHasta(e.target.value); setPage(1); }}
+                        title="Hasta"
+                    />
+                </FiltroItem>
+                {hayFiltros && (
+                    <BtnLimpiar onClick={limpiarFiltros} title="Limpiar filtros">
+                        <RiFilterOffLine />
+                        Limpiar
+                    </BtnLimpiar>
+                )}
+                <TotalInfo>
+                    {res.count ?? 0} comanda{(res.count ?? 0) !== 1 ? "s" : ""}
+                </TotalInfo>
+            </FiltrosRow>
 
-                    <BottomGrid>
-                        {/* Desglose por método de pago */}
-                        <Section>
-                            <SectionTitle>
-                                <RiExchangeDollarLine size={16} />
-                                Desglose por método de pago
-                            </SectionTitle>
-                            {(stats?.porMetodo ?? []).length === 0 ? (
-                                <EmptyTip>Sin cobros registrados hoy</EmptyTip>
-                            ) : (
-                                <>
-                                    <MetodosList>
-                                        {(stats?.porMetodo ?? []).map(m => {
-                                            const meta = METODO_META[m.metodo] ?? { label: m.metodo, icon: RiMoneyDollarCircleLine, color: "#94a3b8" };
-                                            const MetodoIcon = meta.icon;
-                                            const pct = stats?.totalIngresos > 0
-                                                ? Math.round((m.total / stats.totalIngresos) * 100) : 0;
-                                            return (
-                                                <MetodoFila key={m.metodo}>
-                                                    <MetodoHead>
-                                                        <MetodoIconWrap $color={meta.color}>
-                                                            <MetodoIcon size={16} />
-                                                        </MetodoIconWrap>
-                                                        <MetodoNombre>{meta.label}</MetodoNombre>
-                                                        <MetodoCmds>{m.count} cmd</MetodoCmds>
-                                                        <MetodoMonto>{cop(m.total)}</MetodoMonto>
-                                                        <MetodoPct $color={meta.color}>{pct}%</MetodoPct>
-                                                    </MetodoHead>
-                                                    <BarRow>
-                                                        <BarFill style={{ width: `${pct}%`, background: meta.color }} />
-                                                    </BarRow>
-                                                </MetodoFila>
-                                            );
-                                        })}
-                                    </MetodosList>
+            <TablaWrap>
+                <Tabla>
+                    <thead>
+                        <tr>
+                            <Th>Fecha</Th>
+                            <Th>Hora</Th>
+                            <Th>Mesa</Th>
+                            <Th>Método de pago</Th>
+                            <Th $right>Pagado con</Th>
+                            <Th $right>Cambio</Th>
+                            <Th $right>Total</Th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {isFetching ? (
+                            <tr><Td colSpan={7} $center>Cargando...</Td></tr>
+                        ) : comandas.length === 0 ? (
+                            <tr><Td colSpan={7} $center style={{ opacity: 0.5 }}>Sin comandas cobradas</Td></tr>
+                        ) : comandas.map(c => {
+                            const mesa = c.mesas?.nombre ?? `Mesa ${c.mesas?.numero ?? "—"}`;
+                            const cambio = c.cambio ?? 0;
+                            return (
+                                <Tr key={c.id}>
+                                    <Td>{fmtFecha(c.created_at)}</Td>
+                                    <Td>{fmtHora(c.created_at)}</Td>
+                                    <Td><MesaText>{mesa}</MesaText></Td>
+                                    <Td><MetodoBadge metodo={c.metodo_pago} /></Td>
+                                    <Td $right>{c.pagado_con > 0 ? fmt(c.pagado_con) : "—"}</Td>
+                                    <Td $right>
+                                        {cambio > 0
+                                            ? <CambioBadge>+{fmt(cambio)}</CambioBadge>
+                                            : "—"
+                                        }
+                                    </Td>
+                                    <Td $right><TotalText>{fmt(c.total)}</TotalText></Td>
+                                </Tr>
+                            );
+                        })}
+                    </tbody>
+                </Tabla>
+            </TablaWrap>
 
-                                    <TotalRow>
-                                        <RiCheckboxCircleLine size={18} color="#22c55e" />
-                                        <TotalLabel>Total recaudado</TotalLabel>
-                                        <TotalMonto>{cop(stats?.totalIngresos ?? 0)}</TotalMonto>
-                                    </TotalRow>
-                                </>
-                            )}
-                        </Section>
-
-                        {/* Plato más vendido */}
-                        <SideSection>
-                            <Section>
-                                <SectionTitle>
-                                    <RiTrophyLine size={16} />
-                                    Platos más vendidos
-                                </SectionTitle>
-                                {(stats?.topItems ?? []).length === 0 ? (
-                                    <EmptyTip>Sin datos hoy</EmptyTip>
-                                ) : (
-                                    <TopPlatosList>
-                                        {(stats?.topItems ?? []).slice(0, 3).map((item, i) => (
-                                            <TopPlatoRow key={item.nombre} $primero={i === 0}>
-                                                <TopRank $primero={i === 0}>#{i + 1}</TopRank>
-                                                <TopNombre>{item.nombre}</TopNombre>
-                                                <TopQty>{item.cantidad} uds</TopQty>
-                                            </TopPlatoRow>
-                                        ))}
-                                    </TopPlatosList>
-                                )}
-                            </Section>
-
-                            <Section style={{ marginTop: 16 }}>
-                                <SectionTitle>
-                                    <RiTableLine size={16} />
-                                    Estado actual
-                                </SectionTitle>
-                                <EstadoRow>
-                                    <EstadoLabel>Mesas activas ahora</EstadoLabel>
-                                    <EstadoVal $color="#f59e0b">{stats?.mesasActivas ?? 0}</EstadoVal>
-                                </EstadoRow>
-                                {stats?.horaPico && (
-                                    <EstadoRow>
-                                        <EstadoLabel>Hora pico</EstadoLabel>
-                                        <EstadoVal $color="#f97316">{stats.horaPico}</EstadoVal>
-                                    </EstadoRow>
-                                )}
-                            </Section>
-                        </SideSection>
-                    </BottomGrid>
-                </>
+            {totalPags > 1 && (
+                <Paginacion>
+                    <BtnPag onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>‹</BtnPag>
+                    <span>{page} de {totalPags}</span>
+                    <BtnPag onClick={() => setPage(p => Math.min(totalPags, p + 1))} disabled={page === totalPags}>›</BtnPag>
+                </Paginacion>
             )}
         </Page>
     );
 }
 
 /* ── Styled Components ─────────────────────────────────────── */
+const fadeUp = keyframes`from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}`;
+
 const Page = styled.div`
-    width: 100%; min-height: 100vh;
+    min-height: 100vh;
     background: ${({ theme }) => theme.bgtotal};
-    padding: 32px; box-sizing: border-box; overflow-y: auto;
-    @media (max-width: 767px) { padding: 68px 14px 20px; }
+    padding: 28px;
+    display: flex; flex-direction: column; gap: 20px;
+    animation: ${fadeUp} 0.3s ease;
+    @media (max-width: 767px) { padding: 68px 14px 20px; gap: 14px; }
 `;
 
-const Header = styled.div`
-    display: flex; align-items: flex-start; margin-bottom: 28px;
+const TopBar = styled.div`
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
 `;
 
-const TitleRow = styled.div`
-    display: flex; align-items: flex-start; gap: 12px;
-    color: #f97316;
-    h1 { margin: 0; font-size: 22px; font-weight: 800;
-         color: ${({ theme }) => theme.text}; font-family: "Poppins", sans-serif; }
+const TopLeft = styled.div`
+    h1 { font-size: 22px; font-weight: 900; color: ${({ theme }) => theme.text}; margin: 0 0 3px; }
+    p  { font-size: 13px; color: ${({ theme }) => theme.colorsubtitlecard}; margin: 0; }
 `;
 
-const Fecha = styled.p`
-    margin: 2px 0 0; font-size: 12px;
+const RestTag = styled.div`
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+    color: #f97316; background: rgba(249,115,22,0.12);
+    border: 1px solid rgba(249,115,22,0.35);
+    font-family: "Poppins", sans-serif;
+    svg { font-size: 14px; }
+`;
+
+const FiltrosRow = styled.div`
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+`;
+
+const FiltroItem = styled.div`
+    display: flex; align-items: center; gap: 6px;
+    color: ${({ theme }) => theme.colorsubtitlecard}; font-size: 14px;
+`;
+
+const DateInput = styled.input`
+    padding: 7px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    border: 1px solid ${({ theme }) => theme.color2};
+    background: ${({ theme }) => theme.bgcards}; color: ${({ theme }) => theme.text};
+    font-family: "Poppins", sans-serif; outline: none; cursor: pointer;
+    &:focus { border-color: #f97316; }
+    &::-webkit-calendar-picker-indicator { opacity: 0.5; cursor: pointer; }
+`;
+
+const BtnLimpiar = styled.button`
+    display: flex; align-items: center; gap: 5px;
+    padding: 7px 12px; border-radius: 20px; font-size: 12px; font-weight: 700;
+    border: 1px solid #f87171; background: rgba(248,113,113,0.1); color: #f87171;
+    cursor: pointer; font-family: "Poppins", sans-serif;
+    &:hover { background: rgba(248,113,113,0.2); }
+`;
+
+const TotalInfo = styled.span`
+    margin-left: auto; font-size: 12px; font-weight: 600;
     color: ${({ theme }) => theme.colorsubtitlecard};
-    text-transform: capitalize;
 `;
 
-const KpiGrid = styled.div`
-    display: grid; grid-template-columns: repeat(4, 1fr);
-    gap: 16px; margin-bottom: 24px;
-    @media (max-width: 900px) { grid-template-columns: repeat(2, 1fr); }
-    @media (max-width: 480px) { grid-template-columns: 1fr; }
-`;
-
-const KpiCard = styled.div`
-    background: ${({ theme }) => theme.bgcards};
-    border: 1px solid ${({ $accent }) => $accent}30;
-    border-radius: 16px; padding: 20px 18px;
-    display: flex; align-items: center; gap: 14px;
-`;
-
-const KpiIcon = styled.div`
-    width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-    background: ${({ $accent }) => $accent}18; color: ${({ $accent }) => $accent};
-`;
-
-const KpiBody = styled.div`display: flex; flex-direction: column; gap: 2px;`;
-
-const KpiValue = styled.div`
-    font-size: 20px; font-weight: 900;
-    color: ${({ theme }) => theme.text}; font-family: "Poppins", sans-serif;
-`;
-
-const KpiLabel = styled.div`
-    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
-    color: ${({ theme }) => theme.colorsubtitlecard};
-`;
-
-const BottomGrid = styled.div`
-    display: grid; grid-template-columns: 1fr 320px; gap: 20px;
-    @media (max-width: 1024px) { grid-template-columns: 1fr; }
-`;
-
-const Section = styled.div`
+const TablaWrap = styled.div`
     background: ${({ theme }) => theme.bgcards};
     border: 1px solid ${({ theme }) => theme.color2};
-    border-radius: 16px; padding: 20px;
+    border-radius: 14px; overflow: auto;
 `;
 
-const SideSection = styled.div`display: flex; flex-direction: column;`;
+const Tabla = styled.table`width: 100%; border-collapse: collapse;`;
 
-const SectionTitle = styled.div`
-    display: flex; align-items: center; gap: 8px;
-    font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;
-    color: ${({ theme }) => theme.text}; margin-bottom: 16px;
-    font-family: "Poppins", sans-serif;
-    svg { color: #f97316; }
+const Th = styled.th`
+    padding: 12px 14px; text-align: ${({ $right }) => $right ? "right" : "left"};
+    font-size: 11px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.5px; color: ${({ theme }) => theme.colorsubtitlecard};
+    border-bottom: 1px solid ${({ theme }) => theme.color2};
+    background: ${({ theme }) => theme.bgtotal};
+    white-space: nowrap;
 `;
 
-const EmptyTip = styled.p`
-    font-size: 13px; color: ${({ theme }) => theme.colorsubtitlecard};
-    text-align: center; padding: 20px 0; margin: 0;
+const Tr = styled.tr`
+    border-bottom: 1px solid ${({ theme }) => theme.color2};
+    transition: background 0.12s;
+    &:last-child { border-bottom: none; }
+    &:hover td { background: ${({ theme }) => theme.bgtotal}; }
 `;
 
-const MetodosList = styled.div`display: flex; flex-direction: column; gap: 14px;`;
-
-const MetodoFila = styled.div`display: flex; flex-direction: column; gap: 6px;`;
-
-const MetodoHead = styled.div`
-    display: flex; align-items: center; gap: 10px;
+const Td = styled.td`
+    padding: 11px 14px; font-size: 13px;
+    color: ${({ theme }) => theme.text};
+    text-align: ${({ $right, $center }) => $right ? "right" : $center ? "center" : "left"};
+    white-space: nowrap;
 `;
 
-const MetodoIconWrap = styled.div`
-    color: ${({ $color }) => $color}; display: flex; align-items: center;
+const MesaText = styled.span`font-weight: 700;`;
+
+const MetodoChip = styled.span`
+    display: inline-block; padding: 2px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+    background: ${({ $color }) => $color}18;
+    color: ${({ $color }) => $color};
+    border: 1px solid ${({ $color }) => $color}35;
 `;
 
-const MetodoNombre = styled.span`
-    flex: 1; font-size: 14px; font-weight: 700;
-    color: ${({ theme }) => theme.text}; font-family: "Poppins", sans-serif;
+const CambioBadge = styled.span`
+    font-weight: 800; font-size: 13px; color: #22c55e;
 `;
 
-const MetodoCmds = styled.span`
-    font-size: 11px; color: ${({ theme }) => theme.colorsubtitlecard};
+const TotalText = styled.span`
+    font-weight: 800;
 `;
 
-const MetodoMonto = styled.span`
-    font-size: 14px; font-weight: 800;
-    color: ${({ theme }) => theme.text}; font-family: "Poppins", sans-serif;
+const Paginacion = styled.div`
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    font-size: 13px; color: ${({ theme }) => theme.text};
 `;
 
-const MetodoPct = styled.span`
-    font-size: 12px; font-weight: 800; color: ${({ $color }) => $color};
-    min-width: 36px; text-align: right;
-`;
-
-const BarRow = styled.div`
-    height: 5px; border-radius: 3px; background: rgba(255,255,255,0.06);
-`;
-
-const BarFill = styled.div`
-    height: 100%; border-radius: 3px; transition: width 0.6s ease;
-`;
-
-const TotalRow = styled.div`
-    display: flex; align-items: center; gap: 10px;
-    margin-top: 20px; padding-top: 16px;
-    border-top: 1px solid ${({ theme }) => theme.color2};
-`;
-
-const TotalLabel = styled.span`
-    flex: 1; font-size: 14px; font-weight: 700;
-    color: ${({ theme }) => theme.text}; font-family: "Poppins", sans-serif;
-`;
-
-const TotalMonto = styled.span`
-    font-size: 18px; font-weight: 900; color: #22c55e;
-    font-family: "Poppins", sans-serif;
-`;
-
-const TopPlatosList = styled.div`display: flex; flex-direction: column; gap: 10px;`;
-
-const TopPlatoRow = styled.div`
-    display: flex; align-items: center; gap: 10px;
-    padding: 10px 12px; border-radius: 12px;
-    background: ${({ $primero }) => $primero ? "rgba(249,115,22,0.08)" : "rgba(255,255,255,0.02)"};
-    border: 1px solid ${({ $primero }) => $primero ? "rgba(249,115,22,0.2)" : "transparent"};
-`;
-
-const TopRank = styled.span`
-    font-size: 14px; font-weight: 900;
-    color: ${({ $primero }) => $primero ? "#f97316" : "#94a3b8"};
-    min-width: 28px; font-family: "Poppins", sans-serif;
-`;
-
-const TopNombre = styled.span`
-    flex: 1; font-size: 13px; font-weight: 700;
-    color: ${({ theme }) => theme.text}; font-family: "Poppins", sans-serif;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-`;
-
-const TopQty = styled.span`
-    font-size: 12px; font-weight: 700; color: #f97316;
-`;
-
-const EstadoRow = styled.div`
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 0;
-    &:not(:last-child) { border-bottom: 1px solid ${({ theme }) => theme.color2}; }
-`;
-
-const EstadoLabel = styled.span`
-    font-size: 13px; color: ${({ theme }) => theme.colorsubtitlecard};
-`;
-
-const EstadoVal = styled.span`
-    font-size: 18px; font-weight: 900; color: ${({ $color }) => $color};
-    font-family: "Poppins", sans-serif;
-`;
-
-const LoadingWrap = styled.div`
-    display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 12px; height: 300px;
-    color: ${({ theme }) => theme.colorsubtitlecard};
-    font-family: "Poppins", sans-serif;
-    .spin { animation: spin 1s linear infinite; }
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+const BtnPag = styled.button`
+    background: ${({ theme }) => theme.bgcards}; border: 1px solid ${({ theme }) => theme.color2};
+    border-radius: 8px; padding: 6px 14px; cursor: pointer; font-size: 16px;
+    color: ${({ theme }) => theme.text};
+    &:disabled { opacity: 0.3; cursor: not-allowed; }
 `;

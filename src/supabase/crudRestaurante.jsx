@@ -233,6 +233,21 @@ export async function ObtenerStatsRestaurante({ id_empresa, desde, hasta }) {
     };
 }
 
+export async function ListarComandasCobradas({ id_empresa, desde, hasta, page = 1, pageSize = 25 }) {
+    let q = supabase
+        .from("comandas")
+        .select("id, created_at, total, metodo_pago, pagado_con, cambio, mesas(nombre, numero)", { count: "exact" })
+        .eq("id_empresa", id_empresa)
+        .eq("estado", "cobrada")
+        .order("created_at", { ascending: false })
+        .range((page - 1) * pageSize, page * pageSize - 1);
+    if (desde) q = q.gte("created_at", desde);
+    if (hasta) q = q.lte("created_at", hasta + "T23:59:59.999Z");
+    const { data, count, error } = await q;
+    if (error) { toastError(error.message, "Arqueo › Comandas"); return { data: [], count: 0 }; }
+    return { data: data ?? [], count: count ?? 0 };
+}
+
 // ── SUMINISTROS ──────────────────────────────────────────────
 export async function MostrarSuministros({ id_empresa }) {
     const { data, error } = await supabase
